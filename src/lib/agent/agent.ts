@@ -84,7 +84,7 @@ export async function runInvestigationAgent(
   const prompt = `Conduct a strategic intelligence investigation.\nOrganization: ${organization}\nTechnology: ${technology}\nCompetitors: ${competitors.join(", ")}\nTime Range: ${timeRange}\nQuestion: ${strategicQuestion}`;
 
   let iteration = 0;
-  const maxIterations = 5;
+  const maxIterations = 2; // Reduced to 2 to prevent Vercel 60s timeouts
   let response = await chat.sendMessage({ message: prompt });
 
   while (iteration < maxIterations && response.functionCalls && response.functionCalls.length > 0) {
@@ -219,6 +219,7 @@ export async function runInvestigationAgent(
   const history = await chat.getHistory();
   
   const finalPrompt = `You have completed your research. Synthesize the tool results into the final Strategic Radar report.
+CRITICAL: Keep all summaries and text fields EXTREMELY concise (1-2 short sentences max) so that the JSON generates as fast as possible.
 You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not wrap in markdown):
 {
   "executiveSummary": "...",
