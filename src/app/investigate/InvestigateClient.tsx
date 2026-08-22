@@ -352,7 +352,32 @@ export default function InvestigateClient() {
                   )}
 
                   {stage === "done" && (
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-3 mt-4">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch("/api/watches", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                organization: investigation.organization,
+                                technology: investigation.technology,
+                                competitors: investigation.competitors,
+                                timeRange: investigation.timeRange,
+                                strategicQuestion: investigation.strategicQuestion,
+                                frequency: "weekly"
+                              })
+                            });
+                            if (res.ok) alert("Watch saved successfully! We will scan this weekly.");
+                            else alert("Failed to save watch.");
+                          } catch {
+                            alert("Failed to save watch.");
+                          }
+                        }}
+                        className="bg-white text-black border border-black text-[12px] font-medium px-5 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Save as Watch
+                      </button>
                       <a
                         href={`/report/${investigation.id}`}
                         className="bg-black text-white text-[12px] font-medium px-5 py-2 rounded-lg hover:opacity-90 transition-opacity"

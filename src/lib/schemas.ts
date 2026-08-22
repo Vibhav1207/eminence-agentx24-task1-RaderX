@@ -95,3 +95,18 @@ export type InvestigationStatus = z.infer<typeof InvestigationStatusSchema>;
 export type EvidenceType = z.infer<typeof EvidenceTypeSchema>;
 export type Classification = z.infer<typeof ClassificationSchema>;
 export type Impact = z.infer<typeof ImpactSchema>;
+
+export const WatchConfigSchema = z.object({
+  id: z.string(),
+  organization: z.string(),
+  technology: z.string(),
+  competitors: z.array(z.string()),
+  timeRange: TimeRangeSchema,
+  strategicQuestion: z.string(),
+  frequency: z.enum(["daily", "weekly"]),
+  status: z.enum(["active", "paused"]),
+  lastScan: z.string().optional(),
+  createdAt: z.string(),
+});
+export type WatchConfig = z.infer<typeof WatchConfigSchema>;
+

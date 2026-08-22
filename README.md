@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RaderX - Strategic Intelligence Agent
 
-## Getting Started
+## Team Members
+* Vibhav Patel
+* Mahesh Banger 
+* Saksham Patil
+* Saisha Asane
+* Yuvraj Kumar
 
-First, run the development server:
+## Problem Statement
+Organizations, startups, and research institutions operate in highly competitive and rapidly evolving environments where staying updated on research trends, patent developments, competitor strategies, and industry news is critical. However, manually monitoring scientific publications, patent databases, news platforms, and social media sources is time-consuming, inefficient, and prone to missing important updates. The lack of timely insights can result in lost opportunities, delayed innovation, and weakened competitive positioning. Therefore, there is a need for an autonomous AI agent capable of continuously tracking research and competitor activities, analyzing vast information sources, and delivering concise, actionable insights in real time.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Project Description
+Our solution is an **Autonomous Strategic Intelligence Agent** built using the OpenAI API. Instead of relying on a hardcoded pipeline, our intelligent agent dynamically queries multiple data sources (academic research via OpenAlex, patent databases, and news/web trends) based on the user's strategic question. It autonomously correlates evidence across these distinct sources to identify verified strategic signals, classifies them as Threats or Opportunities, scores their confidence and impact, and outputs a prioritized, structured intelligence report.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Technologies Used
+- **Frontend:** Next.js 16, React 19, Tailwind CSS
+- **Backend:** Next.js API Routes, Vercel Serverless Functions
+- **Database:** MongoDB
+- **AI/Agents:** OpenAI Node.js SDK (GPT-4o) with strict structured outputs (Zod)
+- **APIs/Tools:** OpenAlex API (Research), Simulated Patent/Web News endpoints
+- **Infrastructure:** Vercel Cron Jobs (for automated monitoring/watches)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
+- **Autonomous Agentic Loop:** The AI decides which tools to call, evaluates the evidence, and searches again if needed, never relying on a deterministic, hardcoded sequence.
+- **Cross-Source Correlation:** Discovers relationships between scientific research, patent filings, and market news to derive high-value strategic signals.
+- **Threat/Opportunity Classification:** Automatically grades signals on confidence and impact metrics.
+- **Continuous Monitoring (Watches):** Save any investigation as a "Watch" to be automatically re-scanned weekly via Vercel Cron Jobs, persisting only net-new signals to MongoDB.
+- **Full Dashboard Integration:** Beautiful, functional UI to track active monitoring, recent reports, and top-level critical discoveries.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Installation / Setup Steps
 
-## Learn More
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repo-url>
+   cd eminence-agentx24-task1
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Environment Variables:**
+   Create a `.env` or `.env.local` file in the root directory and add:
+   ```env
+   # Required
+   OPENAI_API_KEY=your_openai_api_key
+   MONGODB_URI=your_mongodb_connection_string
+   
+   # Optional (for Vercel Cron authorization)
+   CRON_SECRET=your_secret_string
+   MONGODB_DB=task1web
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How to Run the Project
 
-## Deploy on Vercel
+1. **Start the Development Server:**
+   ```bash
+   npm run dev
+   ```
+2. **Access the Application:**
+   Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
+3. **Run an Investigation:**
+   Click on "New Investigation", enter your strategic question, and watch the agent execute its timeline!
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Screenshots / Demo Link
+*Demo Link:* [Insert Vercel Deployment Link Here]
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Dashboard
+*[Insert Screenshot of Dashboard Here]*
+
+### Investigation Workspace (Monitoring)
+*[Insert Screenshot of the Execution Timeline Here]*
+
+### Intelligence Report
+*[Insert Screenshot of the Final Report Here]*

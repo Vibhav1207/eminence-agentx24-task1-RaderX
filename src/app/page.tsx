@@ -2,6 +2,56 @@ import TopNav from "@/components/TopNav";
 import Link from "next/link";
 import { Investigation } from "@/lib/schemas";
 
+import { WatchConfig } from "@/lib/schemas";
+
+async function getWatches(): Promise<WatchConfig[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/watches`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.watches ?? [];
+  } catch {
+    return [];
+  }
+}
+
+async function WatchesSection() {
+  const watches = await getWatches();
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-[20px] font-semibold text-black">Active Watches</h2>
+      </div>
+      {watches.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {watches.map((w) => (
+            <div key={w.id} className="bg-white border border-[#c6c6cd] rounded-lg p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-semibold bg-[#dce9ff] text-black px-2 py-0.5 rounded">
+                  {w.status.toUpperCase()}
+                </span>
+                <span className="text-[12px] text-[#45464d]">{w.frequency}</span>
+              </div>
+              <h3 className="text-[15px] font-semibold text-black mb-1">{w.organization}</h3>
+              <p className="text-[13px] text-[#45464d] line-clamp-2">{w.technology}</p>
+              <div className="mt-3 pt-3 border-t border-[#c6c6cd] text-[12px] text-[#45464d]">
+                Last Scan: {w.lastScan ? formatDate(w.lastScan) : "Never"}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white border border-[#c6c6cd] rounded-lg p-6 text-center text-[13px] text-[#45464d]">
+          No active watches. Save an investigation to monitor it continuously.
+        </div>
+      )}
+    </div>
+  );
+}
+
 async function getInvestigations(): Promise<Investigation[]> {
   try {
     const res = await fetch(
@@ -176,7 +226,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Recent Investigations */}
-          <div>
+          <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[20px] font-semibold text-black">Recent Investigations</h2>
               {investigations.length > 0 && (
@@ -225,6 +275,9 @@ export default async function DashboardPage() {
               </div>
             )}
           </div>
+
+          {/* Active Watches */}
+          <WatchesSection />
         </main>
 
         {/* Strategic Signals sidebar */}
