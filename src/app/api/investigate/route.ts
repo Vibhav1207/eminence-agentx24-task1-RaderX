@@ -22,9 +22,11 @@ export async function POST(request: Request) {
       parsed.data;
 
     const now = new Date().toISOString();
+    const investigationId = randomUUID();
     
     // Run the agent synchronously for now, as the frontend awaits the fetch call
     const report = await runInvestigationAgent(
+      investigationId,
       organization,
       technology,
       competitors.split(",").map(c => c.trim()),
@@ -34,7 +36,7 @@ export async function POST(request: Request) {
     );
 
     const investigation = {
-      id: randomUUID(),
+      id: investigationId,
       organization,
       technology,
       competitors: competitors.split(",").map((c) => c.trim()).filter(Boolean),

@@ -25,7 +25,9 @@ export async function GET(request: Request) {
     for (const watch of watches) {
       console.log(`Running scan for watch: ${watch.id}`);
       try {
+        const investigationId = randomUUID();
         const report = await runInvestigationAgent(
+          investigationId,
           watch.organization,
           watch.technology,
           watch.competitors,
@@ -53,7 +55,7 @@ export async function GET(request: Request) {
 
         const now = new Date().toISOString();
         const investigation = {
-          id: randomUUID(),
+          id: investigationId,
           watchId: watch.id,
           organization: watch.organization,
           technology: watch.technology,

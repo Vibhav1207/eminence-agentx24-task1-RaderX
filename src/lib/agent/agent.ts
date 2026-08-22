@@ -39,7 +39,10 @@ const tools = [{
   }))
 }];
 
+import { emitAgentEvent } from "./events";
+
 export async function runInvestigationAgent(
+  investigationId: string,
   organization: string,
   technology: string,
   competitors: string[],
@@ -53,6 +56,19 @@ export async function runInvestigationAgent(
 
   console.log("[Pipeline Debug] -> Agent started for organization:", organization);
   emit("Understanding investigation objective...");
+  emitAgentEvent({
+    investigationId,
+    eventType: "AGENT_STARTED",
+    status: "info",
+    message: `Agent started for organization: ${organization}`,
+  });
+  
+  emitAgentEvent({
+    investigationId,
+    eventType: "GOAL_RECEIVED",
+    status: "info",
+    message: `Goal received: Investigate ${technology} competitive landscape.`,
+  });
 
   if (!GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not configured.");
@@ -75,6 +91,14 @@ export async function runInvestigationAgent(
   while (iteration < maxIterations && response.functionCalls && response.functionCalls.length > 0) {
     iteration++;
     console.log(`[Pipeline Debug] -> LLM Loop Iteration ${iteration}`);
+    if (iteration > 1) {
+      emitAgentEvent({
+        investigationId,
+        eventType: "NEXT_ACTION_SELECTED",
+        status: "info",
+        message: `Agent determined another action is necessary (Iteration ${iteration})`
+      });
+    }
     
     const functionResponses = [];
 
@@ -86,6 +110,14 @@ export async function runInvestigationAgent(
         const args = call.args as any;
         const toolHandler = allTools[toolName as keyof typeof allTools];
         
+        emitAgentEvent({
+          investigationId,
+          eventType: "TOOL_SELECTED",
+          toolName,
+          status: "info",
+          message: `Agent selected ${toolName}`
+        });
+
         // Show the user exactly what is being searched
         if (args.query) {
           emit(`Searching ${toolName.replace('search_', '')} for: "${args.query}"...`);
@@ -94,19 +126,70 @@ export async function runInvestigationAgent(
         }
 
         if (toolHandler) {
+          const startTime = Date.now();
+          emitAgentEvent({
+            investigationId,
+            eventType: "TOOL_STARTED",
+            toolName,
+            status: "info",
+            message: `Executing ${toolName} with query: ${args.query || 'none'}`
+          });
+
           const result = await toolHandler.execute(args);
-          console.log(`[Pipeline Debug] -> Tool result received from ${toolName}. Items count: ${Array.isArray(result) ? result.length : 1}`);
+          const durationMs = Date.now() - startTime;
+          const itemsCount = Array.isArray(result) ? result.length : 1;
+          
+          emitAgentEvent({
+            investigationId,
+            eventType: "TOOL_COMPLETED",
+            toolName,
+            status: "success",
+            durationMs,
+            message: `${toolName} completed successfully`,
+            resultMetadata: { count: itemsCount }
+          });
+          
+          emitAgentEvent({
+            investigationId,
+            eventType: "EVIDENCE_RECEIVED",
+            toolName,
+            status: "info",
+            message: `Agent received ${itemsCount} items of evidence`
+          });
+
+          console.log(`[Pipeline Debug] -> Tool result received from ${toolName}. Items count: ${itemsCount}`);
           
           functionResponses.push({
             functionResponse: { name: toolName, response: { items: result } }
           });
+          
+          emitAgentEvent({
+            investigationId,
+            eventType: "EVIDENCE_EVALUATED",
+            status: "info",
+            message: `Agent evaluating evidence from ${toolName}`
+          });
         } else {
+          emitAgentEvent({
+            investigationId,
+            eventType: "TOOL_FAILED",
+            toolName,
+            status: "error",
+            message: `Tool ${toolName} is not registered`
+          });
           functionResponses.push({
             functionResponse: { name: toolName, response: { error: "Tool not found" } }
           });
         }
       } catch (e) {
         console.error(`[Pipeline Debug] -> Error in tool ${toolName}:`, e);
+        emitAgentEvent({
+          investigationId,
+          eventType: "TOOL_FAILED",
+          toolName,
+          status: "error",
+          message: `Tool execution failed: ${String(e)}`
+        });
         functionResponses.push({
           functionResponse: { name: toolName, response: { error: String(e) } }
         });
@@ -171,10 +254,26 @@ You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not
   try {
     const report = JSON.parse(content);
     console.log("[Pipeline Debug] -> JSON successfully parsed.");
+    
+    emitAgentEvent({
+      investigationId,
+      eventType: "INVESTIGATION_COMPLETED",
+      status: "success",
+      message: "Investigation successfully completed and final report generated"
+    });
+    
     return report;
   } catch (e) {
     console.error("[Pipeline Debug] -> CRITICAL ERROR: Model returned malformed structured output.");
     console.error("[Pipeline Debug] -> Raw LLM Response:", content);
+    
+    emitAgentEvent({
+      investigationId,
+      eventType: "INVESTIGATION_FAILED",
+      status: "error",
+      message: "Investigation failed: model returned malformed JSON"
+    });
+    
     throw new Error("Failed to parse the final structured report JSON.");
   }
 }
