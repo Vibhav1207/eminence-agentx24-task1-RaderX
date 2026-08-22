@@ -85,6 +85,14 @@ export async function runInvestigationAgent(
       try {
         const args = call.args as any;
         const toolHandler = allTools[call.name as keyof typeof allTools];
+        
+        // Show the user exactly what is being searched
+        if (args.query) {
+          emit(`Searching ${call.name.replace('search_', '')} for: "${args.query}"...`);
+        } else {
+          emit(`Executing tool: ${call.name}...`);
+        }
+
         if (toolHandler) {
           const result = await toolHandler.execute(args);
           console.log(`[Pipeline Debug] -> Tool result received from ${call.name}. Items count: ${Array.isArray(result) ? result.length : 1}`);
@@ -105,7 +113,12 @@ export async function runInvestigationAgent(
       }
     }
     
-    response = await chat.sendMessage({ message: functionResponses as any });
+    try {
+      response = await chat.sendMessage({ message: functionResponses as any });
+    } catch (e) {
+      console.error(`[Pipeline Debug] -> API Error during tool loop iteration ${iteration}:`, e);
+      throw e; // Throw to fail the pipeline and let route.ts catch it
+    }
   }
 
   console.log("[Pipeline Debug] -> No more tool calls. Analysis started.");
@@ -135,16 +148,22 @@ You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not
   "confidence": 0-100
 }`;
 
-  const finalResponse = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
-    contents: [
-      ...history,
-      { role: 'user', parts: [{ text: finalPrompt }] }
-    ],
-    config: {
-      responseMimeType: "application/json",
-    }
-  });
+  let finalResponse;
+  try {
+    finalResponse = await ai.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents: [
+        ...history,
+        { role: 'user', parts: [{ text: finalPrompt }] }
+      ],
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+  } catch (e) {
+    console.error(`[Pipeline Debug] -> API Error during final report generation:`, e);
+    throw e;
+  }
 
   const content = finalResponse.text || "";
   console.log("[Pipeline Debug] -> Final report generated. Attempting to parse JSON.");
