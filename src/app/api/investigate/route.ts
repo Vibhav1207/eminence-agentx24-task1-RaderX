@@ -1,3 +1,5 @@
+export const maxDuration = 60; // Allow Vercel functions up to 60 seconds
+
 import { CreateInvestigationSchema } from "@/lib/schemas";
 import { getDb } from "@/lib/mongodb";
 import { randomUUID } from "crypto";

@@ -105,6 +105,48 @@ function SignalCard({ signal }: { signal: StrategicSignal }) {
   );
 }
 
+function SaveWatchButton({ investigation }: { investigation: Investigation }) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/watches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organization: investigation.organization,
+          technology: investigation.technology,
+          competitors: investigation.competitors,
+          timeRange: investigation.timeRange,
+          strategicQuestion: investigation.strategicQuestion,
+          frequency: "weekly"
+        })
+      });
+      if (res.ok) {
+        setSaved(true);
+      } else {
+        alert("Failed to save watch. Check your database connection.");
+      }
+    } catch {
+      alert("Failed to save watch.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleSave}
+      disabled={isSaving || saved}
+      className="bg-white text-black border border-black text-[12px] font-medium px-5 py-2 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-32 flex items-center justify-center"
+    >
+      {isSaving ? "Saving..." : saved ? "Saved ✓" : "Save as Watch"}
+    </button>
+  );
+}
+
 export default function InvestigateClient() {
   const router = useRouter();
   const [stage, setStage] = useState<Stage>("setup");
@@ -379,31 +421,7 @@ export default function InvestigateClient() {
 
                   {stage === "done" && (
                     <div className="flex justify-end gap-3 mt-4">
-                      <button
-                        onClick={async () => {
-                          try {
-                            const res = await fetch("/api/watches", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                organization: investigation.organization,
-                                technology: investigation.technology,
-                                competitors: investigation.competitors,
-                                timeRange: investigation.timeRange,
-                                strategicQuestion: investigation.strategicQuestion,
-                                frequency: "weekly"
-                              })
-                            });
-                            if (res.ok) alert("Watch saved successfully! We will scan this weekly.");
-                            else alert("Failed to save watch.");
-                          } catch {
-                            alert("Failed to save watch.");
-                          }
-                        }}
-                        className="bg-white text-black border border-black text-[12px] font-medium px-5 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        Save as Watch
-                      </button>
+                      <SaveWatchButton investigation={investigation} />
                       <a
                         href={`/report/${investigation.id}`}
                         className="bg-black text-white text-[12px] font-medium px-5 py-2 rounded-lg hover:opacity-90 transition-opacity"
