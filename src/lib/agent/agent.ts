@@ -98,7 +98,7 @@ export async function runInvestigationAgent(
           console.log(`[Pipeline Debug] -> Tool result received from ${toolName}. Items count: ${Array.isArray(result) ? result.length : 1}`);
           
           functionResponses.push({
-            functionResponse: { name: toolName, response: result }
+            functionResponse: { name: toolName, response: { items: result } }
           });
         } else {
           functionResponses.push({
