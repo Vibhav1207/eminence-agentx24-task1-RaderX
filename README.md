@@ -71,9 +71,5 @@ Our solution is an **Autonomous Strategic Intelligence Agent** built using the O
 ## Screenshots / Demo Link
 *Demo Link:* [https://eminence-agentx24-task1.vercel.app/](https://eminence-agentx24-task1.vercel.app/)
 
-### Intelligence Dashboard
-![Dashboard](/dashboard.png)
 
-### How to Use Guide
-![How to Use](/how-to-use.png)
 
