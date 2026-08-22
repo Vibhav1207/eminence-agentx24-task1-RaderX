@@ -96,6 +96,17 @@ export const agentsApi = {
     apiFetch<Array<{ id: string; time: string; agentName: string; action: string }>>(
       '/api/agents/activity'
     ),
+  getCounts: () =>
+    apiFetch<{
+      total: number;
+      configured: number;
+      active: number;
+      running: number;
+      idle: number;
+      completed: number;
+      failed: number;
+      offline: number;
+    }>('/api/agents/counts'),
 };
 
 export const watchlistsApi = {
@@ -125,16 +136,37 @@ export const watchlistsApi = {
 };
 
 export const alertsApi = {
-  getAll: () => apiFetch<AlertModel[]>('/api/alerts'),
+  getAll: (params?: { category?: string; unreadOnly?: boolean; userId?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.category) searchParams.set('category', params.category);
+    if (params?.unreadOnly) searchParams.set('unreadOnly', 'true');
+    if (params?.userId) searchParams.set('userId', params.userId);
+    return apiFetch<AlertModel[]>(`/api/alerts?${searchParams.toString()}`);
+  },
+  getWithCount: (params?: { category?: string; unreadOnly?: boolean; userId?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.category) searchParams.set('category', params.category);
+    if (params?.unreadOnly) searchParams.set('unreadOnly', 'true');
+    if (params?.userId) searchParams.set('userId', params.userId);
+    return apiFetch<{ alerts: AlertModel[]; unreadCount: number }>(`/api/alerts?${searchParams.toString()}`);
+  },
   markRead: (id: string) =>
     apiFetch<AlertModel>(`/api/alerts/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ read: true }),
     }),
+  markAllRead: () =>
+    apiFetch<{ markedRead: number }>('/api/alerts?action=markAllRead', {
+      method: 'PATCH',
+    }),
   update: (id: string, data: Partial<AlertModel>) =>
     apiFetch<AlertModel>(`/api/alerts/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
+    }),
+  dismiss: (id: string) =>
+    apiFetch<{ dismissed: boolean }>(`/api/alerts/${id}`, {
+      method: 'DELETE',
     }),
 };
 

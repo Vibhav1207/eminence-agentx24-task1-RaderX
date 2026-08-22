@@ -18,9 +18,10 @@ import {
 import { ConfidenceIndicator } from '@/components/ui/Indicators';
 import { graphApi, investigationsApi } from '@/lib/api';
 import { InvestigationModel, GraphNodeModel, GraphEdgeModel } from '@/lib/types';
+import { normalizeConfidence } from '@/lib/utils/confidence';
 
 export default function IntelligenceGraphPage() {
-  const router = Router();
+  const router = useRouter();
   const [investigations, setInvestigations] = useState<InvestigationModel[]>([]);
   const [activeInvId, setActiveInvId] = useState<string>('');
   const [nodes, setNodes] = useState<GraphNodeModel[]>([]);
@@ -82,7 +83,9 @@ export default function IntelligenceGraphPage() {
 
   const filteredNodes = nodes.filter((n) => {
     if (filterType !== 'ALL' && n.type !== filterType) return false;
-    if (n.confidence < minConfidence) return false;
+    // Normalize confidence for consistent filtering (0-100 scale)
+    const normalizedConfidence = normalizeConfidence(n.confidence);
+    if (normalizedConfidence < minConfidence) return false;
     return true;
   });
 
@@ -230,7 +233,7 @@ export default function IntelligenceGraphPage() {
                 </div>
                 <div className="flex items-center justify-between border-t border-[#E5E7EB] pt-3">
                   <span className="text-[#6B7280]">Node Confidence:</span>
-                  <span className="font-bold text-[#047857]">{selectedNode.confidence}%</span>
+                  <ConfidenceIndicator value={selectedNode.confidence} size="sm" />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#6B7280]">Node Importance:</span>
@@ -274,7 +277,7 @@ export default function IntelligenceGraphPage() {
               <div className="p-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-xs font-mono space-y-2">
                 <div className="flex items-center justify-between font-bold text-[#7A5E0A]">
                   <span>SUPPORTING EVIDENCE ({selectedEdge.evidenceIds.length})</span>
-                  <span>{selectedEdge.confidence}% CONFIDENCE</span>
+                  <ConfidenceIndicator value={selectedEdge.confidence} size="sm" />
                 </div>
                 <button
                   onClick={() => handleStartInvestigationForEdge(selectedEdge)}

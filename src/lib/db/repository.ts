@@ -32,6 +32,8 @@ import {
   InvestigationMemoryModel,
   AgentStepMemoryModel,
   AgentType,
+  EvaluationRunModel,
+  MissionEventModel,
 } from '@/lib/types';
 import {
   seedInvestigation,
@@ -82,6 +84,10 @@ class MemoryStore {
   // Context & Memory Management
   investigationMemory: InvestigationMemoryModel[] = [];
   agentStepMemory: AgentStepMemoryModel[] = [];
+  // Mission Events
+  missionEvents: MissionEventModel[] = [];
+  // Evaluation Lab
+  evaluationRuns: EvaluationRunModel[] = [];
 }
 
 const memory = new MemoryStore();
@@ -321,6 +327,42 @@ export const dbRepository = {
     return undefined;
   },
 
+  // Mission Events
+  async createMissionEvent(data: Partial<MissionEventModel>): Promise<MissionEventModel> {
+    const now = new Date().toISOString();
+    const event: MissionEventModel = {
+      id: data.id || `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      missionId: data.missionId || '',
+      investigationId: data.investigationId || '',
+      type: data.type || 'MISSION_CREATED',
+      agentType: data.agentType,
+      taskId: data.taskId,
+      message: data.message || '',
+      metadata: data.metadata,
+      createdAt: now,
+    };
+
+    memory.missionEvents = memory.missionEvents || [];
+    memory.missionEvents.unshift(event);
+    try {
+      const db = await getDb();
+      await db.collection<MissionEventModel>('mission_events').insertOne(event);
+    } catch {}
+    return event;
+  },
+
+  async getMissionEvents(investigationId: string): Promise<MissionEventModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection<MissionEventModel>('mission_events')
+        .find({ investigationId })
+        .sort({ createdAt: -1 })
+        .toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return (memory.missionEvents || []).filter(e => e.investigationId === investigationId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
   // Watchlists
   async getWatchlists(): Promise<WatchlistModel[]> {
     try {
@@ -404,13 +446,47 @@ export const dbRepository = {
   },
 
   // Alerts
-  async getAlerts(): Promise<AlertModel[]> {
+  async getAlerts(params?: { category?: string; unreadOnly?: boolean; userId?: string }): Promise<AlertModel[]> {
     try {
       const db = await getDb();
-      const docs = await db.collection<AlertModel>('alerts').find({}).sort({ createdAt: -1 }).toArray();
+      const filter: any = {};
+      if (params?.category && params.category !== 'ALL') {
+        if (params.category === 'HIGH IMPACT') {
+          filter.severity = { $in: ['HIGH', 'CRITICAL'] };
+        } else {
+          filter.category = params.category;
+        }
+      }
+      if (params?.unreadOnly) {
+        filter.read = false;
+        filter.status = 'UNREAD';
+      }
+      const docs = await db.collection<AlertModel>('alerts').find(filter).sort({ createdAt: -1 }).toArray();
       if (docs.length > 0) return docs;
     } catch {}
-    return memory.alerts;
+    // In-memory fallback with filtering
+    let alerts = [...memory.alerts];
+    if (params?.category && params.category !== 'ALL') {
+      if (params.category === 'HIGH IMPACT') {
+        alerts = alerts.filter(a => a.severity === 'HIGH' || a.severity === 'CRITICAL');
+      } else {
+        alerts = alerts.filter(a => a.category === params.category);
+      }
+    }
+    if (params?.unreadOnly) {
+      alerts = alerts.filter(a => !a.read && a.status === 'UNREAD');
+    }
+    return alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  async getUnreadCount(userId?: string): Promise<number> {
+    try {
+      const db = await getDb();
+      const filter: any = { read: false, status: 'UNREAD' };
+      if (userId) filter.userId = userId;
+      return await db.collection<AlertModel>('alerts').countDocuments(filter);
+    } catch {}
+    return memory.alerts.filter(a => !a.read && a.status === 'UNREAD').length;
   },
 
   async createAlert(data: Partial<AlertModel>): Promise<AlertModel> {
@@ -434,6 +510,10 @@ export const dbRepository = {
       whatChanged: data.whatChanged,
       whyItMatters: data.whyItMatters,
       recommendedAction: data.recommendedAction,
+      userId: data.userId,
+      relatedReportId: data.relatedReportId,
+      relatedEvidenceId: data.relatedEvidenceId,
+      relatedSignalId: data.relatedSignalId,
       createdAt: now,
     };
 
@@ -1161,7 +1241,13 @@ export const dbRepository = {
       recommendedActions: data.recommendedActions || [],
       watchItems: data.watchItems || [],
       confidence: data.confidence || 85,
-      sourceCoverage: data.sourceCoverage || {},
+      sourceCoverage: data.sourceCoverage || {
+        RESEARCH: 'UNAVAILABLE',
+        PATENT: 'UNAVAILABLE',
+        NEWS: 'UNAVAILABLE',
+        COMPETITOR: 'UNAVAILABLE',
+        WEB: 'UNAVAILABLE',
+      },
       evidenceIds: data.evidenceIds || [],
       signalIds: data.signalIds || [],
       entityIds: data.entityIds || [],
@@ -1529,5 +1615,166 @@ export const dbRepository = {
         status: 'RUNNING',
       });
     }
+  },
+
+  // ==================================================
+  // EVALUATION LAB — TASK 6
+  // ==================================================
+
+  async createEvaluationRun(data: Partial<EvaluationRunModel>): Promise<EvaluationRunModel> {
+    const now = new Date().toISOString();
+    const run: EvaluationRunModel = {
+      id: data.id || `evalrun-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      scenario: data.scenario || 'NORMAL',
+      investigationId: data.investigationId || '',
+      objective: data.objective || '',
+      expectedBehavior: data.expectedBehavior || '',
+      actualResult: data.actualResult || '',
+      finalConclusion: data.finalConclusion || '',
+      confidence: data.confidence ?? 0,
+      status: data.status || 'PENDING',
+      verdict: data.verdict || 'FAIL',
+      metrics: data.metrics || {
+        groundedness: 0,
+        hallucinationRate: 0,
+        evidenceQuality: 0,
+        taskCompletion: 0,
+        recoveryRate: 0,
+        consistency: 0,
+        totalLatencyMs: 0,
+        toolLatencyBreakdown: {},
+        agentSteps: 0,
+        toolCallCount: 0,
+        retryCount: 0,
+        evidenceCount: 0,
+        signalCount: 0,
+      },
+      groundednessDetail: data.groundednessDetail || {
+        groundedClaims: 0,
+        unsupportedClaims: [],
+        contradictedClaims: [],
+        uncertainClaims: [],
+        totalClaims: 0,
+      },
+      toolFailureDetail: data.toolFailureDetail || {
+        failuresDetected: false,
+        failedTools: [],
+        fallbackActivated: false,
+        replanningActivated: false,
+        investigationRecovered: false,
+        providerFailureNotes: [],
+      },
+      uncertaintyDetail: data.uncertaintyDetail || {
+        uncertaintyRecognized: false,
+        insufficientEvidenceIdentified: false,
+        conflictingEvidenceIdentified: false,
+        uncertaintyCommunicated: false,
+        unsupportedConclusionAvoided: false,
+        evaluationNote: '',
+        verdict: 'FAIL',
+      },
+      recoveryDetail: data.recoveryDetail || {
+        recoverableFailures: 0,
+        successfulRecoveries: 0,
+        recoveryRate: 0,
+        recoveryEvents: [],
+      },
+      baselineComparison: data.baselineComparison || {
+        available: false,
+        note: 'Baseline not available',
+      },
+      agentTrace: data.agentTrace || [],
+      evidenceIds: data.evidenceIds || [],
+      sourceIds: data.sourceIds || [],
+      toolsUsed: data.toolsUsed || [],
+      toolFailures: data.toolFailures || [],
+      selfEvaluationId: data.selfEvaluationId,
+      finalScore: data.finalScore ?? 0,
+      resourceUsage: data.resourceUsage,
+      error: data.error,
+      startedAt: data.startedAt || now,
+      completedAt: data.completedAt,
+      createdAt: now,
+    };
+
+    memory.evaluationRuns.unshift(run);
+    try {
+      const db = await getDb();
+      await db.collection<EvaluationRunModel>('evaluation_runs').insertOne(run);
+    } catch {}
+    return run;
+  },
+
+  async updateEvaluationRun(id: string, updates: Partial<EvaluationRunModel>): Promise<EvaluationRunModel | undefined> {
+    try {
+      const db = await getDb();
+      await db.collection('evaluation_runs').updateOne({ id }, { $set: updates });
+    } catch {}
+    const idx = memory.evaluationRuns.findIndex((r) => r.id === id);
+    if (idx >= 0) {
+      memory.evaluationRuns[idx] = { ...memory.evaluationRuns[idx], ...updates };
+      return memory.evaluationRuns[idx];
+    }
+    return undefined;
+  },
+
+  async getEvaluationRuns(): Promise<EvaluationRunModel[]> {
+    try {
+      await ensureIndexes();
+      const db = await getDb();
+      const docs = await db
+        .collection<EvaluationRunModel>('evaluation_runs')
+        .find({})
+        .sort({ createdAt: -1 })
+        .toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return memory.evaluationRuns;
+  },
+
+  async getEvaluationRunById(id: string): Promise<EvaluationRunModel | undefined> {
+    const mem = memory.evaluationRuns.find((r) => r.id === id);
+    if (mem) return mem;
+    try {
+      const db = await getDb();
+      const doc = await db.collection<EvaluationRunModel>('evaluation_runs').findOne({ id });
+      if (doc) return doc;
+    } catch {}
+    return undefined;
+  },
+
+  async deleteEvaluationRun(id: string): Promise<boolean> {
+    try {
+      const db = await getDb();
+      await db.collection('evaluation_runs').deleteOne({ id });
+    } catch {}
+    memory.evaluationRuns = memory.evaluationRuns.filter((r) => r.id !== id);
+    return true;
+  },
+
+  async getLatestEvaluationRunByScenario(scenario: string): Promise<EvaluationRunModel | undefined> {
+    const completed = memory.evaluationRuns
+      .filter((r) => r.scenario === (scenario as EvaluationRunModel['scenario']) && r.status === 'COMPLETED')
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (completed.length > 0) return completed[0];
+    try {
+      const db = await getDb();
+      const docs = await db
+        .collection<EvaluationRunModel>('evaluation_runs')
+        .find({ scenario: scenario as EvaluationRunModel['scenario'], status: 'COMPLETED' })
+        .sort({ createdAt: -1 })
+        .limit(1)
+        .toArray();
+      if (docs.length > 0) return docs[0];
+    } catch {}
+    return undefined;
+  },
+
+  async ensureEvaluationIndex(): Promise<void> {
+    try {
+      const db = await getDb();
+      await db.collection('evaluation_runs').createIndex({ scenario: 1, status: 1, createdAt: -1 });
+      await db.collection('evaluation_runs').createIndex({ investigationId: 1 });
+    } catch {}
   },
 };

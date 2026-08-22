@@ -1,6 +1,7 @@
 import { dbRepository } from '@/lib/db/repository';
 import { apiSuccess, apiError } from '@/lib/api/response';
 import { CreateInvestigationApiSchema } from '@/lib/schemas';
+import { agentRegistry } from '@/lib/agents/agentRegistry';
 
 export async function GET() {
   try {
@@ -34,6 +35,9 @@ export async function POST(request: Request) {
       timeHorizon,
       primaryEntities: primaryEntities.length > 0 ? primaryEntities : [organization, technology],
     });
+
+    // Initialize agent registry for this investigation
+    await agentRegistry.initialize();
 
     return apiSuccess(newInv, 201);
   } catch (error: any) {

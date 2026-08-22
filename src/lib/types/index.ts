@@ -59,7 +59,12 @@ export type AgentStatus =
   | 'PARTIAL'
   | 'FAILED'
   | 'RETRYING'
-  | 'ERROR';
+  | 'ERROR'
+  | 'EXECUTING'
+  | 'WAITING'
+  | 'VERIFYING'
+  | 'RECOVERING'
+  | 'OFFLINE';
 
 // Source Types
 export type SourceType =
@@ -74,6 +79,19 @@ export type SourceType =
 
 // Source Quality Rating
 export type SourceQuality = 'PRIMARY' | 'SECONDARY' | 'AGGREGATED' | 'UNVERIFIED';
+
+// Provider Execution Tracking
+export interface ProviderExecutionModel {
+  provider: string;
+  category: SourceType;
+  request: Record<string, unknown>;
+  startedAt: string;
+  completedAt?: string;
+  status: 'SUCCESS' | 'FAILED' | 'PARTIAL' | 'NO_RESULTS';
+  resultCount: number;
+  error?: string;
+  latencyMs: number;
+}
 
 // 1. Investigation Model
 export interface InvestigationModel {
@@ -112,6 +130,7 @@ export interface InvestigationModel {
   orchestratorStatus?: string;
   orchestratorAction?: string;
   metadata?: Record<string, unknown>;
+  providerExecutions?: ProviderExecutionModel[];
 }
 
 // 2. Agent Model
@@ -120,6 +139,7 @@ export interface AgentModel {
   name: string;
   type: AgentType;
   role: string;
+  description?: string;
   status: AgentStatus;
   currentTask: string;
   currentInvestigationId?: string;
@@ -127,6 +147,9 @@ export interface AgentModel {
   confidence: number;
   color: string;
   lastActive: string;
+  capabilities?: string[];
+  tools?: string[];
+  enabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -281,7 +304,14 @@ export interface ExecutiveBriefModel {
   recommendedActions: ExecutiveRecommendationModel[];
   watchItems: WatchItem[];
   confidence: number;
-  sourceCoverage: Record<string, string>;
+  sourceCoverage: {
+    RESEARCH: 'AVAILABLE' | 'UNAVAILABLE' | 'PARTIAL' | 'NO_EVIDENCE';
+    PATENT: 'AVAILABLE' | 'UNAVAILABLE' | 'PARTIAL' | 'NO_EVIDENCE';
+    NEWS: 'AVAILABLE' | 'UNAVAILABLE' | 'PARTIAL' | 'NO_EVIDENCE';
+    COMPETITOR: 'AVAILABLE' | 'UNAVAILABLE' | 'PARTIAL' | 'NO_EVIDENCE';
+    WEB: 'AVAILABLE' | 'UNAVAILABLE' | 'PARTIAL' | 'NO_EVIDENCE';
+  };
+  providerExecutions?: ProviderExecutionModel[];
   evidenceIds: string[];
   signalIds: string[];
   entityIds: string[];
@@ -573,6 +603,10 @@ export interface AlertModel {
   whatChanged?: string;
   whyItMatters?: string;
   recommendedAction?: string;
+  userId?: string;
+  relatedReportId?: string;
+  relatedEvidenceId?: string;
+  relatedSignalId?: string;
   createdAt: string;
 }
 
@@ -1007,7 +1041,10 @@ export interface AgentResultModel {
   signalCandidates: Partial<SignalModel>[];
   relationships: Partial<RelationshipModel>[];
   confidence: number;
-  metadata?: Record<string, unknown>;
+  metadata?: {
+    providerExecution?: ProviderExecutionModel;
+    [key: string]: unknown;
+  };
   startedAt: string;
   completedAt: string;
 }
@@ -1267,5 +1304,148 @@ export interface VerificationTaskRequest {
   priority: PriorityLevel;
   reason: string;
   informationGain: 'HIGH' | 'MEDIUM' | 'LOW';
+  createdAt: string;
+}
+
+// ==================================================
+// EVALUATION LAB — TASK 6
+// ==================================================
+
+export type EvaluationScenarioType =
+  | 'NORMAL'
+  | 'AMBIGUOUS'
+  | 'ADVERSARIAL'
+  | 'CONTRADICTORY'
+  | 'INCOMPLETE'
+  | 'TOOL_FAILURE'
+  | 'REPEATED_RUN';
+
+export type EvaluationRunStatus =
+  | 'PENDING'
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'ERROR';
+
+export type EvaluationVerdict = 'PASS' | 'PARTIAL' | 'FAIL' | 'ERROR';
+
+export interface EvaluationMetrics {
+  /** 0-100: proportion of major claims grounded in evidence */
+  groundedness: number;
+  /** 0-100: rate of claims without any evidence support */
+  hallucinationRate: number;
+  /** 0-100: proportion of evidence items with high quality scores */
+  evidenceQuality: number;
+  /** 0-100: whether the investigation produced a useful conclusion */
+  taskCompletion: number;
+  /** 0-100: tool failure handled + fallback + investigation recovered */
+  recoveryRate: number;
+  /** 0-100: cross-run output consistency (populated for REPEATED_RUN) */
+  consistency: number;
+  /** Total wall-clock time in milliseconds */
+  totalLatencyMs: number;
+  /** Individual agent/tool latency breakdown */
+  toolLatencyBreakdown: Record<string, number>;
+  /** Number of LangGraph agent steps executed */
+  agentSteps: number;
+  /** Number of distinct tool/provider calls */
+  toolCallCount: number;
+  /** Total retries across all agents */
+  retryCount: number;
+  /** Evidence items collected */
+  evidenceCount: number;
+  /** Signals detected */
+  signalCount: number;
+}
+
+export interface EvaluationGroundednessDetail {
+  groundedClaims: number;
+  unsupportedClaims: string[];
+  contradictedClaims: string[];
+  uncertainClaims: string[];
+  totalClaims: number;
+}
+
+export interface EvaluationToolFailureDetail {
+  failuresDetected: boolean;
+  failedTools: string[];
+  fallbackActivated: boolean;
+  replanningActivated: boolean;
+  investigationRecovered: boolean;
+  providerFailureNotes: string[];
+}
+
+export interface EvaluationUncertaintyDetail {
+  uncertaintyRecognized: boolean;
+  insufficientEvidenceIdentified: boolean;
+  conflictingEvidenceIdentified: boolean;
+  uncertaintyCommunicated: boolean;
+  unsupportedConclusionAvoided: boolean;
+  evaluationNote: string;
+  verdict: EvaluationVerdict;
+}
+
+export interface EvaluationRecoveryDetail {
+  recoverableFailures: number;
+  successfulRecoveries: number;
+  recoveryRate: number;
+  recoveryEvents: Array<{
+    agentType: string;
+    failure: string;
+    recovery: string;
+    success: boolean;
+  }>;
+}
+
+export interface EvaluationBaselineComparison {
+  baselineRunId?: string;
+  baselineScore?: number;
+  scoreDelta?: number;
+  groundednessDelta?: number;
+  latencyDelta?: number;
+  available: boolean;
+  note: string;
+}
+
+/** Full evaluation run persisted to MongoDB */
+export interface EvaluationRunModel {
+  id: string;
+  scenario: EvaluationScenarioType;
+  /** The investigation ID that was created and executed for this evaluation */
+  investigationId: string;
+  objective: string;
+  expectedBehavior: string;
+  /** Final conclusion text from the investigation */
+  actualResult: string;
+  finalConclusion: string;
+  /** Overall investigation confidence at completion */
+  confidence: number;
+  status: EvaluationRunStatus;
+  verdict: EvaluationVerdict;
+  metrics: EvaluationMetrics;
+  groundednessDetail: EvaluationGroundednessDetail;
+  toolFailureDetail: EvaluationToolFailureDetail;
+  uncertaintyDetail: EvaluationUncertaintyDetail;
+  recoveryDetail: EvaluationRecoveryDetail;
+  baselineComparison: EvaluationBaselineComparison;
+  /** Snapshot of LangGraph mission events (agent trace) */
+  agentTrace: MissionEventModel[];
+  /** IDs of evidence collected during the evaluation investigation */
+  evidenceIds: string[];
+  /** IDs of sources used */
+  sourceIds: string[];
+  /** Tool calls made */
+  toolsUsed: string[];
+  /** Tool failures that occurred */
+  toolFailures: Array<{ tool: string; error: string; recovered: boolean }>;
+  /** Self-evaluation result from the critic node */
+  selfEvaluationId?: string;
+  /** Final evaluation score 0-100 (weighted composite) */
+  finalScore: number;
+  /** Token / resource usage if available */
+  resourceUsage?: Record<string, unknown>;
+  error?: string;
+  startedAt: string;
+  completedAt?: string;
   createdAt: string;
 }

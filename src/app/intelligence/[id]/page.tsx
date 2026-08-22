@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/Indicators';
 import { EvidenceCard } from '@/components/ui/Cards';
 import { RightDrawer } from '@/components/ui/Overlays';
+import { ExecutiveBriefModel, ProviderExecutionModel } from '@/lib/types';
 import { investigationsApi } from '@/lib/api';
 import { InvestigationModel, ExecutiveIntelligence, EvidenceModel } from '@/lib/types';
 import { PdfExportButton } from '@/components/report/PdfExportButton';
@@ -96,7 +97,7 @@ export default function UnifiedIntelligencePage() {
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-xs font-mono text-[#6B7280]">
+      <div className="container-responsive p-responsive text-center text-responsive-xs font-mono text-[#6B7280]">
         Synthesizing executive intelligence assessment...
       </div>
     );
@@ -104,39 +105,80 @@ export default function UnifiedIntelligencePage() {
 
   if (!investigation) {
     return (
-      <div className="p-12 text-center text-xs font-mono text-[#6B7280]">
+      <div className="container-responsive p-responsive text-center text-responsive-xs font-mono text-[#6B7280]">
         Intelligence report for investigation <span className="font-bold text-[#111827]">{id}</span> not found.
       </div>
     );
   }
 
-  const coverage = intelligence?.sourceCoverage || {
-    RESEARCH: 'AVAILABLE',
-    PATENT: 'AVAILABLE',
-    NEWS: 'AVAILABLE',
-    COMPETITOR: 'AVAILABLE',
-    WEB: 'AVAILABLE',
-  };
+  const coverage = intelligence?.sourceCoverage || investigation.providerExecutions 
+    ? (() => {
+        const categories = ['RESEARCH', 'PATENT', 'NEWS', 'COMPETITOR', 'WEB'] as const;
+        const result: Record<string, 'AVAILABLE' | 'UNAVAILABLE' | 'PARTIAL' | 'NO_EVIDENCE'> = {
+          RESEARCH: 'UNAVAILABLE',
+          PATENT: 'UNAVAILABLE',
+          NEWS: 'UNAVAILABLE',
+          COMPETITOR: 'UNAVAILABLE',
+          WEB: 'UNAVAILABLE',
+        };
+        const providerExecutions = investigation.providerExecutions || [];
+        const evidence = evidenceList;
+        
+        for (const category of categories) {
+          const executions = providerExecutions.filter(e => e.category === category);
+          const categoryEvidence = evidence.filter(e => e.sourceType === category);
+          
+          if (executions.length === 0) {
+            result[category] = 'UNAVAILABLE';
+            continue;
+          }
+          
+          const hasSuccessful = executions.some(e => e.status === 'SUCCESS');
+          const hasPartial = executions.some(e => e.status === 'PARTIAL');
+          const totalResults = executions.reduce((sum, e) => sum + e.resultCount, 0);
+          const hasEvidence = categoryEvidence.length > 0;
+          
+          if (!hasSuccessful && !hasPartial) {
+            result[category] = 'UNAVAILABLE';
+          } else if (hasSuccessful && totalResults > 0 && hasEvidence) {
+            result[category] = 'AVAILABLE';
+          } else if (hasPartial || (hasSuccessful && totalResults === 0)) {
+            result[category] = 'PARTIAL';
+          } else if (hasSuccessful && totalResults === 0 && !hasEvidence) {
+            result[category] = 'NO_EVIDENCE';
+          } else {
+            result[category] = 'PARTIAL';
+          }
+        }
+        return result;
+      })()
+    : {
+        RESEARCH: 'UNAVAILABLE',
+        PATENT: 'UNAVAILABLE',
+        NEWS: 'UNAVAILABLE',
+        COMPETITOR: 'UNAVAILABLE',
+        WEB: 'UNAVAILABLE',
+      };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-8"
+      className="container-responsive p-responsive space-y-responsive"
     >
       {/* Unified Intelligence Header */}
-      <div className="glass-level-2 p-6 space-y-4 shadow-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#E5E7EB] pb-4">
+      <div className="glass-level-2 p-responsive space-y-responsive shadow-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-responsive border-b border-[#E5E7EB] pb-responsive-sm">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#047857] bg-[#059669]/15 px-2.5 py-0.5 rounded-md border border-[#059669]/30 flex items-center gap-1">
+              <span className="badge-responsive bg-[#059669]/15 text-[#047857] border border-[#059669]/30 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-[#059669]" />
                 INVESTIGATION COMPLETE
               </span>
-              <span className="text-[10px] font-mono text-[#6B7280]">ID: {investigation.id}</span>
+              <span className="text-responsive-xs font-mono text-[#6B7280]">ID: {investigation.id}</span>
             </div>
-            <h1 className="text-2xl font-extrabold text-[#111827] font-sans">
+            <h1 className="text-responsive-2xl font-extrabold text-[#111827] font-sans">
               UNIFIED INTELLIGENCE • {investigation.title}
             </h1>
           </div>
@@ -172,7 +214,7 @@ export default function UnifiedIntelligencePage() {
                 })),
                 watchItems: [],
                 confidence: 90,
-                sourceCoverage: { RESEARCH: 'AVAILABLE', PATENT: 'AVAILABLE', NEWS: 'AVAILABLE', WEB: 'AVAILABLE' },
+                sourceCoverage: coverage as ExecutiveBriefModel['sourceCoverage'],
                 evidenceIds: [],
                 signalIds: [],
                 entityIds: [],
@@ -185,34 +227,35 @@ export default function UnifiedIntelligencePage() {
               whileTap={{ scale: 0.98 }}
               onClick={handleRegenerate}
               disabled={isRegenerating}
-              className="inline-flex items-center gap-1.5 bg-white border border-[#E5E7EB] text-[#374151] font-mono text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-2xs hover:border-[#D4AF37] transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 bg-white border border-[#E5E7EB] text-[#374151] font-mono text-responsive-xs font-bold px-3.5 py-2.5 rounded-xl shadow-2xs hover:border-[#D4AF37] transition-all cursor-pointer touch-target"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
-              <span>REGENERATE</span>
+              <span className="hidden sm:inline">REGENERATE</span>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setIsWatchlistModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-md shadow-[#D4AF37]/25 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-responsive-xs font-extrabold px-4 py-2.5 rounded-xl shadow-md shadow-[#D4AF37]/25 transition-all cursor-pointer touch-target"
             >
               <Eye className="w-4 h-4 text-[#111827]" />
-              <span>START AUTONOMOUS MONITORING</span>
+              <span className="hidden sm:inline">START AUTONOMOUS MONITORING</span>
+              <span className="sm:hidden">MONITOR</span>
             </motion.button>
           </div>
         </div>
 
         {/* Source Coverage Grid */}
         <div className="space-y-2 pt-1">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#6B7280] uppercase">
+          <div className="flex items-center justify-between text-responsive-xs font-mono font-bold text-[#6B7280] uppercase">
             <span>REAL SOURCE PROVIDER COVERAGE</span>
             <span>CITATIONS: 100% TRACEABLE</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs font-mono">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-responsive-xs font-mono">
             {Object.entries(coverage).map(([stream, status]) => (
-              <div key={stream} className="bg-white/80 p-2.5 rounded-xl border border-[#E5E7EB] flex items-center justify-between shadow-2xs">
-                <span className="text-[10px] font-bold text-[#374151]">{stream}</span>
-                <span className={`text-[9px] font-extrabold px-2 py-0.2 rounded ${
+              <div key={stream} className="bg-white/80 p-responsive rounded-xl border border-[#E5E7EB] flex items-center justify-between shadow-2xs">
+                <span className="text-responsive-xs font-bold text-[#374151]">{stream}</span>
+                <span className={`text-responsive-xs font-extrabold px-2 py-0.2 rounded ${
                   status === 'AVAILABLE' ? 'bg-[#059669]/15 text-[#047857]' : 'bg-[#991B1B]/15 text-[#991B1B]'
                 }`}>
                   {status}
@@ -224,71 +267,73 @@ export default function UnifiedIntelligencePage() {
       </div>
 
       {/* Executive Intelligence & Strategic Scores */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-responsive">
         {/* Left 2 Cols: Level 3 Executive Brief & Findings */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="glass-level-3 p-6 space-y-4">
-            <div className="flex items-center gap-2 text-xs font-mono font-extrabold uppercase tracking-wider text-[#8C6D13]">
+        <div className="lg:col-span-2 space-y-responsive">
+          <div className="glass-level-3 p-responsive space-y-responsive">
+            <div className="flex items-center gap-2 text-responsive-xs font-mono font-extrabold uppercase tracking-wider text-[#8C6D13]">
               <Sparkles className="w-4 h-4 text-[#C9A227]" />
               EXECUTIVE BRIEF (SYNTHESIS ENGINE)
             </div>
 
-            <h2 className="text-xl font-extrabold text-[#111827] leading-snug font-sans">
-              "{intelligence?.executiveSummary || investigation.executiveSummary}"
+            <h2 className="text-responsive-xl font-extrabold text-[#111827] leading-snug font-sans">
+              {intelligence?.executiveSummary || investigation.executiveSummary}
             </h2>
 
             {/* Strategic Score Indicators */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-responsive pt-responsive-sm">
               <ThreatIndicator score={investigation.threatScore || 68} />
               <OpportunityIndicator score={investigation.opportunityScore || 74} />
-              <div className="glass-level-2 border-l-4 border-l-[#D4AF37] border-[#D4AF37]/30 p-3.5 flex items-center justify-between shadow-2xs">
+              <div className="glass-level-2 border-l-4 border-l-[#D4AF37] border-[#D4AF37]/30 p-responsive flex items-center justify-between shadow-2xs">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center shrink-0">
                     <TrendingUp className="w-4 h-4 text-[#8C6D13]" />
                   </div>
                   <div>
-                    <div className="text-[10px] font-mono text-[#6B7280] uppercase font-bold">SIGNAL VELOCITY</div>
-                    <div className="text-xs font-extrabold text-[#8C6D13] font-mono">ACCELERATING</div>
+                    <div className="text-responsive-xs font-mono text-[#6B7280] uppercase font-bold">SIGNAL VELOCITY</div>
+                    <div className="text-responsive-sm font-extrabold text-[#8C6D13] font-mono">ACCELERATING</div>
                   </div>
                 </div>
-                <div className="text-xl font-extrabold font-mono text-[#8C6D13]">+42%</div>
+                <div className="text-responsive-xl font-extrabold font-mono text-[#8C6D13]">+42%</div>
               </div>
             </div>
           </div>
 
           {/* Key Findings List with Evidence Citations */}
-          <div className="glass-level-2 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+          <div className="glass-level-2 p-responsive space-y-responsive">
+            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-responsive-sm flex-wrap gap-2">
+              <h3 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
                 <Target className="w-4 h-4 text-[#C9A227]" />
                 KEY FINDINGS ({intelligence?.keyFindings?.length || 0})
               </h3>
-              <span className="text-[10px] font-mono text-[#047857] font-bold">EVIDENCE-BACKED</span>
+              <span className="badge-responsive bg-[#059669]/15 text-[#047857] border border-[#059669]/30 font-extrabold">
+                EVIDENCE-BACKED
+              </span>
             </div>
 
             <div className="space-y-3">
               {(intelligence?.keyFindings || []).map((kf, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl bg-white/80 border border-[#E5E7EB] hover:border-[#D4AF37]/40 transition-colors space-y-2 shadow-2xs"
+                  className="p-responsive rounded-xl bg-white/80 border border-[#E5E7EB] hover:border-[#D4AF37]/40 transition-colors space-y-2 shadow-2xs"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-extrabold uppercase px-2.5 py-0.5 rounded-md bg-[#D4AF37]/15 text-[#8C6D13] border border-[#D4AF37]/30">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="badge-responsive bg-[#D4AF37]/15 text-[#8C6D13] border border-[#D4AF37]/30 font-extrabold uppercase">
                       FINDING #{idx + 1} • {kf.impact} IMPACT
                     </span>
-                    <span className="text-[11px] font-mono text-[#047857] font-extrabold">
+                    <span className="text-responsive-xs font-mono text-[#047857] font-extrabold">
                       {kf.confidence}% CONFIDENCE
                     </span>
                   </div>
-                  <h4 className="text-sm font-bold text-[#111827] font-sans">{kf.title}</h4>
-                  <p className="text-xs text-[#4B5563] font-sans leading-relaxed">{kf.summary}</p>
+                  <h4 className="text-responsive-sm font-bold text-[#111827] font-sans">{kf.title}</h4>
+                  <p className="text-responsive-xs text-[#4B5563] font-sans leading-relaxed">{kf.summary}</p>
                   
                   {/* Evidence Citation Pills */}
                   {kf.evidenceIds && kf.evidenceIds.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#E5E7EB]">
-                      <span className="text-[9px] font-mono text-[#6B7280] font-bold">CITATIONS:</span>
+                      <span className="text-responsive-xs font-mono text-[#6B7280] font-bold">CITATIONS:</span>
                       {kf.evidenceIds.map((evId, evIdx) => (
-                        <span key={`${evId}-${evIdx}`} className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#FAF9F6] text-[#111827] border border-[#E5E7EB] flex items-center gap-1">
+                        <span key={`${evId}-${evIdx}`} className="text-responsive-xs font-mono px-2 py-0.5 rounded bg-[#FAF9F6] text-[#111827] border border-[#E5E7EB] flex items-center gap-1">
                           <LinkIcon className="w-2.5 h-2.5 text-[#8C6D13]" />
                           {evId}
                         </span>
@@ -302,29 +347,29 @@ export default function UnifiedIntelligencePage() {
         </div>
 
         {/* Right Col: Recommendations & Watch Items */}
-        <div className="space-y-6">
+        <div className="space-y-responsive">
           {/* Actionable Recommendations */}
-          <div className="glass-level-3 p-5 space-y-4">
-            <div className="border-b border-[#E5E7EB] pb-3">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C6D13]">
+          <div className="glass-level-3 p-responsive space-y-responsive">
+            <div className="border-b border-[#E5E7EB] pb-responsive-sm">
+              <span className="text-responsive-xs font-mono font-bold uppercase tracking-widest text-[#8C6D13]">
                 ACTIONABLE RECOMMENDATIONS
               </span>
-              <h3 className="text-sm font-bold text-[#111827] font-sans mt-0.5">
+              <h3 className="text-responsive-lg font-bold text-[#111827] font-sans mt-0.5">
                 RADARX RECOMMENDS
               </h3>
             </div>
 
             <div className="space-y-3">
               {(intelligence?.recommendedActions || []).map((rec, idx) => (
-                <div key={idx} className="p-3.5 rounded-xl bg-white border border-[#E5E7EB] space-y-1.5 shadow-2xs">
-                  <div className="flex items-center justify-between text-[10px] font-mono">
+                <div key={idx} className="p-responsive rounded-xl bg-white border border-[#E5E7EB] space-y-1.5 shadow-2xs">
+                  <div className="flex items-center justify-between text-responsive-xs font-mono">
                     <span className="font-bold text-[#8C6D13]">{rec.timeHorizon} HORIZON</span>
-                    <span className="px-2 py-0.2 rounded-md bg-[#991B1B]/15 text-[#991B1B] font-extrabold">
+                    <span className="badge-responsive bg-[#991B1B]/15 text-[#991B1B] border border-[#991B1B]/30 font-extrabold">
                       {rec.priority} PRIORITY
                     </span>
                   </div>
-                  <h4 className="text-xs font-bold text-[#111827] font-sans">{rec.action}</h4>
-                  <p className="text-[11px] text-[#4B5563] leading-relaxed font-sans">{rec.reason}</p>
+                  <h4 className="text-responsive-xs font-bold text-[#111827] font-sans">{rec.action}</h4>
+                  <p className="text-responsive-xs text-[#4B5563] leading-relaxed font-sans">{rec.reason}</p>
                 </div>
               ))}
             </div>
@@ -333,29 +378,30 @@ export default function UnifiedIntelligencePage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setIsWatchlistModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-xs font-extrabold py-3 px-4 rounded-xl shadow-md shadow-[#D4AF37]/25 transition-all cursor-pointer mt-2"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-responsive-xs font-extrabold py-3 px-4 rounded-xl shadow-md shadow-[#D4AF37]/25 transition-all cursor-pointer touch-target mt-responsive-sm"
             >
               <Eye className="w-4 h-4 text-[#111827]" />
-              <span>START AUTONOMOUS MONITORING</span>
+              <span className="hidden sm:inline">START AUTONOMOUS MONITORING</span>
+              <span className="sm:hidden">START MONITORING</span>
             </motion.button>
           </div>
 
           {/* Continuous Watch Items */}
-          <div className="glass-level-2 p-5 space-y-4">
-            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+          <div className="glass-level-2 p-responsive space-y-responsive">
+            <h3 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
               <Shield className="w-4 h-4 text-[#047857]" />
               CONTINUOUS WATCH ITEMS
             </h3>
 
             <div className="space-y-3">
               {(intelligence?.watchItems || []).map((wi, idx) => (
-                <div key={idx} className="p-3 rounded-xl bg-white/80 border border-[#E5E7EB] space-y-1 text-xs font-mono">
-                  <div className="flex items-center justify-between text-[10px]">
+                <div key={idx} className="p-responsive rounded-xl bg-white/80 border border-[#E5E7EB] space-y-1 text-responsive-xs font-mono">
+                  <div className="flex items-center justify-between text-responsive-xs flex-wrap gap-2">
                     <span className="font-extrabold text-[#111827]">{wi.topic}</span>
                     <span className="text-[#047857] font-bold">{wi.priority} PRIORITY</span>
                   </div>
-                  <p className="text-[11px] text-[#4B5563] font-sans">{wi.reason}</p>
-                  <div className="text-[9px] text-[#6B7280] pt-1">Trigger: {wi.trigger}</div>
+                  <p className="text-responsive-xs text-[#4B5563] font-sans">{wi.reason}</p>
+                  <div className="text-responsive-xs text-[#6B7280] pt-1">Trigger: {wi.trigger}</div>
                 </div>
               ))}
             </div>
@@ -364,16 +410,16 @@ export default function UnifiedIntelligencePage() {
       </div>
 
       {/* Real Evidence Exploration Grid */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+      <div className="space-y-responsive">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
             <FileText className="w-4 h-4 text-[#06B6D4]" />
             PRIMARY EVIDENCE BEHIND ASSESSMENT ({evidenceList.length})
           </h2>
-          <span className="text-xs font-mono text-[#6B7280]">Real Provider Metadata</span>
+          <span className="text-responsive-xs font-mono text-[#6B7280]">Real Provider Metadata</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-responsive">
           {evidenceList.map((ev, idx) => (
             <EvidenceCard key={`${ev.id}-${idx}`} evidence={ev} />
           ))}
@@ -387,29 +433,29 @@ export default function UnifiedIntelligencePage() {
         title="START AUTONOMOUS WATCHLIST"
         subtitle="Convert investigation findings into continuous background monitoring"
       >
-        <div className="space-y-5">
+        <div className="space-y-responsive">
           <div className="space-y-2">
-            <label className="text-xs font-mono font-bold text-[#111827]">WATCHLIST TITLE</label>
+            <label className="text-responsive-xs font-mono font-bold text-[#111827]">WATCHLIST TITLE</label>
             <input
               type="text"
               value={watchlistTitle}
               onChange={(e) => setWatchlistTitle(e.target.value)}
-              className="w-full bg-white border border-[#E5E7EB] rounded-xl px-3.5 py-2.5 text-xs text-[#111827] font-mono focus:border-[#D4AF37] focus:outline-none"
+              className="w-full bg-white border border-[#E5E7EB] rounded-xl px-responsive py-responsive text-responsive-xs text-[#111827] font-mono focus:border-[#D4AF37] focus:outline-none input-responsive"
             />
           </div>
 
-          <div className="bg-[#FAF9F6] p-4 rounded-xl border border-[#E5E7EB] space-y-2 text-xs font-mono">
-            <div className="flex justify-between text-[#6B7280]">
+          <div className="bg-[#FAF9F6] p-responsive rounded-xl border border-[#E5E7EB] space-y-2 text-responsive-xs font-mono">
+            <div className="flex justify-between text-[#6B7280] flex-wrap gap-2">
               <span>TARGET ENTITY:</span>
               <span className="text-[#111827] font-bold">{investigation.title}</span>
             </div>
-            <div className="flex justify-between text-[#6B7280]">
+            <div className="flex justify-between text-[#6B7280] flex-wrap gap-2">
               <span>SCAN FREQUENCY:</span>
               <span className="text-[#047857] font-bold">Continuous (24/7)</span>
             </div>
           </div>
 
-          <p className="text-xs text-[#6B7280] font-sans leading-relaxed">
+          <p className="text-responsive-xs text-[#6B7280] font-sans leading-relaxed">
             RadarX sub-agents will automatically watch connected streams and emit alerts whenever a high-impact signal is detected.
           </p>
 
@@ -417,10 +463,11 @@ export default function UnifiedIntelligencePage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleCreateWatchlist}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-xs font-extrabold py-3 px-4 rounded-xl shadow-md shadow-[#D4AF37]/25 transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-responsive-xs font-extrabold py-3 px-4 rounded-xl shadow-md shadow-[#D4AF37]/25 transition-all cursor-pointer touch-target"
           >
             <Plus className="w-4 h-4 text-[#111827]" />
-            <span>CREATE WATCHLIST & MONITOR NOW</span>
+            <span className="hidden sm:inline">CREATE WATCHLIST & MONITOR NOW</span>
+            <span className="sm:hidden">CREATE WATCHLIST</span>
           </motion.button>
         </div>
       </RightDrawer>

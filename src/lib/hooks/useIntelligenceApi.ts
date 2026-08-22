@@ -181,8 +181,8 @@ export function useAlerts() {
   const fetchAlerts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await alertsApi.getAll();
-      setAlerts(res);
+      const res = await alertsApi.getWithCount();
+      setAlerts(res.alerts);
     } catch {
     } finally {
       setLoading(false);

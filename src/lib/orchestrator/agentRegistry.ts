@@ -6,6 +6,7 @@ import {
   EvidenceModel,
   SignalModel,
   RelationshipModel,
+  ProviderExecutionModel,
 } from '@/lib/types';
 import { defaultCrossrefProvider } from '@/lib/providers/crossrefProvider';
 import { defaultPatentProvider } from '@/lib/providers/patentProvider';
@@ -35,7 +36,9 @@ class ResearchAgent implements Agent {
     const invId = context.investigation.id;
     const query = context.investigation.objective || context.investigation.title;
 
+    const providerStart = Date.now();
     const providerResults = await defaultCrossrefProvider.search(query, { limit: 3 });
+    const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
     const entityIdsSet = new Set<string>();
@@ -45,6 +48,18 @@ class ResearchAgent implements Agent {
       evidenceItems.push(normalized.evidence);
       normalized.entityIds.forEach((id) => entityIdsSet.add(id));
     }
+
+    const providerExecution: ProviderExecutionModel = {
+      provider: defaultCrossrefProvider.name,
+      category: 'RESEARCH' as const,
+      request: { query },
+      startedAt: new Date(Date.now() - providerLatency).toISOString(),
+      completedAt: now,
+      status: providerResults.length > 0 ? 'SUCCESS' : 'PARTIAL',
+      resultCount: providerResults.length,
+      error: providerResults.length === 0 ? 'No results returned' : undefined,
+      latencyMs: providerLatency,
+    };
 
     return {
       taskId: context.task.id,
@@ -57,7 +72,11 @@ class ResearchAgent implements Agent {
       signalCandidates: [],
       relationships: [],
       confidence: 93,
-      metadata: { provider: defaultCrossrefProvider.name, query },
+      metadata: { 
+        provider: defaultCrossrefProvider.name, 
+        query,
+        providerExecution
+      },
       startedAt: now,
       completedAt: now,
     };
@@ -78,7 +97,9 @@ class PatentAgent implements Agent {
     const invId = context.investigation.id;
     const org = context.investigation.primaryEntities[0] || context.investigation.title;
 
+    const providerStart = Date.now();
     const providerResults = await defaultPatentProvider.search(org, { limit: 2, entity: org });
+    const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
     const entityIdsSet = new Set<string>();
@@ -106,6 +127,18 @@ class PatentAgent implements Agent {
       },
     ];
 
+    const providerExecution: ProviderExecutionModel = {
+      provider: defaultPatentProvider.name,
+      category: 'PATENT' as const,
+      request: { entity: org },
+      startedAt: new Date(Date.now() - providerLatency).toISOString(),
+      completedAt: now,
+      status: providerResults.length > 0 ? 'SUCCESS' : 'PARTIAL',
+      resultCount: providerResults.length,
+      error: providerResults.length === 0 ? 'No results returned' : undefined,
+      latencyMs: providerLatency,
+    };
+
     return {
       taskId: context.task.id,
       agentType: this.type,
@@ -117,7 +150,11 @@ class PatentAgent implements Agent {
       signalCandidates: [],
       relationships,
       confidence: 94,
-      metadata: { provider: defaultPatentProvider.name, entity: org },
+      metadata: { 
+        provider: defaultPatentProvider.name, 
+        entity: org,
+        providerExecution
+      },
       startedAt: now,
       completedAt: now,
     };
@@ -138,7 +175,9 @@ class NewsAgent implements Agent {
     const invId = context.investigation.id;
     const org = context.investigation.primaryEntities[0] || context.investigation.title;
 
+    const providerStart = Date.now();
     const providerResults = await defaultNewsProvider.search(org, { limit: 3, entity: org });
+    const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
     const entityIdsSet = new Set<string>();
@@ -148,6 +187,18 @@ class NewsAgent implements Agent {
       evidenceItems.push(normalized.evidence);
       normalized.entityIds.forEach((id) => entityIdsSet.add(id));
     }
+
+    const providerExecution: ProviderExecutionModel = {
+      provider: defaultNewsProvider.name,
+      category: 'NEWS' as const,
+      request: { entity: org },
+      startedAt: new Date(Date.now() - providerLatency).toISOString(),
+      completedAt: now,
+      status: providerResults.length > 0 ? 'SUCCESS' : 'PARTIAL',
+      resultCount: providerResults.length,
+      error: providerResults.length === 0 ? 'No results returned' : undefined,
+      latencyMs: providerLatency,
+    };
 
     return {
       taskId: context.task.id,
@@ -160,7 +211,11 @@ class NewsAgent implements Agent {
       signalCandidates: [],
       relationships: [],
       confidence: 91,
-      metadata: { provider: defaultNewsProvider.name, entity: org },
+      metadata: { 
+        provider: defaultNewsProvider.name, 
+        entity: org,
+        providerExecution
+      },
       startedAt: now,
       completedAt: now,
     };
@@ -182,7 +237,9 @@ class CompetitorAgent implements Agent {
     const org = context.investigation.primaryEntities[0] || context.investigation.title;
 
     // Search for competitor industry moves dynamically
+    const providerStart = Date.now();
     const compResults = await defaultNewsProvider.search(`${org} competitor vs market share`, { limit: 2, entity: org });
+    const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
     const entityIdsSet = new Set<string>();
@@ -210,6 +267,18 @@ class CompetitorAgent implements Agent {
       },
     ];
 
+    const providerExecution: ProviderExecutionModel = {
+      provider: defaultNewsProvider.name,
+      category: 'COMPETITOR' as const,
+      request: { query: `${org} competitor vs market share` },
+      startedAt: new Date(Date.now() - providerLatency).toISOString(),
+      completedAt: now,
+      status: compResults.length > 0 ? 'SUCCESS' : 'PARTIAL',
+      resultCount: compResults.length,
+      error: compResults.length === 0 ? 'No results returned' : undefined,
+      latencyMs: providerLatency,
+    };
+
     return {
       taskId: context.task.id,
       agentType: this.type,
@@ -221,6 +290,11 @@ class CompetitorAgent implements Agent {
       signalCandidates: [],
       relationships,
       confidence: 90,
+      metadata: { 
+        provider: defaultNewsProvider.name, 
+        entity: org,
+        providerExecution
+      },
       startedAt: now,
       completedAt: now,
     };
@@ -241,7 +315,9 @@ class WebAgent implements Agent {
     const invId = context.investigation.id;
     const topic = context.investigation.objective || context.investigation.title;
 
+    const providerStart = Date.now();
     const providerResults = await defaultWebProvider.search(topic, { limit: 2 });
+    const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
     const entityIdsSet = new Set<string>();
@@ -251,6 +327,18 @@ class WebAgent implements Agent {
       evidenceItems.push(normalized.evidence);
       normalized.entityIds.forEach((id) => entityIdsSet.add(id));
     }
+
+    const providerExecution: ProviderExecutionModel = {
+      provider: defaultWebProvider.name,
+      category: 'WEB' as const,
+      request: { query: topic },
+      startedAt: new Date(Date.now() - providerLatency).toISOString(),
+      completedAt: now,
+      status: providerResults.length > 0 ? 'SUCCESS' : 'PARTIAL',
+      resultCount: providerResults.length,
+      error: providerResults.length === 0 ? 'No results returned' : undefined,
+      latencyMs: providerLatency,
+    };
 
     return {
       taskId: context.task.id,
@@ -263,6 +351,11 @@ class WebAgent implements Agent {
       signalCandidates: [],
       relationships: [],
       confidence: 89,
+      metadata: { 
+        provider: defaultWebProvider.name,
+        topic,
+        providerExecution
+      },
       startedAt: now,
       completedAt: now,
     };

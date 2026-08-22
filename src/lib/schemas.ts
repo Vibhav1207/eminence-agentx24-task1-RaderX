@@ -144,6 +144,7 @@ export const PatchWatchlistApiSchema = z.object({
 
 export const PatchAlertApiSchema = z.object({
   read: z.boolean().optional(),
+  status: z.enum(['UNREAD', 'READ', 'DISMISSED']).optional(),
 });
 
 export type Investigation = z.infer<typeof InvestigationSchema>;

@@ -3,6 +3,7 @@
 import React from 'react';
 import { AlertTriangle, TrendingUp, Cpu } from 'lucide-react';
 import { clsx } from 'clsx';
+import { confidenceToPercent } from '@/lib/utils/confidence';
 
 export function StatusBadge({ status }: { status: string }) {
   const normalized = status.toUpperCase();
@@ -41,9 +42,12 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 export function ConfidenceIndicator({ value, size = 'md' }: { value: number; size?: 'sm' | 'md' | 'lg' }) {
+  // Normalize confidence value to 0-100 range for display
+  const displayValue = confidenceToPercent(value);
+  
   let color = 'text-[#047857] border-[#059669]/30 bg-[#059669]/10';
-  if (value < 85) color = 'text-[#D97706] border-[#F59E0B]/30 bg-[#F59E0B]/10';
-  if (value < 70) color = 'text-[#991B1B] border-[#991B1B]/30 bg-[#991B1B]/10';
+  if (displayValue < 85) color = 'text-[#D97706] border-[#F59E0B]/30 bg-[#F59E0B]/10';
+  if (displayValue < 70) color = 'text-[#991B1B] border-[#991B1B]/30 bg-[#991B1B]/10';
 
   return (
     <div className="flex items-center gap-2">
@@ -56,7 +60,7 @@ export function ConfidenceIndicator({ value, size = 'md' }: { value: number; siz
           size === 'lg' && 'text-sm px-2.5 py-1'
         )}
       >
-        {value}%
+        {displayValue}%
       </div>
       <span className="text-[10px] font-mono text-[#6B7280] font-bold uppercase tracking-wider">CONFIDENCE</span>
     </div>

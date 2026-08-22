@@ -96,22 +96,265 @@ body {
   border-radius: 18px;
 }
 
-/* Radar Sweep Animation - Gold Aesthetic */
-@keyframes radar-gold-sweep {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* Responsive Typography Scale */
+.text-responsive-xs { @apply text-[10px] sm:text-[11px]; }
+.text-responsive-sm { @apply text-[11px] sm:text-[12px]; }
+.text-responsive-base { @apply text-xs sm:text-sm; }
+.text-responsive-lg { @apply text-sm sm:text-base; }
+.text-responsive-xl { @apply text-base sm:text-lg; }
+.text-responsive-2xl { @apply text-lg sm:text-xl; }
+.text-responsive-3xl { @apply text-xl sm:text-2xl; }
+.text-responsive-4xl { @apply text-2xl sm:text-3xl; }
+
+/* Responsive Spacing Scale */
+.p-responsive { @apply p-4 sm:p-6 md:p-8; }
+.p-responsive-sm { @apply p-3 sm:p-4 md:p-5; }
+.p-responsive-lg { @apply p-6 sm:p-8 md:p-10; }
+.m-responsive { @apply m-4 sm:m-6 md:m-8; }
+.gap-responsive { @apply gap-3 sm:gap-4 md:gap-6; }
+.gap-responsive-sm { @apply gap-2 sm:gap-3 md:gap-4; }
+.space-y-responsive > * + * { @apply mt-4 sm:mt-5 md:mt-6; }
+.space-y-responsive-sm > * + * { @apply mt-2 sm:mt-3 md:mt-4; }
+
+/* Responsive Grid Helpers */
+.grid-responsive-1-2-3 { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4; }
+.grid-responsive-1-2-4 { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4; }
+.grid-responsive-1-3 { @apply grid grid-cols-1 lg:grid-cols-3 gap-4; }
+.grid-responsive-1-2 { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
+.grid-responsive-auto-fit { @apply grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4; }
+
+/* Mobile-first Container */
+.container-responsive { @apply w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8; }
+
+/* Responsive Card Grid - Cards stack on mobile */
+.card-grid { @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4; }
+.card-grid-3 { @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4; }
+.card-grid-2 { @apply grid grid-cols-1 sm:grid-cols-2 gap-4; }
+
+/* Responsive Table - becomes cards on mobile */
+.table-responsive {
+  @apply w-full overflow-hidden;
+}
+.table-responsive table {
+  @apply w-full text-left;
+}
+.table-responsive th,
+.table-responsive td {
+  @apply px-3 py-2 text-xs sm:text-sm;
+}
+@media (max-width: 639px) {
+  .table-responsive table,
+  .table-responsive thead,
+  .table-responsive tbody,
+  .table-responsive th,
+  .table-responsive td,
+  .table-responsive tr {
+    @apply block;
+  }
+  .table-responsive thead {
+    @apply hidden;
+  }
+  .table-responsive tr {
+    @apply mb-4 p-4 rounded-xl bg-white border border-[#E5E7EB] shadow-xs;
+  }
+  .table-responsive td {
+    @apply flex justify-between py-2 border-t border-[#F3F4F6] last:border-0;
+  }
+  .table-responsive td::before {
+    content: attr(data-label);
+    @apply font-mono font-bold text-[10px] text-[#6B7280];
+  }
 }
 
-.animate-radar-sweep {
-  animation: radar-gold-sweep 4s linear infinite;
+/* Touch Target Minimums */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.touch-target-sm {
+  min-height: 40px;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Pulsing Gold Glow */
-@keyframes gold-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.15); }
+/* Mobile Navigation */
+.mobile-nav {
+  @apply fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-[#E5E7EB] flex items-center justify-around py-2 md:hidden;
+}
+.mobile-nav-item {
+  @apply flex flex-col items-center gap-1 p-2 text-[10px] font-mono text-[#6B7280] transition-colors;
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.mobile-nav-item.active {
+  @apply text-[#8C6D13] font-bold;
+}
+.mobile-nav-item .icon {
+  @apply w-5 h-5;
 }
 
-.pulse-gold {
-  animation: gold-pulse 2.2s ease-in-out infinite;
+/* Sidebar Mobile Overlay */
+.sidebar-overlay {
+  @apply fixed inset-0 bg-black/50 z-40 md:hidden;
+}
+.sidebar-mobile {
+  @apply fixed top-0 left-0 h-full w-[280px] max-w-[85vw] bg-white z-50 md:hidden transform transition-transform duration-300;
+}
+.sidebar-mobile.open {
+  @apply translate-x-0;
+}
+.sidebar-mobile.closed {
+  @apply -translate-x-full;
+}
+
+/* Responsive Modal/Drawer */
+.drawer-mobile {
+  @apply fixed inset-0 z-50 flex items-end md:items-center justify-center;
+}
+.drawer-mobile .drawer-content {
+  @apply w-full max-h-[90vh] md:max-h-[80vh] md:max-w-[480px] bg-white rounded-t-2xl md:rounded-2xl shadow-2xl overflow-y-auto;
+}
+
+/* Prevent Horizontal Scroll */
+html, body, #__next {
+  @apply overflow-x-hidden;
+}
+
+/* Framer Motion Layout Stability */
+.motion-safe {
+  @apply will-change-transform;
+}
+
+/* Chart/Graph Container Responsiveness */
+.chart-container {
+  @apply w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px];
+}
+
+/* Investigation Graph Responsiveness */
+.investigation-graph {
+  @apply w-full h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] overflow-auto;
+}
+
+/* Evidence Card Responsiveness */
+.evidence-card {
+  @apply p-4 sm:p-5;
+}
+.evidence-card h4 {
+  @apply text-xs sm:text-sm;
+}
+.evidence-card p {
+  @apply text-[11px] sm:text-xs;
+}
+
+/* Report Page Responsiveness */
+.report-section {
+  @apply space-y-4 sm:space-y-6;
+}
+.report-section h2 {
+  @apply text-xs sm:text-sm font-mono uppercase tracking-wider;
+}
+.report-section h3 {
+  @apply text-sm sm:text-base font-bold;
+}
+.report-section p {
+  @apply text-xs sm:text-sm leading-relaxed;
+}
+
+/* Alert Center Mobile */
+.alert-card {
+  @apply p-3 sm:p-4 md:p-5;
+}
+.alert-card h3 {
+  @apply text-sm sm:text-base md:text-lg;
+}
+.alert-card .actions {
+  @apply flex-col sm:flex-row gap-2 w-full sm:w-auto;
+}
+
+/* PDF Export Controls Mobile */
+.pdf-export-controls {
+  @apply flex flex-col sm:flex-row gap-3 w-full;
+}
+.pdf-export-controls button {
+  @apply w-full sm:w-auto;
+}
+
+/* Button Responsive */
+.btn-responsive {
+  @apply px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm;
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-responsive-sm {
+  @apply px-2.5 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs;
+  min-height: 40px;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Input Responsive */
+.input-responsive {
+  @apply px-3 sm:px-4 py-2.5 text-xs sm:text-sm;
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* Avatar/Status Badge Responsive */
+.avatar-responsive {
+  @apply w-8 h-8 sm:w-10 sm:h-10;
+}
+.badge-responsive {
+  @apply px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px];
+}
+
+/* Prevent Content Overflow */
+.no-overflow {
+  @apply overflow-hidden;
+}
+.text-ellipsis {
+  @apply truncate;
+}
+.flex-no-shrink {
+  @apply flex-shrink-0;
+}
+
+/* Image/Chart Responsive */
+.img-responsive {
+  @apply max-w-full h-auto;
+}
+.chart-responsive {
+  @apply w-full h-auto max-h-[60vh] sm:max-h-[70vh];
+}
+
+/* Focus Visible for Accessibility */
+*:focus-visible {
+  @apply outline-none ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-white;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

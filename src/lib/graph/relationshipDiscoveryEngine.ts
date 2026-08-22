@@ -8,6 +8,7 @@ import {
 } from '@/lib/types';
 import { dbRepository } from '@/lib/db/repository';
 import { defaultEntityResolver } from './entityResolver';
+import { normalizeConfidence } from '@/lib/utils/confidence';
 
 export class RelationshipDiscoveryEngine {
   async discoverGraphFromEvidence(
@@ -51,7 +52,7 @@ export class RelationshipDiscoveryEngine {
         label: prof.name,
         description: prof.description,
         importance: prof.importance,
-        confidence: prof.confidence,
+        confidence: normalizeConfidence(prof.confidence),
       });
       nodeMap.set(prof.name.toLowerCase(), node);
     }
@@ -69,7 +70,7 @@ export class RelationshipDiscoveryEngine {
         label: ev.title.substring(0, 45) + (ev.title.length > 45 ? '...' : ''),
         description: ev.summary,
         importance: Math.round(ev.relevanceScore * 100),
-        confidence: Math.round(ev.confidence * 100),
+        confidence: normalizeConfidence(ev.confidence),
         metadata: { url: ev.url, source: ev.source, sourceType: ev.sourceType },
       });
 
@@ -90,7 +91,7 @@ export class RelationshipDiscoveryEngine {
             targetNodeId: targetNode.id,
             relationshipType: relType,
             direction: 'DIRECTED',
-            confidence: Math.round(ev.confidence * 100),
+            confidence: normalizeConfidence(ev.confidence),
             importance: Math.round(ev.relevanceScore * 100),
             evidenceIds: [ev.id],
           });
@@ -115,7 +116,7 @@ export class RelationshipDiscoveryEngine {
           targetNodeId: n2.id,
           relationshipType: 'COMPETES_WITH',
           direction: 'UNDIRECTED',
-          confidence: 85,
+          confidence: 0.85,
           importance: 80,
           evidenceIds: sharedEvidence.length > 0 ? sharedEvidence.map((e) => e.id) : [evidenceList[0]?.id || 'ev-default'],
         });

@@ -9,6 +9,7 @@ import {
   MissionModel,
   MissionEventModel,
   ClaimModel,
+  ProviderExecutionModel,
 } from "../types";
 import { dbRepository } from "../db/repository";
 import { defaultAgentRegistry } from "./agentRegistry";
@@ -215,7 +216,7 @@ async function logTraceEvent(
   agentType?: AgentType,
   taskId?: string
 ) {
-  // Forward to orchestratorService listener
+  // Forward to orchestratorService listener (which will persist to MongoDB)
   graphEventEmitter.emit(missionId, investigationId, type, message, agentType, taskId);
 
   const evt: MissionEventModel = {
@@ -230,12 +231,18 @@ async function logTraceEvent(
   };
   console.log(`[LANGGRAPH EVENT]: [${type}] ${message}`);
 
-  // Persist directly to DB via MongoDB update
+  // Persist directly to DB via repository
   try {
-    const db = await dbRepository.getInvestigations().then(() => dbRepository.saveEvidenceItem as any).then(() => require("@/lib/mongodb").getDb());
-    await db.collection("mission_events").insertOne(evt);
-  } catch {
-    // Fail-safe in-memory or error bypass
+    await dbRepository.createMissionEvent({
+      missionId,
+      investigationId,
+      type,
+      agentType,
+      taskId,
+      message,
+    });
+  } catch (err) {
+    console.error('[LANGGRAPH] Failed to persist event to MongoDB:', err);
   }
 }
 
@@ -1277,8 +1284,26 @@ async function synthesisNode(state: InvestigationStateType): Promise<Partial<Inv
     []
   );
 
-  // Build brief
-  await defaultExecutiveBriefVersioner.createOrUpdateBrief(inv, finalEvidence, finalSignals);
+  // Collect provider executions from all agent results in the state
+  const allProviderExecutions: ProviderExecutionModel[] = [];
+  for (const result of state.agentResults) {
+    if (result.metadata?.providerExecution) {
+      allProviderExecutions.push({
+        provider: result.metadata.providerExecution.provider,
+        category: result.metadata.providerExecution.category,
+        request: result.metadata.providerExecution.request,
+        startedAt: result.metadata.providerExecution.startedAt,
+        completedAt: result.metadata.providerExecution.completedAt,
+        status: result.metadata.providerExecution.status,
+        resultCount: result.metadata.providerExecution.resultCount,
+        error: result.metadata.providerExecution.error,
+        latencyMs: result.metadata.providerExecution.latencyMs,
+      });
+    }
+  }
+
+  // Build brief with provider executions
+  await defaultExecutiveBriefVersioner.createOrUpdateBrief(inv, finalEvidence, finalSignals, allProviderExecutions);
 
   await dbRepository.updateInvestigation(invId, {
     status: 'COMPLETED',
@@ -1290,6 +1315,7 @@ async function synthesisNode(state: InvestigationStateType): Promise<Partial<Inv
     orchestratorStatus: '● COMPLETED',
     orchestratorAction: 'Mission complete. Unified intelligence assessment ready.',
     executiveSummary: intelligence.executiveSummary,
+    providerExecutions: allProviderExecutions,
   });
 
   await logTraceEvent(invId, missionId, 'MISSION_COMPLETED', 'LangGraph pipeline execution completed successfully. Assessment saved.');

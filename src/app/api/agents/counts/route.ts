@@ -4,9 +4,9 @@ import { apiSuccess, apiError } from '@/lib/api/response';
 export async function GET() {
   try {
     await agentRegistry.initialize();
-    const agents = await agentRegistry.getAllAgents();
-    return apiSuccess(agents);
+    const counts = await agentRegistry.getAgentCounts();
+    return apiSuccess(counts);
   } catch (error: any) {
-    return apiError(error.message || 'Failed to fetch agents', 'FETCH_ERROR', 500);
+    return apiError(error.message || 'Failed to fetch agent counts', 'FETCH_ERROR', 500);
   }
 }

@@ -95,6 +95,21 @@ class OrchestratorService {
       status: 'RUNNING',
       orchestratorStatus: '● RUNNING',
       orchestratorAction: 'LangGraph workflow initiated. Running parallel agents.',
+      metadata: {
+        ...(inv.metadata || {}),
+        langGraph: {
+          plan: initialTasks,
+          resourceBudget: {
+            toolCallCount: 3,
+            maxToolCalls: 30,
+            llmCallCount: 4,
+            maxLlmCalls: 15,
+            totalRetries: 0,
+            maxRetries: 5,
+            maxVerificationRounds: 3,
+          },
+        },
+      },
     });
 
     // Start background decision loop asynchronously (runs the LangGraph flow)
@@ -217,6 +232,18 @@ class OrchestratorService {
     list.unshift(evt);
     this.events.set(missionId, list);
     console.log(`[ORCHESTRATOR EVENT]: [${type}] ${message}`);
+
+    // Persist to MongoDB
+    dbRepository.createMissionEvent({
+      missionId,
+      investigationId,
+      type,
+      agentType,
+      taskId,
+      message,
+    }).catch((err) => {
+      console.error('[ORCHESTRATOR] Failed to persist event to MongoDB:', err);
+    });
   }
 
   private async runDecisionLoop(missionId: string, investigationId: string) {

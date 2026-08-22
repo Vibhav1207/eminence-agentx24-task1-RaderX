@@ -3,14 +3,15 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Search, Bell, Cpu, User, ChevronRight, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Search, Bell, Cpu, User, ChevronRight, ShieldCheck, AlertTriangle, Menu } from 'lucide-react';
 import { appConfig } from '@/lib/config';
 
 interface TopBarProps {
   onOpenCommandPalette: () => void;
+  onOpenSidebar: () => void;
 }
 
-export default function TopBar({ onOpenCommandPalette }: TopBarProps) {
+export default function TopBar({ onOpenCommandPalette, onOpenSidebar }: TopBarProps) {
   const pathname = usePathname();
 
   const getBreadcrumbs = () => {
@@ -29,24 +30,33 @@ export default function TopBar({ onOpenCommandPalette }: TopBarProps) {
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <header className="h-14 bg-white/80 backdrop-blur-md border-b border-[#E5E7EB] px-6 flex items-center justify-between sticky top-0 z-20 shrink-0 shadow-2xs">
+    <header className="h-14 bg-white/80 backdrop-blur-md border-b border-[#E5E7EB] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shrink-0 shadow-2xs">
+      {/* Mobile Menu Button */}
+      <button
+        onClick={onOpenSidebar}
+        className="md:hidden p-2 rounded-xl bg-white border border-[#E5E7EB] text-[#4B5563] hover:text-[#111827] hover:border-[#D4AF37]/50 shadow-xs transition-colors touch-target"
+        aria-label="Open navigation menu"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
       {/* Breadcrumb Path */}
-      <div className="flex items-center gap-2 text-xs font-mono text-[#6B7280]">
-        <span>{breadcrumbs[0]}</span>
-        <ChevronRight className="w-3.5 h-3.5 text-[#9CA3AF]" />
-        <span className="text-[#111827] font-semibold">{breadcrumbs[1]}</span>
+      <div className="flex-1 flex items-center gap-2 text-xs font-mono text-[#6B7280] min-w-0">
+        <span className="truncate">{breadcrumbs[0]}</span>
+        <ChevronRight className="w-3.5 h-3.5 text-[#9CA3AF] flex-shrink-0" />
+        <span className="text-[#111827] font-semibold truncate">{breadcrumbs[1]}</span>
       </div>
 
       {/* Global Controls Right */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         {/* App Mode Explicit Indicator */}
         {appConfig.isDemo ? (
-          <div className="flex items-center gap-1.5 bg-[#F59E0B]/15 text-[#B45309] border border-[#F59E0B]/30 px-2.5 py-1 rounded-xl text-[10px] font-mono font-extrabold shadow-2xs">
+          <div className="hidden sm:flex items-center gap-1.5 bg-[#F59E0B]/15 text-[#B45309] border border-[#F59E0B]/30 px-2.5 py-1 rounded-xl text-[10px] font-mono font-extrabold shadow-2xs">
             <AlertTriangle className="w-3 h-3 text-[#D97706]" />
             <span>DEMO MODE</span>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 bg-[#059669]/10 text-[#047857] border border-[#059669]/25 px-2.5 py-1 rounded-xl text-[10px] font-mono font-extrabold shadow-2xs">
+          <div className="hidden sm:flex items-center gap-1.5 bg-[#059669]/10 text-[#047857] border border-[#059669]/25 px-2.5 py-1 rounded-xl text-[10px] font-mono font-extrabold shadow-2xs">
             <ShieldCheck className="w-3 h-3 text-[#059669]" />
             <span>PRODUCTION • REAL DATA</span>
           </div>
@@ -57,11 +67,12 @@ export default function TopBar({ onOpenCommandPalette }: TopBarProps) {
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
           onClick={onOpenCommandPalette}
-          className="flex items-center gap-3 bg-white/90 border border-[#E5E7EB] hover:border-[#D4AF37]/50 text-[#6B7280] hover:text-[#111827] text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition-colors group"
+          className="flex items-center gap-3 bg-white/90 border border-[#E5E7EB] hover:border-[#D4AF37]/50 text-[#6B7280] hover:text-[#111827] text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition-colors group touch-target"
         >
           <Search className="w-3.5 h-3.5 text-[#6B7280] group-hover:text-[#C9A227]" />
-          <span className="font-sans">Search entity, signal, agent...</span>
-          <kbd className="bg-[#F3F4F6] text-[#4B5563] border border-[#D1D5DB] font-mono text-[10px] px-1.5 py-0.5 rounded font-semibold">
+          <span className="hidden sm:inline font-sans">Search entity, signal, agent...</span>
+          <span className="sm:hidden">Search...</span>
+          <kbd className="hidden sm:inline bg-[#F3F4F6] text-[#4B5563] border border-[#D1D5DB] font-mono text-[10px] px-1.5 py-0.5 rounded font-semibold">
             ⌘K
           </kbd>
         </motion.button>
@@ -78,7 +89,7 @@ export default function TopBar({ onOpenCommandPalette }: TopBarProps) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => (window.location.href = '/alerts')}
-          className="relative p-2 rounded-xl bg-white border border-[#E5E7EB] text-[#4B5563] hover:text-[#111827] hover:border-[#D4AF37]/50 shadow-xs transition-colors"
+          className="relative p-2 rounded-xl bg-white border border-[#E5E7EB] text-[#4B5563] hover:text-[#111827] hover:border-[#D4AF37]/50 shadow-xs transition-colors touch-target"
           title="Notifications"
         >
           <Bell className="w-4 h-4" />

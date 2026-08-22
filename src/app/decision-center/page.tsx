@@ -104,7 +104,7 @@ export default function DecisionCenterPage() {
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-xs font-mono text-[#6B7280]">
+      <div className="container-responsive p-responsive text-center text-responsive-xs font-mono text-[#6B7280]">
         Synthesizing Executive Brief and Strategic Decision Matrix...
       </div>
     );
@@ -115,34 +115,34 @@ export default function DecisionCenterPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-8"
+      className="container-responsive p-responsive space-y-responsive"
     >
       {/* Header & Controls */}
-      <div className="glass-level-2 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-level-2 p-responsive flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C6D13] bg-[#D4AF37]/15 px-2.5 py-0.5 rounded-md border border-[#D4AF37]/35">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="badge-responsive bg-[#D4AF37]/15 text-[#8C6D13] border border-[#D4AF37]/35 uppercase tracking-widest">
               STAGE 2.11 EXECUTIVE DECISION CENTER
             </span>
             {brief && (
-              <span className="text-[10px] font-mono font-extrabold bg-[#059669]/15 text-[#047857] px-2.5 py-0.5 rounded-md">
+              <span className="badge-responsive bg-[#059669]/15 text-[#047857] border border-[#059669]/30">
                 BRIEF v{brief.version}
               </span>
             )}
           </div>
-          <h1 className="text-2xl font-extrabold text-[#111827] font-sans">
+          <h1 className="text-responsive-2xl font-extrabold text-[#111827] font-sans">
             EXECUTIVE DECISION & ACTION CENTER
           </h1>
-          <p className="text-xs text-[#6B7280] font-sans">
+          <p className="text-responsive-xs text-[#6B7280] font-sans">
             Evidence-backed strategic implications, threat matrices, and actionable recommendations.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
           <select
             value={activeInvId}
             onChange={(e) => handleSelectInvestigation(e.target.value)}
-            className="bg-white border border-[#E5E7EB] text-xs font-mono px-3 py-2 rounded-xl text-[#111827]"
+            className="bg-white border border-[#E5E7EB] text-responsive-xs font-mono px-responsive py-2 rounded-xl text-[#111827] shrink-0 w-full sm:w-auto input-responsive"
           >
             {investigations.map((inv) => (
               <option key={inv.id} value={inv.id}>
@@ -153,10 +153,11 @@ export default function DecisionCenterPage() {
 
           <button
             onClick={() => exportBrief('md')}
-            className="flex items-center gap-1.5 bg-white border border-[#E5E7EB] text-xs font-mono font-bold px-3 py-2 rounded-xl text-[#111827] hover:bg-[#FAF9F6] transition-all cursor-pointer shadow-2xs"
+            className="flex items-center gap-1.5 bg-white border border-[#E5E7EB] text-responsive-xs font-mono font-bold px-responsive py-2 rounded-xl text-[#111827] hover:bg-[#FAF9F6] transition-all cursor-pointer shadow-2xs touch-target shrink-0"
           >
             <Download className="w-3.5 h-3.5" />
-            EXPORT BRIEF (.MD)
+            <span className="hidden sm:inline">EXPORT BRIEF (.MD)</span>
+            <span className="sm:hidden">EXPORT</span>
           </button>
         </div>
       </div>
@@ -164,64 +165,64 @@ export default function DecisionCenterPage() {
       {brief ? (
         <>
           {/* Executive Brief Card */}
-          <div className="glass-level-2 p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
-              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+          <div className="glass-level-2 p-responsive space-y-responsive shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E5E7EB] pb-responsive-sm">
+              <h2 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[#D4AF37]" />
                 RADARX INTELLIGENCE SUMMARY
               </h2>
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-mono text-[#6B7280]">
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-responsive-xs font-mono text-[#6B7280] hidden sm:inline">
                   INTELLIGENCE CONFIDENCE
                 </span>
                 <ConfidenceIndicator value={brief.confidence} size="md" />
               </div>
             </div>
 
-            <p className="text-sm text-[#374151] font-sans leading-relaxed font-medium">
+            <p className="text-responsive-sm text-[#374151] font-sans leading-relaxed font-medium">
               {brief.executiveSummary}
             </p>
           </div>
 
           {/* Material Changes Grid */}
-          <div className="glass-level-2 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
-              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+          <div className="glass-level-2 p-responsive space-y-responsive">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E5E7EB] pb-responsive-sm">
+              <h2 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#D97706]" />
                 MATERIAL INTELLIGENCE CHANGES ({brief.keyChanges.length})
               </h2>
-              <span className="text-[10px] font-mono text-[#047857] font-bold">
+              <span className="text-responsive-xs font-mono text-[#047857] font-bold">
                 RANKED BY IMPACT & NOVELTY
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-responsive">
               {brief.keyChanges.map((c) => (
                 <div
                   key={c.id}
-                  className="p-4 rounded-2xl border border-[#E5E7EB] bg-[#FAF9F6] space-y-2 text-xs font-mono shadow-2xs"
+                  className="p-responsive rounded-2xl border border-[#E5E7EB] bg-[#FAF9F6] space-y-2 text-responsive-xs font-mono shadow-2xs"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-[#D97706] text-[10px] uppercase">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-extrabold text-[#D97706] text-responsive-xs uppercase">
                       {c.changeType}
                     </span>
-                    <span className="bg-[#D4AF37]/20 text-[#7A5E0A] px-2 py-0.5 rounded text-[10px] font-bold">
+                    <span className="badge-responsive bg-[#D4AF37]/20 text-[#7A5E0A] font-bold">
                       {c.magnitude} MAGNITUDE
                     </span>
                   </div>
-                  <h4 className="font-bold text-[#111827] text-sm leading-tight">{c.title}</h4>
-                  <p className="text-[11px] text-[#4B5563] font-sans line-clamp-3">{c.description}</p>
+                  <h4 className="font-bold text-[#111827] text-responsive-sm leading-tight">{c.title}</h4>
+                  <p className="text-responsive-xs text-[#4B5563] font-sans line-clamp-3">{c.description}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Threat & Opportunity Matrices */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-responsive">
             {/* Threats Panel */}
-            <div className="glass-level-2 p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
-                <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#991B1B] flex items-center gap-2">
+            <div className="glass-level-2 p-responsive space-y-responsive">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E5E7EB] pb-responsive-sm">
+                <h2 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#991B1B] flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-[#DC2626]" />
                   VALIDATED THREAT MATRIX ({brief.threats.length})
                 </h2>
@@ -232,22 +233,22 @@ export default function DecisionCenterPage() {
                   brief.threats.map((t, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-xl border border-[#DC2626]/30 bg-[#DC2626]/5 space-y-2 text-xs font-mono"
+                      className="p-responsive rounded-xl border border-[#DC2626]/30 bg-[#DC2626]/5 space-y-2 text-responsive-xs font-mono"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-extrabold text-[#991B1B]">{t.title}</span>
-                        <span className="bg-[#DC2626]/20 text-[#991B1B] px-2 py-0.5 rounded text-[10px] font-bold">
+                        <span className="badge-responsive bg-[#DC2626]/20 text-[#991B1B] font-bold">
                           {t.impact} SEVERITY
                         </span>
                       </div>
-                      <p className="text-[#374151] font-sans text-xs">{t.description}</p>
-                      <div className="text-[11px] font-bold text-[#7F1D1D] pt-1">
+                      <p className="text-[#374151] font-sans text-responsive-xs">{t.description}</p>
+                      <div className="text-responsive-xs font-bold text-[#7F1D1D] pt-1">
                         Recommended Response: {t.recommendedResponse}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-6 text-center text-xs font-mono text-[#6B7280]">
+                  <div className="p-responsive text-center text-responsive-xs font-mono text-[#6B7280]">
                     No active strategic threats detected in primary evidence.
                   </div>
                 )}
@@ -255,9 +256,9 @@ export default function DecisionCenterPage() {
             </div>
 
             {/* Opportunities Panel */}
-            <div className="glass-level-2 p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
-                <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#047857] flex items-center gap-2">
+            <div className="glass-level-2 p-responsive space-y-responsive">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E5E7EB] pb-responsive-sm">
+                <h2 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#047857] flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-[#059669]" />
                   STRATEGIC OPPORTUNITY MATRIX ({brief.opportunities.length})
                 </h2>
@@ -268,22 +269,22 @@ export default function DecisionCenterPage() {
                   brief.opportunities.map((o, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-xl border border-[#059669]/30 bg-[#059669]/5 space-y-2 text-xs font-mono"
+                      className="p-responsive rounded-xl border border-[#059669]/30 bg-[#059669]/5 space-y-2 text-responsive-xs font-mono"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="font-extrabold text-[#047857]">{o.title}</span>
-                        <span className="bg-[#059669]/20 text-[#047857] px-2 py-0.5 rounded text-[10px] font-bold">
+                        <span className="badge-responsive bg-[#059669]/20 text-[#047857] font-bold">
                           {o.potentialImpact} IMPACT
                         </span>
                       </div>
-                      <p className="text-[#374151] font-sans text-xs">{o.description}</p>
-                      <div className="text-[11px] font-bold text-[#064E3B] pt-1">
+                      <p className="text-[#374151] font-sans text-responsive-xs">{o.description}</p>
+                      <div className="text-responsive-xs font-bold text-[#064E3B] pt-1">
                         Recommended Action: {o.recommendedAction}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-6 text-center text-xs font-mono text-[#6B7280]">
+                  <div className="p-responsive text-center text-responsive-xs font-mono text-[#6B7280]">
                     No immediate opportunities identified in evidence set.
                   </div>
                 )}
@@ -292,9 +293,9 @@ export default function DecisionCenterPage() {
           </div>
 
           {/* Action Center & Recommendations */}
-          <div className="glass-level-2 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
-              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+          <div className="glass-level-2 p-responsive space-y-responsive">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E5E7EB] pb-responsive-sm">
+              <h2 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
                 <Shield className="w-4 h-4 text-[#D4AF37]" />
                 PRIORITIZED ACTION CENTER ({recommendations.length})
               </h2>
@@ -304,12 +305,12 @@ export default function DecisionCenterPage() {
               {recommendations.map((rec) => (
                 <div
                   key={rec.id}
-                  className="p-5 rounded-2xl border border-[#E5E7EB] bg-white space-y-3 text-xs font-mono shadow-sm"
+                  className="p-responsive rounded-2xl border border-[#E5E7EB] bg-white space-y-3 text-responsive-xs font-mono shadow-sm"
                 >
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[#F3F4F6] pb-2">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#F3F4F6] pb-2 flex-wrap">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className={`px-2.5 py-0.5 rounded text-[10px] font-extrabold ${
+                        className={`badge-responsive font-extrabold ${
                           rec.priority === 'CRITICAL'
                             ? 'bg-[#DC2626]/20 text-[#991B1B]'
                             : 'bg-[#D4AF37]/25 text-[#7A5E0A]'
@@ -317,38 +318,39 @@ export default function DecisionCenterPage() {
                       >
                         {rec.priority} PRIORITY
                       </span>
-                      <h3 className="font-extrabold text-[#111827] text-sm font-sans">{rec.title}</h3>
+                      <h3 className="font-extrabold text-[#111827] text-responsive-sm font-sans">{rec.title}</h3>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-[#6B7280]">Status: {rec.status}</span>
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <span className="text-responsive-xs text-[#6B7280] hidden sm:inline">Status: {rec.status}</span>
                       <button
                         onClick={() => handleStatusChange(rec.id, 'ACKNOWLEDGED')}
-                        className="px-2.5 py-1 rounded bg-[#F3F4F6] text-[#374151] font-bold text-[10px] hover:bg-[#E5E7EB] cursor-pointer"
+                        className="px-responsive py-1 rounded bg-[#F3F4F6] text-[#374151] font-bold text-responsive-xs hover:bg-[#E5E7EB] cursor-pointer touch-target"
                       >
                         Acknowledge
                       </button>
                       <button
                         onClick={() => handleStatusChange(rec.id, 'IN_PROGRESS')}
-                        className="px-2.5 py-1 rounded bg-[#D4AF37]/20 text-[#7A5E0A] font-bold text-[10px] hover:bg-[#D4AF37]/35 cursor-pointer"
+                        className="px-responsive py-1 rounded bg-[#D4AF37]/20 text-[#7A5E0A] font-bold text-responsive-xs hover:bg-[#D4AF37]/35 cursor-pointer touch-target"
                       >
                         In Progress
                       </button>
                     </div>
                   </div>
 
-                  <p className="text-[#374151] font-sans text-xs leading-relaxed">{rec.action}</p>
+                  <p className="text-[#374151] font-sans text-responsive-xs leading-relaxed">{rec.action}</p>
 
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2">
-                    <span className="text-[11px] text-[#6B7280]">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 flex-wrap">
+                    <span className="text-responsive-xs text-[#6B7280]">
                       Reason: <strong className="text-[#111827]">{rec.reason}</strong>
                     </span>
 
                     <button
                       onClick={() => handleInvestigateFurther(rec)}
-                      className="inline-flex items-center gap-1.5 bg-[#111827] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-black transition-all cursor-pointer shrink-0"
+                      className="inline-flex items-center gap-1.5 bg-[#111827] text-white px-responsive py-2 rounded-xl text-responsive-xs font-bold hover:bg-black transition-all cursor-pointer shrink-0 touch-target"
                     >
-                      <span>INVESTIGATE FURTHER</span>
+                      <span className="hidden sm:inline">INVESTIGATE FURTHER</span>
+                      <span className="sm:hidden">INVESTIGATE</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -358,7 +360,7 @@ export default function DecisionCenterPage() {
           </div>
         </>
       ) : (
-        <div className="p-12 text-center text-xs font-mono text-[#6B7280]">
+        <div className="container-responsive p-responsive text-center text-responsive-xs font-mono text-[#6B7280]">
           Select an investigation to render the Executive Decision Brief.
         </div>
       )}
