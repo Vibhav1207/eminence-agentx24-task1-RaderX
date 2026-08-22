@@ -90,7 +90,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       <CommandPalette />
       {/* Mobile Sidebar */}
       <aside 
-        className={`sidebar-mobile ${isOpen ? 'open' : 'closed'}`}
+        className={`fixed top-0 left-0 h-full w-[280px] max-w-[85vw] bg-white z-50 md:hidden transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         role="navigation"
         aria-label="Main navigation"
       >

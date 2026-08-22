@@ -22,7 +22,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
-          className="sidebar-overlay" 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
           onClick={() => setIsSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -44,25 +44,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="mobile-nav" role="navigation" aria-label="Primary navigation">
-        <a href="/dashboard" className={`mobile-nav-item ${pathname === '/dashboard' || pathname === '/' ? 'active' : ''}`}>
-          <LayoutDashboard className="icon" />
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-[#E5E7EB] flex items-center justify-around py-2 md:hidden" role="navigation" aria-label="Primary navigation">
+        <a href="/dashboard" className={`flex flex-col items-center gap-1 p-2 text-[10px] font-mono transition-colors min-h-[44px] min-w-[44px] ${pathname === '/dashboard' || pathname === '/' ? 'text-[#8C6D13] font-bold' : 'text-[#6B7280]'}`} onClick={() => setIsSidebarOpen(false)}>
+          <LayoutDashboard className="w-5 h-5" />
           <span>Dashboard</span>
         </a>
-        <a href="/investigations/new" className={`mobile-nav-item ${pathname.startsWith('/investigations') ? 'active' : ''}`}>
-          <PlusCircle className="icon" />
+        <a href="/investigations/new" className={`flex flex-col items-center gap-1 p-2 text-[10px] font-mono transition-colors min-h-[44px] min-w-[44px] ${pathname.startsWith('/investigations') ? 'text-[#8C6D13] font-bold' : 'text-[#6B7280]'}`} onClick={() => setIsSidebarOpen(false)}>
+          <PlusCircle className="w-5 h-5" />
           <span>Investigate</span>
         </a>
-        <a href="/alerts" className={`mobile-nav-item ${pathname === '/alerts' ? 'active' : ''}`}>
-          <Zap className="icon" />
+        <a href="/alerts" className={`flex flex-col items-center gap-1 p-2 text-[10px] font-mono transition-colors min-h-[44px] min-w-[44px] ${pathname === '/alerts' ? 'text-[#8C6D13] font-bold' : 'text-[#6B7280]'}`} onClick={() => setIsSidebarOpen(false)}>
+          <Zap className="w-5 h-5" />
           <span>Alerts</span>
         </a>
-        <a href="/agents" className={`mobile-nav-item ${pathname === '/agents' ? 'active' : ''}`}>
-          <Bot className="icon" />
+        <a href="/agents" className={`flex flex-col items-center gap-1 p-2 text-[10px] font-mono transition-colors min-h-[44px] min-w-[44px] ${pathname === '/agents' ? 'text-[#8C6D13] font-bold' : 'text-[#6B7280]'}`} onClick={() => setIsSidebarOpen(false)}>
+          <Bot className="w-5 h-5" />
           <span>Agents</span>
         </a>
-        <a href="/watchlists" className={`mobile-nav-item ${pathname === '/watchlists' ? 'active' : ''}`}>
-          <Eye className="icon" />
+        <a href="/watchlists" className={`flex flex-col items-center gap-1 p-2 text-[10px] font-mono transition-colors min-h-[44px] min-w-[44px] ${pathname === '/watchlists' ? 'text-[#8C6D13] font-bold' : 'text-[#6B7280]'}`} onClick={() => setIsSidebarOpen(false)}>
+          <Eye className="w-5 h-5" />
           <span>Watchlists</span>
         </a>
       </nav>
