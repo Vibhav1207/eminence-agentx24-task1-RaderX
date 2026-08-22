@@ -165,6 +165,11 @@ export default function LogsClient({ recentInvestigations }: LogsClientProps) {
                         <div className={`font-bold mb-1 ${getEventColor(ev.eventType)}`}>
                           {ev.eventType.replace(/_/g, " ")}
                         </div>
+                        {ev.agentRole && (
+                          <div className="text-[11px] font-mono font-bold tracking-wider text-black bg-[#e2e8f0] inline-block px-1.5 py-0.5 rounded mb-1">
+                            {ev.agentRole}
+                          </div>
+                        )}
                         <div className="text-black font-medium mb-1">{ev.message}</div>
                         {ev.toolName && (
                           <div className="text-[#45464d] text-[12px]">

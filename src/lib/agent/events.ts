@@ -17,6 +17,7 @@ export interface AgentEvent {
   investigationId: string;
   timestamp: string;
   eventType: AgentEventType;
+  agentRole?: string;
   toolName?: string;
   status: "success" | "info" | "error";
   message: string;

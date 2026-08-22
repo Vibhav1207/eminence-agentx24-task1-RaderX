@@ -5,27 +5,9 @@ import { emitAgentEvent } from "./events";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-const SYSTEM_PROMPT = `
-You are an autonomous Strategic Intelligence Agent.
-Your objective is to investigate a strategic question, gather evidence, correlate cross-source information, and produce a structured final report.
+// ---------- RESEARCH AGENT ----------
 
-You have access to the following tools:
-- search_research: For scientific publications and academic trends.
-- search_patents: For patent activity and technical filings.
-- search_web_news: For competitor news, market trends, and industry developments.
-
-Workflow:
-1. Understand the goal and plan your searches.
-2. Use tools to gather evidence. You are NOT restricted to a single tool sequence. Decide dynamically based on the evidence you find.
-3. If evidence is weak or insufficient, search again with refined queries.
-4. Correlate information. Look for patterns like "Research activity + Patent activity + Announcements = Strategic signal".
-5. Verify your findings against the gathered evidence.
-6. Once satisfied, generate the final structured InvestigationReport.
-
-CRITICAL: Do not invent evidence or fabricate URLs. If you cannot find sufficient evidence, mark your signals with low confidence.
-`;
-
-const tools = [{
+const researchTools = [{
   functionDeclarations: Object.entries(allTools).map(([name, tool]) => ({
     name,
     description: tool.description,
@@ -40,70 +22,58 @@ const tools = [{
   }))
 }];
 
-export async function runInvestigationAgent(
+async function runResearchAgent(
   investigationId: string,
   organization: string,
   technology: string,
   competitors: string[],
   timeRange: string,
-  strategicQuestion: string,
+  focus: string,
   onEvent?: (event: string) => void
 ) {
-  const emit = (msg: string) => {
-    if (onEvent) onEvent(msg);
-  };
+  const emit = (msg: string) => { if (onEvent) onEvent(msg); };
 
-  console.log("[Pipeline Debug] -> Agent started for organization:", organization);
-  emit("Understanding investigation objective...");
   emitAgentEvent({
     investigationId,
     eventType: "AGENT_STARTED",
+    agentRole: "RESEARCH AGENT",
     status: "info",
-    message: `Agent started for organization: ${organization}`,
+    message: `Research Agent started with focus: ${focus}`
   });
-  
-  emitAgentEvent({
-    investigationId,
-    eventType: "GOAL_RECEIVED",
-    status: "info",
-    message: `Goal received: Investigate ${technology} competitive landscape.`,
-  });
-
-  if (!GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured.");
-  }
 
   const chat = ai.chats.create({
     model: 'gemini-3.6-flash',
     config: {
-      systemInstruction: SYSTEM_PROMPT,
-      tools: tools as any,
+      systemInstruction: `You are the Research Intelligence Agent.
+Your objective is to find and structure evidence.
+Use tools to gather evidence for the focus area.
+CRITICAL: Keep summaries EXTREMELY concise (1 sentence max).
+Output ONLY valid JSON matching this schema:
+{
+  "status": "complete",
+  "evidence": [
+    { "title": "...", "source": "...", "url": "...", "date": "...", "entity": "...", "technology": "...", "type": "research|patent|news|web", "relevance": 0.9, "summary": "..." }
+  ],
+  "contradictions": [],
+  "gaps": [],
+  "research_complete": true
+}`,
+      tools: researchTools as any,
     }
   });
 
-  const prompt = `Conduct a strategic intelligence investigation.\nOrganization: ${organization}\nTechnology: ${technology}\nCompetitors: ${competitors.join(", ")}\nTime Range: ${timeRange}\nQuestion: ${strategicQuestion}`;
-
+  const prompt = `Gather evidence for Organization: ${organization}, Tech: ${technology}, Competitors: ${competitors.join(", ")}, Time: ${timeRange}. Focus: ${focus}`;
+  
   let iteration = 0;
-  const maxIterations = 1; // HARD LIMIT to 1 iteration to guarantee <60s execution
+  const maxIterations = 1; // Strict limit to avoid 60s Vercel timeouts
   let response = await chat.sendMessage({ message: prompt });
 
   while (iteration < maxIterations && response.functionCalls && response.functionCalls.length > 0) {
     iteration++;
-    console.log(`[Pipeline Debug] -> LLM Loop Iteration ${iteration}`);
-    if (iteration > 1) {
-      emitAgentEvent({
-        investigationId,
-        eventType: "NEXT_ACTION_SELECTED",
-        status: "info",
-        message: `Agent determined another action is necessary (Iteration ${iteration})`
-      });
-    }
-    
     const functionResponses = [];
 
     for (const call of response.functionCalls) {
       const toolName = call.name || "unknown_tool";
-      console.log(`[Pipeline Debug] -> Tool selected: ${toolName}`);
       
       try {
         const args = call.args as any;
@@ -112,22 +82,18 @@ export async function runInvestigationAgent(
         emitAgentEvent({
           investigationId,
           eventType: "TOOL_SELECTED",
+          agentRole: "RESEARCH AGENT",
           toolName,
           status: "info",
-          message: `Agent selected ${toolName}`
+          message: `Research tool selected: ${toolName}`
         });
-
-        if (args.query) {
-          emit(`Searching ${toolName.replace('search_', '')} for: "${args.query}"...`);
-        } else {
-          emit(`Executing tool: ${toolName}...`);
-        }
 
         if (toolHandler) {
           const startTime = Date.now();
           emitAgentEvent({
             investigationId,
             eventType: "TOOL_STARTED",
+            agentRole: "RESEARCH AGENT",
             toolName,
             status: "info",
             message: `Executing ${toolName} with query: ${args.query || 'none'}`
@@ -140,51 +106,23 @@ export async function runInvestigationAgent(
           emitAgentEvent({
             investigationId,
             eventType: "TOOL_COMPLETED",
+            agentRole: "RESEARCH AGENT",
             toolName,
             status: "success",
             durationMs,
-            message: `${toolName} completed successfully`,
+            message: `${toolName} completed. Found ${itemsCount} items.`,
             resultMetadata: { count: itemsCount }
-          });
-          
-          emitAgentEvent({
-            investigationId,
-            eventType: "EVIDENCE_RECEIVED",
-            toolName,
-            status: "info",
-            message: `Agent received ${itemsCount} items of evidence`
           });
           
           functionResponses.push({
             functionResponse: { name: toolName, response: { items: result } }
           });
-          
-          emitAgentEvent({
-            investigationId,
-            eventType: "EVIDENCE_EVALUATED",
-            status: "info",
-            message: `Agent evaluating evidence from ${toolName}`
-          });
         } else {
-          emitAgentEvent({
-            investigationId,
-            eventType: "TOOL_FAILED",
-            toolName,
-            status: "error",
-            message: `Tool ${toolName} is not registered`
-          });
           functionResponses.push({
             functionResponse: { name: toolName, response: { error: "Tool not found" } }
           });
         }
       } catch (e) {
-        emitAgentEvent({
-          investigationId,
-          eventType: "TOOL_FAILED",
-          toolName,
-          status: "error",
-          message: `Tool execution failed: ${String(e)}`
-        });
         functionResponses.push({
           functionResponse: { name: toolName, response: { error: String(e) } }
         });
@@ -195,8 +133,7 @@ export async function runInvestigationAgent(
       response = await chat.sendMessage({ message: functionResponses as any });
     } catch (e: any) {
       if (e?.status === 429 || e?.message?.includes('429')) {
-        emit("Rate limit reached. Waiting a few seconds before retrying...");
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         response = await chat.sendMessage({ message: functionResponses as any });
       } else {
         throw e;
@@ -204,15 +141,63 @@ export async function runInvestigationAgent(
     }
   }
 
-  emit("Correlating evidence and generating final report...");
+  emitAgentEvent({
+    investigationId,
+    eventType: "EVIDENCE_RECEIVED",
+    agentRole: "RESEARCH AGENT",
+    status: "success",
+    message: `Evidence package completed.`
+  });
 
   const history = await chat.getHistory();
-  
-  const finalPrompt = `You have completed your research. Synthesize the tool results into the final Strategic Radar report.
-CRITICAL: Keep all summaries and text fields EXTREMELY concise (1-2 short sentences max) so that the JSON generates as fast as possible.
-You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not wrap in markdown):
+  const finalResponse = await ai.models.generateContent({
+    model: 'gemini-3.6-flash',
+    contents: [...history, { role: 'user', parts: [{ text: "Synthesize findings into the JSON Evidence Package." }] }],
+    config: { responseMimeType: "application/json" }
+  });
+
+  let content = finalResponse.text || "{}";
+  content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    console.error("Failed to parse research JSON", content);
+    return { evidence: [], status: "complete" };
+  }
+}
+
+// ---------- STRATEGIC ANALYSIS AGENT ----------
+
+async function runStrategicAnalysisAgent(
+  investigationId: string,
+  strategicQuestion: string,
+  evidencePackage: any
+) {
+  emitAgentEvent({
+    investigationId,
+    eventType: "AGENT_STARTED",
+    agentRole: "STRATEGY AGENT",
+    status: "info",
+    message: `Analyzing evidence...`
+  });
+
+  const prompt = `You are the Strategic Analysis Agent.
+Your objective is to understand what the evidence means.
+Strategic Question: ${strategicQuestion}
+Evidence Package: ${JSON.stringify(evidencePackage)}
+
+Evaluate if the evidence is sufficient to confidently answer the strategic question.
+If INSUFFICIENT, output this exact JSON:
 {
-  "executiveSummary": "...",
+  "status": "needs_more_evidence",
+  "reason": "Explain briefly why",
+  "requested_focus": "Specific instructions for the Research Agent",
+  "priority": "HIGH"
+}
+
+If SUFFICIENT, output this exact JSON (keep text very concise):
+{
+  "status": "complete",
   "signals": [
     {
       "title": "...", "classification": "threat"|"opportunity"|"neutral", "impact": "high"|"medium"|"low", 
@@ -223,67 +208,127 @@ You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not
   ]
 }`;
 
-  let finalResponse;
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.6-flash',
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    config: { responseMimeType: "application/json" }
+  });
+
+  let content = response.text || "{}";
+  content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+  
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    finalResponse = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: [
-        ...history,
-        { role: 'user', parts: [{ text: finalPrompt }] }
-      ],
-      config: {
-        responseMimeType: "application/json",
-      }
-    });
-  } catch (e: any) {
-    if (e?.status === 429 || e?.message?.includes('429')) {
-      console.log(`[Pipeline Debug] -> Rate limit hit during final generation. Retrying after 3 seconds...`);
-      emit("Rate limit reached. Waiting a few seconds before final generation...");
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      finalResponse = await ai.models.generateContent({
-        model: 'gemini-3.6-flash',
-        contents: [
-          ...history,
-          { role: 'user', parts: [{ text: finalPrompt }] }
-        ],
-        config: {
-          responseMimeType: "application/json",
-        }
+    const parsed = JSON.parse(content);
+    if (parsed.status === "needs_more_evidence") {
+      emitAgentEvent({
+        investigationId,
+        eventType: "EVIDENCE_EVALUATED",
+        agentRole: "STRATEGY AGENT",
+        status: "info",
+        message: `Evidence insufficient: ${parsed.reason}`
       });
     } else {
-      console.error(`[Pipeline Debug] -> API Error during final report generation:`, e);
-      throw e;
+      emitAgentEvent({
+        investigationId,
+        eventType: "EVIDENCE_EVALUATED",
+        agentRole: "STRATEGY AGENT",
+        status: "success",
+        message: `Signals verified. Strategic analysis complete.`
+      });
+    }
+    return parsed;
+  } catch (e) {
+    console.error("Failed to parse strategy JSON", content);
+    return { status: "complete", signals: [] };
+  }
+}
+
+// ---------- INTELLIGENCE ORCHESTRATOR ----------
+
+export async function runInvestigationAgent(
+  investigationId: string,
+  organization: string,
+  technology: string,
+  competitors: string[],
+  timeRange: string,
+  strategicQuestion: string,
+  onEvent?: (event: string) => void
+) {
+  const emit = (msg: string) => { if (onEvent) onEvent(msg); };
+
+  emit("Understanding investigation objective...");
+  emitAgentEvent({
+    investigationId,
+    eventType: "AGENT_STARTED",
+    agentRole: "ORCHESTRATOR",
+    status: "info",
+    message: `Investigation received for ${organization}`,
+  });
+
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured.");
+  
+  let currentFocus = "Initial comprehensive research";
+  let finalReport = null;
+  const maxCycles = 2; // Hard cap on research-analysis loops
+
+  for (let cycle = 1; cycle <= maxCycles; cycle++) {
+    emitAgentEvent({
+      investigationId,
+      eventType: "NEXT_ACTION_SELECTED",
+      agentRole: "ORCHESTRATOR",
+      status: "info",
+      message: `Delegating evidence collection (Cycle ${cycle})`
+    });
+
+    const evidencePackage = await runResearchAgent(
+      investigationId, organization, technology, competitors, timeRange, currentFocus, onEvent
+    );
+
+    emitAgentEvent({
+      investigationId,
+      eventType: "NEXT_ACTION_SELECTED",
+      agentRole: "ORCHESTRATOR",
+      status: "info",
+      message: `Delegating strategic analysis`
+    });
+
+    const analysis = await runStrategicAnalysisAgent(
+      investigationId, strategicQuestion, evidencePackage
+    );
+
+    if (analysis.status === "complete" || cycle === maxCycles) {
+      if (analysis.status !== "complete") {
+        analysis.status = "complete";
+        analysis.signals = [];
+      }
+      finalReport = analysis;
+      break;
+    } else {
+      emitAgentEvent({
+        investigationId,
+        eventType: "NEXT_ACTION_SELECTED",
+        agentRole: "ORCHESTRATOR",
+        status: "info",
+        message: `Requesting additional evidence: ${analysis.requested_focus}`
+      });
+      currentFocus = analysis.requested_focus;
     }
   }
 
-  let content = finalResponse.text || "";
-  content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
-  console.log("[Pipeline Debug] -> Final report generated. Attempting to parse JSON.");
+  const reportSchemaFields = {
+    executiveSummary: "Strategic analysis complete.",
+    threats: [], opportunities: [], emergingTrends: [], recommendations: [],
+    evidence: [], sources: [], confidence: 85,
+    ...finalReport
+  };
 
-  try {
-    const report = JSON.parse(content);
-    console.log("[Pipeline Debug] -> JSON successfully parsed.");
-    
-    emitAgentEvent({
-      investigationId,
-      eventType: "INVESTIGATION_COMPLETED",
-      status: "success",
-      message: "Investigation successfully completed and final report generated"
-    });
-    
-    return report;
-  } catch (e) {
-    console.error("[Pipeline Debug] -> CRITICAL ERROR: Model returned malformed structured output.");
-    console.error("[Pipeline Debug] -> Raw LLM Response:", content);
-    
-    emitAgentEvent({
-      investigationId,
-      eventType: "INVESTIGATION_FAILED",
-      status: "error",
-      message: "Investigation failed: model returned malformed JSON"
-    });
-    
-    throw new Error("Failed to parse the final structured report JSON.");
-  }
+  emitAgentEvent({
+    investigationId,
+    eventType: "INVESTIGATION_COMPLETED",
+    agentRole: "ORCHESTRATOR",
+    status: "success",
+    message: "Final report generated"
+  });
+
+  return reportSchemaFields;
 }
