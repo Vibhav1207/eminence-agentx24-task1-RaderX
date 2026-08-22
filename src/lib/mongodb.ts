@@ -20,12 +20,12 @@ export async function getDb(): Promise<Db> {
 
   if (process.env.NODE_ENV === "development") {
     if (!global._mongoClient) {
-      global._mongoClient = new MongoClient(uri);
+      global._mongoClient = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
       await global._mongoClient.connect();
     }
     client = global._mongoClient;
   } else {
-    client = new MongoClient(uri);
+    client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
     await client.connect();
   }
 
