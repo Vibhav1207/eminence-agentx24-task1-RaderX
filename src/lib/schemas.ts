@@ -58,9 +58,6 @@ export const InvestigationReportSchema = z.object({
   evidence: z.array(EvidenceSchema),
   sources: z.array(z.string()),
   confidence: z.number().min(0).max(100),
-  previousAssessment: z.string().optional(),
-  currentAssessment: z.string().optional(),
-  changes: z.string().optional(),
 });
 
 export const InvestigationStatusSchema = z.enum([
