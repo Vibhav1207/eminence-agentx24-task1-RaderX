@@ -53,8 +53,8 @@ export async function POST(request: Request) {
 
     console.log("[Pipeline Debug] -> Response returned successfully (201). Investigation ID:", investigation.id);
     return Response.json({ investigation }, { status: 201 });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Agent execution failed:", error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: error?.message || "Internal server error" }, { status: 500 });
   }
 }
