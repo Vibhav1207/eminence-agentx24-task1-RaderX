@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { allTools } from "./tools";
+import { emitAgentEvent } from "./events";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
@@ -38,8 +39,6 @@ const tools = [{
     }
   }))
 }];
-
-import { emitAgentEvent } from "./events";
 
 export async function runInvestigationAgent(
   investigationId: string,
