@@ -87,10 +87,10 @@ function SignalSection({ signal, index }: { signal: StrategicSignal; index: numb
                   : "bg-[#f1f5f9] text-[#45464d]"
               }`}
             >
-              {signal.classification.charAt(0).toUpperCase() + signal.classification.slice(1)}
+              {String(signal.classification || "neutral").charAt(0).toUpperCase() + String(signal.classification || "neutral").slice(1)}
             </span>
             <span className="text-[12px] font-medium bg-[#dce9ff] text-[#45464d] px-2 py-0.5 rounded">
-              {signal.impact.charAt(0).toUpperCase() + signal.impact.slice(1)} Impact
+              {String(signal.impact || "medium").charAt(0).toUpperCase() + String(signal.impact || "medium").slice(1)} Impact
             </span>
             <span className="text-[12px] font-medium bg-[#dce9ff] text-[#45464d] px-2 py-0.5 rounded">
               {signal.confidence}% Confidence
@@ -102,13 +102,13 @@ function SignalSection({ signal, index }: { signal: StrategicSignal; index: numb
         <p className="text-[14px] text-[#45464d] leading-5 mb-4">
           <span className="font-semibold text-black">Explanation:</span> {signal.summary}
         </p>
-        {signal.evidence.length > 0 && (
+        {(signal.evidence || []).length > 0 && (
           <>
             <h4 className="text-[11px] font-semibold text-[#45464d] uppercase tracking-wider mb-3">
               Supporting Evidence
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {signal.evidence.slice(0, 3).map((ev, i) => (
+              {(Array.isArray(signal.evidence) ? signal.evidence : []).slice(0, 3).map((ev, i) => (
                 <EvidenceCard key={i} ev={ev} />
               ))}
             </div>
@@ -170,9 +170,9 @@ export default function ReportClient({ investigation }: ReportClientProps) {
   }
 
   const allSignals = [
-    ...(report.signals ?? []),
-    ...(report.threats ?? []),
-    ...(report.opportunities ?? []),
+    ...(Array.isArray(report.signals) ? report.signals : []),
+    ...(Array.isArray(report.threats) ? report.threats : []),
+    ...(Array.isArray(report.opportunities) ? report.opportunities : []),
   ].filter(
     (s, i, arr) => arr.findIndex((x) => x.title === s.title) === i
   );
@@ -370,12 +370,12 @@ export default function ReportClient({ investigation }: ReportClientProps) {
                     Recommended Actions
                   </h2>
                   <ul className="flex flex-col gap-3">
-                    {report.recommendations.map((action, i) => (
+                    {(Array.isArray(report.recommendations) ? report.recommendations : []).map((action, i) => (
                       <li key={i} className="flex items-start gap-2 text-[14px] leading-5">
                         <span className="bg-black text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
                           {i + 1}
                         </span>
-                        {action}
+                        {String(action)}
                       </li>
                     ))}
                   </ul>
@@ -383,14 +383,14 @@ export default function ReportClient({ investigation }: ReportClientProps) {
               )}
 
               {/* Emerging Trends */}
-              {report.emergingTrends?.length > 0 && (
+              {Array.isArray(report.emergingTrends) && report.emergingTrends.length > 0 && (
                 <div className="bg-white border border-[#c6c6cd] rounded p-4">
                   <h2 className="text-[16px] font-semibold text-black mb-3">Emerging Trends</h2>
                   <ul className="flex flex-col gap-2">
                     {report.emergingTrends.map((trend, i) => (
                       <li key={i} className="flex items-start gap-2 text-[13px] text-[#45464d] leading-4">
                         <span className="w-1 h-1 rounded-full bg-[#45464d] mt-2 shrink-0" />
-                        {trend}
+                        {String(trend)}
                       </li>
                     ))}
                   </ul>
@@ -400,7 +400,7 @@ export default function ReportClient({ investigation }: ReportClientProps) {
           </div>
 
           {/* Evidence */}
-          {report.evidence?.length > 0 && (
+          {Array.isArray(report.evidence) && report.evidence.length > 0 && (
             <div id="evidence" className="mb-6">
               <h2 className="text-[22px] font-semibold text-black mb-4 flex items-center gap-2">
                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,19 +417,19 @@ export default function ReportClient({ investigation }: ReportClientProps) {
           )}
 
           {/* Sources */}
-          {report.sources?.length > 0 && (
+          {Array.isArray(report.sources) && report.sources.length > 0 && (
             <div id="sources" className="mb-6">
               <h2 className="text-[18px] font-semibold text-black mb-3">Sources</h2>
               <div className="bg-white border border-[#c6c6cd] rounded p-4">
                 <ul className="flex flex-col gap-1">
                   {report.sources.map((src, i) => (
                     <li key={i} className="text-[12px] font-mono text-[#45464d] hover:text-black transition-colors">
-                      {src.startsWith("http") ? (
-                        <a href={src} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-                          {src}
+                      {String(src).startsWith("http") ? (
+                        <a href={String(src)} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                          {String(src)}
                         </a>
                       ) : (
-                        src
+                        String(src)
                       )}
                     </li>
                   ))}
