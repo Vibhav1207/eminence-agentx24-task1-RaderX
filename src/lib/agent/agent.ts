@@ -63,7 +63,7 @@ async function runResearchAgent(
   }
 
   const chat = ai.chats.create({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-3.6-flash',
     config: {
       systemInstruction: `You are the Research Intelligence Agent.
 Your objective is to find and structure evidence.
@@ -256,7 +256,7 @@ If SUFFICIENT, output this exact JSON (keep text very concise):
 }`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-3.6-flash',
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config: { responseMimeType: "application/json" }
   });
