@@ -166,10 +166,15 @@ Do NOT output the final report until you have used tools to gather real evidence
       emit("Prioritizing findings and generating recommendations...");
       
       try {
+        messages.push({
+          role: "user",
+          content: "Please output the final report as a JSON object matching this exact structure: { \"executiveSummary\": string, \"signals\": [ { \"title\": string, \"classification\": \"threat\"|\"opportunity\"|\"neutral\", \"impact\": \"high\"|\"medium\"|\"low\", \"confidence\": number, \"summary\": string, \"whyItMatters\": string, \"evidence\": [ { \"source\": string, \"title\": string, \"url\": string, \"date\": string, \"summary\": string, \"relevance\": number, \"entity\": string, \"evidenceType\": \"research\"|\"patent\"|\"news\"|\"competitor\"|\"web\" } ], \"recommendedActions\": [string] } ], \"threats\": [], \"opportunities\": [], \"emergingTrends\": [string], \"recommendations\": [string], \"evidence\": [], \"sources\": [string], \"confidence\": number }"
+        });
+
         const finalResponse = await openai.chat.completions.create({
           model: "gpt-4o-2024-08-06",
           messages,
-          response_format: zodResponseFormat(InvestigationReportSchema, "investigation_report"),
+          response_format: { type: "json_object" },
         });
         
         if (finalResponse.choices[0].message.content) {
