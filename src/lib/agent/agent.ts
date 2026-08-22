@@ -3,8 +3,10 @@ import { allTools } from "./tools";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { InvestigationReportSchema } from "../schemas";
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "dummy",
+  apiKey: GEMINI_API_KEY || "dummy",
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
 });
 
 const SYSTEM_PROMPT = `
@@ -42,8 +44,8 @@ export async function runInvestigationAgent(
   console.log("[Pipeline Debug] -> Agent started for organization:", organization);
   emit("Understanding investigation objective...");
 
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY is not configured.");
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not configured.");
   }
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
@@ -78,7 +80,7 @@ export async function runInvestigationAgent(
     console.log(`[Pipeline Debug] -> LLM Loop Iteration ${iteration}`);
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-2024-08-06",
+      model: "gemini-1.5-flash",
       messages,
       tools,
       tool_choice: "auto",
@@ -157,7 +159,7 @@ You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not
   });
 
   const finalResponse = await openai.chat.completions.create({
-    model: "gpt-4o-2024-08-06",
+    model: "gemini-1.5-flash",
     messages,
     response_format: { type: "json_object" }
   });
