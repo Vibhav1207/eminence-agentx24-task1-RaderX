@@ -44,33 +44,38 @@ export const searchPatentsSchema = z.object({
 });
 
 export async function searchPatents(args: z.infer<typeof searchPatentsSchema>) {
-  // Using a mock implementation since open patent APIs often require keys or complex querying.
-  // In a real scenario we could use PatentSight, Google Patents API, or USPTO.
-  // Here we simulate an API call that returns structured patent data matching the query.
-  
-  // Just simulating a delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  return [
-    {
-      title: `System and method for ${args.query}`,
-      assignee: "Major Tech Corp",
-      filing_date: new Date().toISOString(),
-      status: "pending",
-      source: "Patent Database",
-      summary: `A newly filed patent covering advanced methods in ${args.query}.`,
-      url: `https://patents.google.com/?q=${encodeURIComponent(args.query)}`
-    },
-    {
-      title: `Improvements in ${args.query} processes`,
-      assignee: "Innovator Inc",
-      filing_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      status: "granted",
-      source: "Patent Database",
-      summary: `Granted patent detailing significant improvements in ${args.query}.`,
-      url: `https://patents.google.com/?q=${encodeURIComponent(args.query)}`
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) {
+    return { error: "SERPAPI_API_KEY is missing in environment variables" };
+  }
+
+  try {
+    const url = new URL("https://serpapi.com/search");
+    url.searchParams.set("engine", "google_patents");
+    url.searchParams.set("q", args.query);
+    url.searchParams.set("api_key", apiKey);
+    url.searchParams.set("num", (args.limit || 5).toString());
+
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      return { error: `SerpApi error: ${response.statusText}` };
     }
-  ];
+
+    const data = await response.json();
+    if (!data.organic_results) return [];
+
+    return data.organic_results.map((result: any) => ({
+      title: result.title,
+      assignee: result.assignee || "Unknown",
+      filing_date: result.filing_date || "Unknown",
+      status: result.status || "Unknown",
+      source: "Google Patents",
+      summary: result.snippet || "No summary available",
+      url: result.link
+    }));
+  } catch (error: unknown) {
+    return { error: `Failed to search patents: ${error instanceof Error ? error.message : String(error)}` };
+  }
 }
 
 export const searchWebNewsSchema = z.object({
@@ -79,25 +84,37 @@ export const searchWebNewsSchema = z.object({
 });
 
 export async function searchWebNews(args: z.infer<typeof searchWebNewsSchema>) {
-  // Simulated web/news search tool.
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  return [
-    {
-      title: `Industry Leader Announces Breakthrough in ${args.query}`,
-      source: "Tech News Network",
-      date: new Date().toISOString(),
-      summary: `A major announcement today regarding ${args.query} has sent shockwaves through the industry. Competitors are scrambling to catch up.`,
-      url: `https://news.example.com/search?q=${encodeURIComponent(args.query)}`,
-    },
-    {
-      title: `Market Analysis: The Future of ${args.query}`,
-      source: "Market Insights",
-      date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      summary: `Recent trends indicate a massive shift towards ${args.query} technologies. Investments have doubled in the last quarter.`,
-      url: `https://insights.example.com/search?q=${encodeURIComponent(args.query)}`,
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey) {
+    return { error: "SERPAPI_API_KEY is missing in environment variables" };
+  }
+
+  try {
+    const url = new URL("https://serpapi.com/search");
+    url.searchParams.set("engine", "google");
+    url.searchParams.set("q", args.query);
+    url.searchParams.set("tbm", "nws");
+    url.searchParams.set("api_key", apiKey);
+    url.searchParams.set("num", (args.limit || 5).toString());
+
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      return { error: `SerpApi error: ${response.statusText}` };
     }
-  ];
+
+    const data = await response.json();
+    if (!data.news_results) return [];
+
+    return data.news_results.map((result: any) => ({
+      title: result.title,
+      source: result.source || "Web News",
+      date: result.date || new Date().toISOString(),
+      summary: result.snippet || "No summary available",
+      url: result.link
+    }));
+  } catch (error: unknown) {
+    return { error: `Failed to search web news: ${error instanceof Error ? error.message : String(error)}` };
+  }
 }
 
 export const allTools = {

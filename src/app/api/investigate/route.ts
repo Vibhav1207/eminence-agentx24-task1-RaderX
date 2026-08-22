@@ -8,6 +8,7 @@ import { runInvestigationAgent } from "@/lib/agent/agent";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    console.log("[Pipeline Debug] -> Request received for /api/investigate:", JSON.stringify(body).slice(0, 200));
     const parsed = CreateInvestigationSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -45,13 +46,10 @@ export async function POST(request: Request) {
       updatedAt: now,
     };
 
-    try {
-      const db = await getDb();
-      await db.collection("investigations").insertOne({ ...investigation, _id: investigation.id as unknown as import("mongodb").ObjectId });
-    } catch {
-      // If MongoDB is not configured, return the investigation without persisting
-    }
+    const db = await getDb();
+    await db.collection("investigations").insertOne({ ...investigation, _id: investigation.id as unknown as import("mongodb").ObjectId });
 
+    console.log("[Pipeline Debug] -> Response returned successfully (201). Investigation ID:", investigation.id);
     return Response.json({ investigation }, { status: 201 });
   } catch (error: unknown) {
     console.error("Agent execution failed:", error);
