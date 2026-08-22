@@ -60,6 +60,7 @@ export default function Sidebar() {
       title: 'AGENTS',
       items: [
         { label: 'Agent Network', href: '/agents', icon: Bot, badge: '7' },
+        { label: 'Adversarial Live Test', href: '/adversarial-test', icon: Shield, badge: 'LIVE DEMO' },
       ],
     },
     {

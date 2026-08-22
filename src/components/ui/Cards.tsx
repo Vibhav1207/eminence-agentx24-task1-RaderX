@@ -235,27 +235,63 @@ export function SignalCard({ signal }: { signal: SignalItem }) {
   );
 }
 
-export function InvestigationCard({ investigation }: { investigation: InvestigationItem }) {
+export function InvestigationCard({ investigation }: { investigation: any }) {
+  const isComplete = investigation.status === 'COMPLETED';
+  const hasCheckpoint = !!investigation.metadata?.lastCheckpointId;
+
+  const linkHref = isComplete
+    ? `/intelligence/${investigation.id}`
+    : `/investigations/${investigation.id}`;
+
+  const createdDate = investigation.createdAt 
+    ? new Date(investigation.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })
+    : 'Recent';
+
+  const lastActivity = investigation.lastHeartbeatAt || investigation.updatedAt
+    ? new Date(investigation.lastHeartbeatAt || investigation.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : undefined;
+
   return (
-    <Link href={`/intelligence/${investigation.id}`}>
+    <Link href={linkHref}>
       <motion.div
         whileHover={{ y: -3, scale: 1.008 }}
         whileTap={{ scale: 0.98 }}
         className="glass-level-2 hover:border-[#D4AF37]/50 p-5 transition-all flex flex-col justify-between group cursor-pointer h-full"
       >
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <StatusBadge status={investigation.status} />
-            <span className="text-[10px] font-mono text-[#6B7280]">{investigation.timeRange}</span>
+            <span className="text-[10px] font-mono text-[#6B7280] font-bold">Created {createdDate}</span>
           </div>
 
           <h3 className="text-base font-bold text-[#111827] group-hover:text-[#8C6D13] transition-colors mb-1 font-sans">
             {investigation.title}
           </h3>
 
-          <p className="text-xs text-[#4B5563] line-clamp-2 mb-4 font-sans leading-relaxed">
-            {investigation.strategicQuestion}
+          <p className="text-xs text-[#4B5563] line-clamp-2 mb-3 font-sans leading-relaxed">
+            {investigation.strategicQuestion || investigation.objective}
           </p>
+
+          {/* Timestamps & Availability Badges (Requirement 20) */}
+          <div className="flex flex-wrap gap-2 mb-4 font-mono text-[9px] font-bold">
+            {lastActivity && (
+              <span className="bg-gray-100 text-[#4B5563] px-2 py-0.5 rounded border border-gray-200">
+                ACTIVE: {lastActivity}
+              </span>
+            )}
+            
+            {hasCheckpoint && (
+              <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">
+                ● RECOVERABLE
+              </span>
+            )}
+
+            {isComplete && (
+              <span className="bg-[#D4AF37]/15 text-[#8C6D13] px-2 py-0.5 rounded border border-[#D4AF37]/35">
+                ● REPORT READY
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -273,10 +309,10 @@ export function InvestigationCard({ investigation }: { investigation: Investigat
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-[#E5E7EB] text-[11px] font-mono text-[#6B7280]">
-            <span>{investigation.activeAgentsCount} agents active</span>
-            <span>{investigation.evidenceCount} evidence</span>
-            <span className="text-[#047857] font-bold">{investigation.confidence}% CONF</span>
+          <div className="flex items-center justify-between pt-2 border-t border-[#E5E7EB] text-[11px] font-mono text-[#6B7280] font-semibold">
+            <span>{investigation.activeAgentsCount || 5} agents</span>
+            <span>{investigation.evidenceCount || 0} evidence</span>
+            <span className="text-[#047857] font-bold">{investigation.confidence || 90}% CONF</span>
           </div>
         </div>
       </motion.div>

@@ -17,6 +17,11 @@ import {
   UncertaintyModel,
   KnowledgeGapModel,
   ContradictionModel,
+  ClaimModel,
+  HypothesisModel,
+  SelfEvaluationResult,
+  ConclusionVersion,
+  VerificationTaskRequest,
   DecisionLogModel,
   GraphNodeModel,
   GraphEdgeModel,
@@ -60,6 +65,13 @@ class MemoryStore {
   uncertainties: UncertaintyModel[] = [];
   knowledgeGaps: KnowledgeGapModel[] = [];
   contradictions: ContradictionModel[] = [];
+  // Stage 5F: Normalized claims extracted from evidence
+  claims: ClaimModel[] = [];
+  // Stage 5G: Self-Evaluation & Hypothesis stores
+  hypotheses: HypothesisModel[] = [];
+  selfEvaluations: SelfEvaluationResult[] = [];
+  conclusionVersions: ConclusionVersion[] = [];
+  verificationRequests: VerificationTaskRequest[] = [];
   decisionLogs: DecisionLogModel[] = [];
   graphNodes: GraphNodeModel[] = [];
   graphEdges: GraphEdgeModel[] = [];
@@ -134,7 +146,7 @@ export const dbRepository = {
   async createInvestigation(data: Partial<InvestigationModel>): Promise<InvestigationModel> {
     const now = new Date().toISOString();
     const newInv: InvestigationModel = {
-      id: `inv-${Date.now()}`,
+      id: data.id || `inv-${Date.now()}`,
       title: data.title || 'Untitled Autonomous Investigation',
       objective: data.objective || 'Identify competitive threats and technical breakthroughs.',
       status: 'INVESTIGATING',
@@ -146,10 +158,11 @@ export const dbRepository = {
       competitors: data.competitors,
       strategicQuestion: data.strategicQuestion || data.objective,
       confidenceScore: 92,
-      progress: 0,
+      progress: data.progress ?? 0,
       activeAgents: ['RESEARCH', 'PATENT', 'NEWS', 'COMPETITOR', 'WEB'],
       evidenceCount: 0,
       signalCount: 0,
+      metadata: data.metadata,
       createdAt: now,
       updatedAt: now,
     };
@@ -708,10 +721,17 @@ export const dbRepository = {
       investigationId: data.investigationId || 'inv-default',
       claims: data.claims || [],
       evidenceIds: data.evidenceIds || [],
+      // Stage 5F fields
+      claimIds: data.claimIds,
+      conflictType: data.conflictType,
+      resolutionStrategy: data.resolutionStrategy,
       severity: data.severity || 'MEDIUM',
       status: data.status || 'UNRESOLVED',
       resolution: data.resolution,
+      unresolvedReason: data.unresolvedReason,
+      confidenceDelta: data.confidenceDelta,
       createdAt: now,
+      resolvedAt: data.resolvedAt,
     };
 
     memory.contradictions.unshift(contradiction);
@@ -743,6 +763,213 @@ export const dbRepository = {
       return contradiction;
     }
     return undefined;
+  },
+
+  // Stage 5F: Claims CRUD
+  async createClaim(data: Partial<ClaimModel>): Promise<ClaimModel> {
+    const now = new Date().toISOString();
+    const claim: ClaimModel = {
+      id: `claim-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      investigationId: data.investigationId || 'inv-default',
+      statement: data.statement || '',
+      topic: data.topic || '',
+      entities: data.entities || [],
+      evidenceIds: data.evidenceIds || [],
+      supportingEvidenceIds: data.supportingEvidenceIds || [],
+      contradictingEvidenceIds: data.contradictingEvidenceIds || [],
+      confidence: data.confidence ?? 50,
+      status: data.status || 'INSUFFICIENT_EVIDENCE',
+      temporalScope: data.temporalScope,
+      scopeNote: data.scopeNote,
+      contradictionId: data.contradictionId,
+      sourceQualityScore: data.sourceQualityScore,
+      createdAt: now,
+    };
+    memory.claims.unshift(claim);
+    try {
+      const db = await getDb();
+      await db.collection<ClaimModel>('claims').insertOne(claim);
+    } catch {}
+    return claim;
+  },
+
+  async getClaimsByInvestigationId(investigationId: string): Promise<ClaimModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection<ClaimModel>('claims').find({ investigationId }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return memory.claims.filter((c) => c.investigationId === investigationId);
+  },
+
+  async updateClaim(id: string, updates: Partial<ClaimModel>): Promise<ClaimModel | undefined> {
+    try {
+      const db = await getDb();
+      await db.collection('claims').updateOne({ id }, { $set: { ...updates, updatedAt: new Date().toISOString() } });
+    } catch {}
+    const claim = memory.claims.find((c) => c.id === id);
+    if (claim) {
+      Object.assign(claim, updates, { updatedAt: new Date().toISOString() });
+      return claim;
+    }
+    return undefined;
+  },
+
+  // Stage 5G: Hypotheses CRUD
+  async createHypothesis(data: Partial<HypothesisModel>): Promise<HypothesisModel> {
+    const now = new Date().toISOString();
+    const hypothesis: HypothesisModel = {
+      id: data.id || `hyp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      investigationId: data.investigationId || 'inv-default',
+      statement: data.statement || '',
+      supportingEvidenceIds: data.supportingEvidenceIds || [],
+      contradictingEvidenceIds: data.contradictingEvidenceIds || [],
+      confidence: data.confidence ?? 50,
+      status: data.status || 'UNRESOLVED',
+      verificationTasks: data.verificationTasks || [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    memory.hypotheses.unshift(hypothesis);
+    try {
+      const db = await getDb();
+      await db.collection<HypothesisModel>('hypotheses').insertOne(hypothesis);
+    } catch {}
+    return hypothesis;
+  },
+
+  async getHypothesesByInvestigationId(investigationId: string): Promise<HypothesisModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection<HypothesisModel>('hypotheses').find({ investigationId }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return memory.hypotheses.filter((h) => h.investigationId === investigationId);
+  },
+
+  async updateHypothesis(id: string, updates: Partial<HypothesisModel>): Promise<HypothesisModel | undefined> {
+    const now = new Date().toISOString();
+    try {
+      const db = await getDb();
+      await db.collection('hypotheses').updateOne({ id }, { $set: { ...updates, updatedAt: now } });
+    } catch {}
+    const hyp = memory.hypotheses.find((h) => h.id === id);
+    if (hyp) {
+      Object.assign(hyp, updates, { updatedAt: now });
+      return hyp;
+    }
+    return undefined;
+  },
+
+  // Stage 5G: Self-Evaluations CRUD
+  async createSelfEvaluation(data: Partial<SelfEvaluationResult>): Promise<SelfEvaluationResult> {
+    const now = new Date().toISOString();
+    const result: SelfEvaluationResult = {
+      id: data.id || `eval-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      investigationId: data.investigationId || 'inv-default',
+      iterationNumber: data.iterationNumber ?? 1,
+      overallStatus: data.overallStatus || 'NEEDS_VERIFICATION',
+      confidence: data.confidence ?? 50,
+      evidenceStrength: data.evidenceStrength || 'MEDIUM',
+      evidenceCoverage: data.evidenceCoverage ?? 50,
+      totalMajorClaims: data.totalMajorClaims ?? 0,
+      supportedClaims: data.supportedClaims ?? 0,
+      partiallySupportedClaims: data.partiallySupportedClaims ?? 0,
+      unsupportedClaims: data.unsupportedClaims || [],
+      unverifiedAssumptions: data.unverifiedAssumptions || [],
+      conflicts: data.conflicts || [],
+      missingEvidence: data.missingEvidence || [],
+      recommendedActions: data.recommendedActions || [],
+      claimEvaluations: data.claimEvaluations || [],
+      reasoning: data.reasoning || '',
+      shouldReplan: data.shouldReplan ?? false,
+      reasoningLimitReached: data.reasoningLimitReached,
+      createdAt: now,
+    };
+    memory.selfEvaluations.unshift(result);
+    try {
+      const db = await getDb();
+      await db.collection<SelfEvaluationResult>('self_evaluations').insertOne(result);
+    } catch {}
+    return result;
+  },
+
+  async getSelfEvaluationsByInvestigationId(investigationId: string): Promise<SelfEvaluationResult[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection<SelfEvaluationResult>('self_evaluations').find({ investigationId }).sort({ createdAt: -1 }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return memory.selfEvaluations.filter((e) => e.investigationId === investigationId);
+  },
+
+  async getLatestSelfEvaluation(investigationId: string): Promise<SelfEvaluationResult | undefined> {
+    const evals = await this.getSelfEvaluationsByInvestigationId(investigationId);
+    return evals[0];
+  },
+
+  // Stage 5G: Conclusion Versions CRUD
+  async createConclusionVersion(data: Partial<ConclusionVersion>): Promise<ConclusionVersion> {
+    const now = new Date().toISOString();
+    const existing = await this.getConclusionVersionsByInvestigationId(data.investigationId || 'inv-default');
+    const versionNum = data.version ?? (existing.length + 1);
+
+    const version: ConclusionVersion = {
+      id: data.id || `conc-v${versionNum}-${Date.now()}`,
+      investigationId: data.investigationId || 'inv-default',
+      version: versionNum,
+      conclusion: data.conclusion || '',
+      confidence: data.confidence ?? 50,
+      evaluationId: data.evaluationId || '',
+      reason: data.reason || 'Initial conclusion formulation',
+      createdAt: now,
+    };
+    memory.conclusionVersions.unshift(version);
+    try {
+      const db = await getDb();
+      await db.collection<ConclusionVersion>('conclusion_versions').insertOne(version);
+    } catch {}
+    return version;
+  },
+
+  async getConclusionVersionsByInvestigationId(investigationId: string): Promise<ConclusionVersion[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection<ConclusionVersion>('conclusion_versions').find({ investigationId }).sort({ version: -1 }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return memory.conclusionVersions.filter((v) => v.investigationId === investigationId).sort((a, b) => b.version - a.version);
+  },
+
+  // Stage 5G: Verification Task Requests CRUD
+  async createVerificationRequest(data: Partial<VerificationTaskRequest>): Promise<VerificationTaskRequest> {
+    const now = new Date().toISOString();
+    const req: VerificationTaskRequest = {
+      id: data.id || `vreq-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      investigationId: data.investigationId || 'inv-default',
+      hypothesisId: data.hypothesisId || '',
+      description: data.description || '',
+      missingEvidenceType: data.missingEvidenceType || 'RESEARCH',
+      priority: data.priority || 'HIGH',
+      reason: data.reason || '',
+      informationGain: data.informationGain || 'HIGH',
+      createdAt: now,
+    };
+    memory.verificationRequests.unshift(req);
+    try {
+      const db = await getDb();
+      await db.collection<VerificationTaskRequest>('verification_requests').insertOne(req);
+    } catch {}
+    return req;
+  },
+
+  async getVerificationRequestsByInvestigationId(investigationId: string): Promise<VerificationTaskRequest[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection<VerificationTaskRequest>('verification_requests').find({ investigationId }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return memory.verificationRequests.filter((r) => r.investigationId === investigationId);
   },
 
   // Decision Logs

@@ -5,23 +5,57 @@ import {
   InvestigationModel,
   EvidenceModel,
   SignalModel,
-} from '@/lib/types';
-import { dbRepository } from '@/lib/db/repository';
+} from '../types';
+import { dbRepository } from '../db/repository';
 import { defaultMissionPlanner } from './missionPlanner';
 import { defaultAgentRegistry } from './agentRegistry';
 import { defaultEvidenceEvaluator } from './evidenceEvaluator';
-import { defaultSignalEngine } from '@/lib/intelligence/signalEngine';
-import { defaultSynthesisEngine } from '@/lib/intelligence/synthesisEngine';
+import { defaultSignalEngine } from '../intelligence/signalEngine';
+import { defaultSynthesisEngine } from '../intelligence/synthesisEngine';
 import { defaultAutonomousController } from './autonomousController';
-import { defaultRelationshipDiscoveryEngine } from '@/lib/graph/relationshipDiscoveryEngine';
-import { defaultExecutiveBriefVersioner } from '@/lib/intelligence/executiveBriefVersioner';
+import { defaultRelationshipDiscoveryEngine } from '../graph/relationshipDiscoveryEngine';
+import { defaultExecutiveBriefVersioner } from '../intelligence/executiveBriefVersioner';
 import { defaultContextBuilderService } from './contextBuilderService';
+import { langGraphOrchestrator, graphEventEmitter, graphStateSync } from './langGraphOrchestrator';
 
 class OrchestratorService {
   private missions: Map<string, MissionModel> = new Map();
   private tasks: Map<string, TaskModel[]> = new Map();
   private events: Map<string, MissionEventModel[]> = new Map();
   private runningLoop: Map<string, boolean> = new Map();
+
+  constructor() {
+    // Connect LangGraph events and state updates to local in-memory arrays
+    graphEventEmitter.emit = (missionId, investigationId, type, message, agentType, taskId) => {
+      this.emitEvent(missionId, investigationId, type, message, agentType, taskId);
+    };
+
+    graphEventEmitter.isPaused = (missionId) => {
+      const m = this.missions.get(missionId);
+      return m?.status === 'PAUSED';
+    };
+
+    graphEventEmitter.isCancelled = (missionId) => {
+      const m = this.missions.get(missionId);
+      return m?.status === 'CANCELLED';
+    };
+
+    graphStateSync.sync = (missionId, plan) => {
+      this.tasks.set(missionId, plan);
+    };
+
+    // Background stale run checker (Requirement 22 & 23)
+    if (typeof window === 'undefined') {
+      setInterval(async () => {
+        try {
+          const { detectStaleInvestigations } = require('./checkpointManager');
+          await detectStaleInvestigations(120000); // 2 minutes stale threshold
+        } catch (err) {
+          console.error("[STALE CHECKER] Failed to run stale check:", err);
+        }
+      }, 60000); // Every 60 seconds
+    }
+  }
 
   async startMission(investigationId: string): Promise<MissionModel> {
     const inv = await dbRepository.getInvestigationById(investigationId);
@@ -59,11 +93,11 @@ class OrchestratorService {
     mission.currentPhase = 'DISCOVERY';
     await dbRepository.updateInvestigation(inv.id, {
       status: 'RUNNING',
-      orchestratorStatus: '● DISCOVERY',
-      orchestratorAction: 'Dispatching specialized sub-agents across parallel streams.',
+      orchestratorStatus: '● RUNNING',
+      orchestratorAction: 'LangGraph workflow initiated. Running parallel agents.',
     });
 
-    // Start background decision loop asynchronously
+    // Start background decision loop asynchronously (runs the LangGraph flow)
     this.runDecisionLoop(mission.id, inv.id);
 
     return mission;
@@ -96,17 +130,50 @@ class OrchestratorService {
   }
 
   async resumeMission(missionId: string): Promise<MissionModel | undefined> {
-    const m = this.missions.get(missionId);
-    if (m) {
-      m.status = 'RUNNING';
-      this.emitEvent(missionId, m.investigationId, 'MISSION_RESUMED', 'Orchestrator resumed mission execution.');
-      await dbRepository.updateInvestigation(m.investigationId, {
-        status: 'RUNNING',
-        orchestratorStatus: '● RUNNING',
-        orchestratorAction: 'Mission execution resumed.',
-      });
-      this.runDecisionLoop(missionId, m.investigationId);
+    let m = this.missions.get(missionId);
+    const investigationId = missionId.replace('mission-', '');
+    
+    const inv = await dbRepository.getInvestigationById(investigationId);
+    if (!inv) return undefined;
+
+    // Load checkpoint to verify it exists
+    const { getValidCheckpoint, resumeInvestigation } = require('./checkpointManager');
+    const cp = await getValidCheckpoint(investigationId);
+    if (!cp) {
+      console.warn(`[ORCHESTRATOR RESUME] No checkpoint found for ${investigationId}. Cannot resume.`);
+      return undefined;
     }
+
+    if (!m) {
+      // Recreate mission in-memory after server restart
+      m = {
+        id: missionId,
+        investigationId: inv.id,
+        objective: inv.objective,
+        status: 'RUNNING',
+        currentPhase: 'DISCOVERY',
+        progress: inv.progress || 0,
+        maxIterations: 5,
+        iterationCount: 0,
+        priority: inv.priority || 'HIGH',
+        createdBy: 'system',
+        createdAt: inv.createdAt,
+        startedAt: inv.createdAt,
+      };
+      this.missions.set(missionId, m);
+      this.tasks.set(missionId, cp?.state?.plan || []);
+      this.events.set(missionId, []);
+    }
+
+    m.status = 'RUNNING';
+    this.emitEvent(missionId, inv.id, 'MISSION_RESUMED', 'Orchestrator resumed mission execution from latest valid checkpoint.');
+    
+    // Call resumeInvestigation to clean and prepare state in MongoDB
+    const recoveredState = await resumeInvestigation(investigationId);
+    this.tasks.set(missionId, recoveredState.plan);
+
+    // Run execution loop
+    this.runDecisionLoop(missionId, inv.id);
     return m;
   }
 
@@ -157,202 +224,78 @@ class OrchestratorService {
     this.runningLoop.set(missionId, true);
 
     const inv = await dbRepository.getInvestigationById(investigationId);
-    if (!inv) return;
+    if (!inv) {
+      this.runningLoop.set(missionId, false);
+      return;
+    }
 
     try {
-      while (this.runningLoop.get(missionId)) {
-        const m = this.missions.get(missionId);
-        if (!m || m.status !== 'RUNNING') break;
+      // 1. Set up initial LangGraph state
+      const initialTasks = this.tasks.get(missionId) || [];
+      const initialState = {
+        investigationId,
+        userObjective: inv.objective,
+        targetEntity: inv.primaryEntities?.[0] || inv.title,
+        topic: inv.technology || '',
+        constraints: [],
+        plan: initialTasks,
+        completedTasks: [],
+        pendingTasks: initialTasks,
+        activeAgents: [],
+        agentResults: [],
+        evidence: [],
+        hypotheses: [],
+        verifiedHypotheses: {},
+        conflictingEvidence: [],
+        toolHistory: [],
+        toolFailures: [],
+        retryCounts: {},
+        resourceBudget: {
+          maxIterations: 5,
+          iterationCount: 0,
+          maxToolCalls: 15,
+          toolCallCount: 0,
+          maxRetries: 2,
+          totalRetries: 0,
+          executionTimeMs: 0,
+          maxConcurrentAgents: 3,
+        },
+        confidence: 75,
+        uncertainty: 'Low',
+        finalFindings: [],
+        recommendations: [],
+        errors: [],
+        openQuestions: [],
+        executionStatus: 'PLANNING' as const,
+        startedAt: new Date().toISOString(),
+      };
 
-        const tasksList = this.tasks.get(missionId) || [];
-        const completedTaskIds = new Set(tasksList.filter((t) => t.status === 'COMPLETED').map((t) => t.id));
-
-        // REAL PROGRESS: Calculated strictly as (completedTasks / totalTasks) * 100
-        const calcProgress = Math.round((completedTaskIds.size / Math.max(1, tasksList.length)) * 100);
-
-        // Find next eligible task (all dependencies completed, status QUEUED or PENDING)
-        const nextTask = tasksList.find((t) => {
-          if (t.status !== 'QUEUED' && t.status !== 'PENDING') return false;
-          return t.dependencies.every((depId) => completedTaskIds.has(depId));
-        });
-
-        if (!nextTask) {
-          const allFinished = tasksList.every((t) => t.status === 'COMPLETED' || t.status === 'CANCELLED' || t.status === 'FAILED');
-          if (allFinished) {
-            await this.finalizeMission(m, inv);
-            break;
-          }
-          await new Promise((r) => setTimeout(r, 400));
-          continue;
-        }
-
-        // Execute task via Agent Registry
-        nextTask.status = 'RUNNING';
-        nextTask.startedAt = new Date().toISOString();
-        this.emitEvent(missionId, investigationId, 'TASK_STARTED', `Started execution for ${nextTask.title}`, nextTask.agentType, nextTask.id);
-
-        await dbRepository.updateInvestigation(investigationId, {
-          progress: Math.min(95, calcProgress),
-          orchestratorStatus: `● ${nextTask.agentType}`,
-          orchestratorAction: nextTask.description,
-        });
-
-        // Mark agent as active in memory
-        await dbRepository.updateInvestigationMemory(investigationId, { activeAgent: nextTask.agentType });
-
-        const agentRunner = defaultAgentRegistry.getAgent(nextTask.agentType);
-        if (agentRunner) {
-          // Build compact, relevant context for this specific agent type
-          const agentContext = await defaultContextBuilderService.buildAgentContext(
-            inv, m, nextTask, nextTask.agentType
-          );
-
-          const result = await agentRunner.run(agentContext);
-
-          // Persist generated evidence items to database
-          if (result.evidenceItems && result.evidenceItems.length > 0) {
-            for (const item of result.evidenceItems) {
-              await dbRepository.saveEvidenceItem(item);
-            }
-            nextTask.evidenceIds = result.evidenceItems.map((e) => e.id);
-            this.emitEvent(missionId, investigationId, 'EVIDENCE_FOUND', `${agentRunner.name} discovered ${result.evidenceItems.length} structured evidence item(s).`, nextTask.agentType, nextTask.id);
-          }
-
-          // Evaluate evidence importance + record agent step into persistent memory
-          const importantEvidenceIds = result.evidenceItems
-            .filter((e) => defaultContextBuilderService.evaluateEvidenceImportance(e, inv).isImportant)
-            .map((e) => e.id);
-
-          const relevantCtx = await dbRepository.getRelevantContext(investigationId, nextTask.agentType);
-          await defaultContextBuilderService.recordAgentStep(
-            investigationId,
-            m.id,
-            nextTask,
-            result,
-            importantEvidenceIds,
-            relevantCtx.keyFindings.length,
-            relevantCtx.openQuestions.length,
-            relevantCtx.targetEntity,
-            relevantCtx.objective || inv.objective
-          );
-
-          // Update investigation long-term memory summary
-          await defaultContextBuilderService.updateInvestigationMemory(
-            investigationId,
-            inv,
-            nextTask.agentType,
-            result.evidenceItems
-          );
-
-          // Dynamic Signal Generation during SIGNAL Task Execution
-          if (nextTask.agentType === 'SIGNAL') {
-            m.currentPhase = 'CORRELATION';
-            const contextRelationships = await dbRepository.getRelationshipsByInvestigationId(investigationId);
-            const currentEvidence = await dbRepository.getEvidenceByInvestigationId(investigationId);
-            const currentEntities = await dbRepository.getEntitiesByInvestigationId(investigationId);
-
-            const generatedSignals = defaultSignalEngine.processInvestigationSignals(
-              currentEvidence,
-              currentEntities,
-              contextRelationships,
-              inv
-            );
-
-            await dbRepository.updateInvestigation(investigationId, {
-              signals: generatedSignals,
-              signalsCount: generatedSignals.length,
-            });
-
-            this.emitEvent(
-              missionId,
-              investigationId,
-              'SIGNAL_DETECTED',
-              `Signal Engine correlated ${generatedSignals.length} high-confidence strategic signal(s).`,
-              'SIGNAL',
-              nextTask.id
-            );
-          }
-
-          nextTask.status = 'COMPLETED';
-          nextTask.completedAt = new Date().toISOString();
-          this.emitEvent(missionId, investigationId, 'TASK_COMPLETED', `Completed task ${nextTask.title}`, nextTask.agentType, nextTask.id);
-
-          // STAGE 2.9 AUTONOMOUS AGENTIC REASONING EVALUATION
-          const outcome = await defaultAutonomousController.evaluateAndDecide(inv, m, tasksList);
-          if (outcome.decision === 'FOLLOW_UP' && outcome.newTasks.length > 0) {
-            tasksList.push(...outcome.newTasks);
-            this.tasks.set(missionId, tasksList);
-            for (const newTask of outcome.newTasks) {
-              this.emitEvent(
-                missionId,
-                investigationId,
-                'FOLLOWUP_CREATED',
-                `Autonomous Controller created follow-up task: ${newTask.title}`,
-                newTask.agentType,
-                newTask.id
-              );
-            }
-          }
-        } else {
-          nextTask.status = 'COMPLETED';
-        }
-
-        await new Promise((r) => setTimeout(r, 600));
+      // Check if a saved checkpoint exists in MongoDB to resume from it
+      let stateToUse = initialState;
+      if (inv.metadata?.langGraph) {
+        stateToUse = { ...initialState, ...inv.metadata.langGraph };
       }
+
+      // Sync tasks map before running the state graph
+      this.tasks.set(missionId, stateToUse.plan);
+
+      // 2. Invoke the compiled LangGraph workflow
+      const finalState = await langGraphOrchestrator.invoke(stateToUse);
+
+      // 3. Sync tasks and mission state on completion
+      this.tasks.set(missionId, finalState.plan);
+      const m = this.missions.get(missionId);
+      if (m) {
+        m.status = finalState.executionStatus === 'COMPLETED' ? 'COMPLETED' : 'FAILED';
+        m.progress = 100;
+        m.completedAt = new Date().toISOString();
+      }
+    } catch (err: any) {
+      console.error("[ORCHESTRATOR ERROR] LangGraph execution failed:", err);
+      this.emitEvent(missionId, investigationId, 'TASK_FAILED', `LangGraph loop exception: ${err.message || err}`);
     } finally {
       this.runningLoop.set(missionId, false);
     }
-  }
-
-  private async finalizeMission(mission: MissionModel, inv: InvestigationModel) {
-    this.emitEvent(mission.id, inv.id, 'SYNTHESIS_STARTED', 'Orchestrator running SynthesisEngine for executive brief generation.', 'SYNTHESIS');
-    mission.currentPhase = 'SYNTHESIS';
-
-    const finalEvidence = await dbRepository.getEvidenceByInvestigationId(inv.id);
-    const finalSignals = await dbRepository.getSignalsByInvestigationId(inv.id);
-    const finalEntities = await dbRepository.getEntitiesByInvestigationId(inv.id);
-    const finalRelationships = await dbRepository.getRelationshipsByInvestigationId(inv.id);
-
-    // Build evidence-backed Graph Nodes and Edges
-    await defaultRelationshipDiscoveryEngine.discoverGraphFromEvidence(inv.id, finalEvidence, finalEntities);
-
-    // Run AI Synthesis Engine
-    const intelligence = await defaultSynthesisEngine.synthesizeIntelligence(
-      inv,
-      finalSignals,
-      finalEvidence,
-      finalEntities,
-      finalRelationships
-    );
-
-    // Build Executive Brief Version
-    await defaultExecutiveBriefVersioner.createOrUpdateBrief(inv, finalEvidence, finalSignals);
-
-    mission.status = 'COMPLETED';
-    mission.currentPhase = 'COMPLETED';
-    mission.progress = 100;
-    mission.completedAt = new Date().toISOString();
-
-    await dbRepository.updateInvestigation(inv.id, {
-      status: 'COMPLETED',
-      progress: 100,
-      confidence: intelligence.confidence,
-      threatScore: 68,
-      opportunityScore: 74,
-      signalVelocity: 42,
-      evidenceCount: finalEvidence.length,
-      signalsCount: finalSignals.length,
-      sourcesCount: finalEvidence.length > 0 ? 5 : 0,
-      activeAgentsCount: 7,
-      evidence: finalEvidence,
-      signals: finalSignals,
-      intelligence,
-      orchestratorStatus: '● COMPLETED',
-      orchestratorAction: 'Mission complete. Unified intelligence assessment ready.',
-      executiveSummary: intelligence.executiveSummary,
-    });
-
-    this.emitEvent(mission.id, inv.id, 'MISSION_COMPLETED', 'Orchestrator finalized mission. Executive intelligence assessment generated and saved.');
   }
 }
 

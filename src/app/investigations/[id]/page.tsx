@@ -16,7 +16,8 @@ import {
   Check,
   Pause,
   Play,
-  XCircle
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { StatusBadge, ConfidenceIndicator } from '@/components/ui/Indicators';
 import { ActivityFeed, ActivityItem } from '@/components/ui/Feeds';
@@ -29,6 +30,15 @@ import { ToolSelectionPanel } from '@/components/investigation/ToolSelectionPane
 import { InvestigationMemoryPanel } from '@/components/investigation/InvestigationMemoryPanel';
 import { AgentNetworkPanel } from '@/components/investigation/AgentNetworkPanel';
 import { KnowledgeGapPanel } from '@/components/investigation/KnowledgeGapPanel';
+import { DynamicMissionPlan } from '@/components/investigation/DynamicMissionPlan';
+import { SelfEvaluationPanel } from '@/components/investigation/SelfEvaluationPanel';
+import { HypothesisPanel } from '@/components/investigation/HypothesisPanel';
+import { ConclusionRevisionPanel } from '@/components/investigation/ConclusionRevisionPanel';
+import { ExecutionBudgetPanel } from '@/components/investigation/ExecutionBudgetPanel';
+import { ActiveTaskQueuePanel } from '@/components/investigation/ActiveTaskQueuePanel';
+import { LoopDeadlockNoticePanel } from '@/components/investigation/LoopDeadlockNoticePanel';
+import { DecisionExplanationStream } from '@/components/investigation/DecisionExplanationStream';
+import { InvestigationFlowGraph } from '@/components/investigation/InvestigationFlowGraph';
 
 export default function LiveInvestigationWorkspace() {
   const params = useParams();
@@ -41,6 +51,9 @@ export default function LiveInvestigationWorkspace() {
   const [gaps, setGaps] = useState<any[]>([]);
   const [decisions, setDecisions] = useState<any[]>([]);
   const [signals, setSignals] = useState<any[]>([]);
+  const [selfEvaluation, setSelfEvaluation] = useState<any>(null);
+  const [hypotheses, setHypotheses] = useState<any[]>([]);
+  const [conclusions, setConclusions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchMissionState = useCallback(async () => {
@@ -66,6 +79,19 @@ export default function LiveInvestigationWorkspace() {
 
       const sigList = await investigationsApi.getSignals(id);
       if (sigList) setSignals(sigList);
+
+      // Stage 5G: Self-Evaluation & Hypothesis API calls
+      fetch(`/api/investigations/${id}/evaluation`).then((res) => res.json()).then((res) => {
+        if (res.data?.latest) setSelfEvaluation(res.data.latest);
+      }).catch(() => {});
+
+      fetch(`/api/investigations/${id}/hypotheses`).then((res) => res.json()).then((res) => {
+        if (res.data) setHypotheses(res.data);
+      }).catch(() => {});
+
+      fetch(`/api/investigations/${id}/conclusions`).then((res) => res.json()).then((res) => {
+        if (res.data) setConclusions(res.data);
+      }).catch(() => {});
     } catch {
       // Clean error handling
     } finally {
@@ -183,6 +209,26 @@ export default function LiveInvestigationWorkspace() {
     fetchMissionState();
   };
 
+  const handleToggleAdversarial = async (flag: string) => {
+    if (!investigation) return;
+    const currentMetadata = investigation.metadata || {};
+    const updatedMetadata = {
+      ...currentMetadata,
+      [flag]: !currentMetadata[flag],
+    };
+    
+    setInvestigation({
+      ...investigation,
+      metadata: updatedMetadata,
+    });
+    
+    try {
+      await investigationsApi.update(id, { metadata: updatedMetadata });
+    } catch {
+      // Bypassed
+    }
+  };
+
   const progressSteps = [
     { label: 'Objective', completed: true },
     { label: 'Planner Tasks', completed: tasks.length > 0 },
@@ -277,11 +323,66 @@ export default function LiveInvestigationWorkspace() {
         </div>
       </div>
 
+      {/* Resumable Investigation Banner (Requirement 18) */}
+      {investigation.status === 'INTERRUPTED' && (
+        <div className="glass-level-3 p-6 border-l-4 border-l-red-500 bg-red-50/5 space-y-4 rounded-2xl shadow-lg font-mono text-xs">
+          <div className="flex items-center justify-between border-b border-red-200/50 pb-3">
+            <h3 className="text-sm font-extrabold text-[#DC2626] uppercase tracking-wider flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500 animate-pulse" />
+              INVESTIGATION INTERRUPTED
+            </h3>
+            <span className="text-[10px] bg-red-100 text-red-800 font-bold px-2.5 py-0.5 rounded border border-red-300">
+              RESUMABLE STATE DETECTED
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-[#4B5563] text-[11px]">
+            <div>
+              <span className="text-gray-500 text-[10px] block font-bold">LAST CHECKPOINT</span>
+              <span className="text-[#111827] font-bold text-sm">
+                {investigation.metadata?.lastCheckpointTimestamp
+                  ? new Date(String(investigation.metadata.lastCheckpointTimestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                  : 'N/A'}
+              </span>
+              <span className="text-[10px] text-gray-400 block mt-0.5 font-mono">
+                Node: {String(investigation.metadata?.lastCheckpointNode || 'Unknown')}
+              </span>
+            </div>
+
+            <div>
+              <span className="text-gray-500 text-[10px] block font-bold">COMPLETED TASKS</span>
+              <span className="text-emerald-700 font-extrabold text-sm block mt-1">
+                {tasks.filter(t => t.status === 'COMPLETED' || t.status === 'PARTIAL').length} tasks
+              </span>
+            </div>
+
+            <div>
+              <span className="text-gray-500 text-[10px] block font-bold">PENDING / INTERRUPTED</span>
+              <span className="text-amber-700 font-extrabold text-sm block mt-1">
+                {tasks.filter(t => t.status === 'PENDING' || t.status === 'QUEUED' || t.status === 'INTERRUPTED').length} tasks
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-2 flex items-center justify-end">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleResume}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-mono text-xs font-extrabold px-6 py-3 rounded-xl shadow-md cursor-pointer transition-all border border-red-500/20"
+            >
+              <Zap className="w-4 h-4 animate-bounce" />
+              <span>RESUME INVESTIGATION</span>
+            </motion.button>
+          </div>
+        </div>
+      )}
+
       {/* RADARX ORCHESTRATOR Live Status Banner + MISSION CONTROLS */}
       <div className="glass-level-3 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-l-4 border-l-[#D4AF37]">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#D4AF37]/20 border border-[#D4AF37]/40 flex items-center justify-center shrink-0">
-            <Cpu className={`w-5 h-5 text-[#8C6D13] ${!isComplete && !isPaused ? 'animate-pulse' : ''}`} />
+            <Cpu className={`w-5 h-5 text-[#8C6D13] ${!isComplete && !isPaused && investigation.status !== 'INTERRUPTED' ? 'animate-pulse' : ''}`} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -300,6 +401,26 @@ export default function LiveInvestigationWorkspace() {
             <p className="text-xs font-mono text-[#8C6D13] mt-1 font-semibold">
               Current action: "{investigation.orchestratorAction || 'Orchestrating agent network.'}"
             </p>
+
+            {/* Subtle Checkpoint Status Indicator (Requirement 19) */}
+            {Boolean(investigation.metadata?.lastCheckpointId) && (
+              <div className="mt-2 text-[10px] font-mono text-emerald-700 flex flex-wrap items-center gap-x-3 gap-y-1 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg w-max shadow-2xs">
+                <span className="font-extrabold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                  ● CHECKPOINT SAVED ({String(investigation.metadata?.lastCheckpointId || '')})
+                </span>
+                <span className="text-gray-300">|</span>
+                <span>
+                  Last checkpoint: {new Date(String(investigation.metadata?.lastCheckpointTimestamp || '')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+                <span className="text-gray-300">|</span>
+                <span>
+                  Node: {String(investigation.metadata?.lastCheckpointNode || '')}
+                </span>
+                <span className="text-gray-300">|</span>
+                <span className="font-extrabold text-emerald-800 bg-emerald-500/20 px-1.5 py-0.2 rounded">Recoverable</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -307,10 +428,10 @@ export default function LiveInvestigationWorkspace() {
         <div className="flex items-center gap-2 shrink-0">
           {!isComplete && (
             <>
-              {isPaused ? (
+              {isPaused || investigation.status === 'INTERRUPTED' ? (
                 <button
                   onClick={handleResume}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#059669]/15 border border-[#059669]/35 text-[#047857] text-xs font-mono font-bold hover:bg-[#059669]/25 transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#059669]/15 border border-[#059669]/35 text-[#047857] text-xs font-mono font-bold hover:bg-[#059669]/25 transition-all cursor-pointer shadow-2xs"
                 >
                   <Play className="w-3.5 h-3.5" />
                   <span>RESUME</span>
@@ -318,7 +439,7 @@ export default function LiveInvestigationWorkspace() {
               ) : (
                 <button
                   onClick={handlePause}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#D97706]/15 border border-[#D97706]/35 text-[#B45309] text-xs font-mono font-bold hover:bg-[#D97706]/25 transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#D97706]/15 border border-[#D97706]/35 text-[#B45309] text-xs font-mono font-bold hover:bg-[#D97706]/25 transition-all cursor-pointer shadow-2xs"
                 >
                   <Pause className="w-3.5 h-3.5" />
                   <span>PAUSE</span>
@@ -327,7 +448,7 @@ export default function LiveInvestigationWorkspace() {
 
               <button
                 onClick={handleCancel}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#991B1B]/15 border border-[#991B1B]/35 text-[#991B1B] text-xs font-mono font-bold hover:bg-[#991B1B]/25 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#991B1B]/15 border border-[#991B1B]/35 text-[#991B1B] text-xs font-mono font-bold hover:bg-[#991B1B]/25 transition-all cursor-pointer shadow-2xs"
               >
                 <XCircle className="w-3.5 h-3.5" />
                 <span>CANCEL</span>
@@ -336,65 +457,109 @@ export default function LiveInvestigationWorkspace() {
           )}
 
           <div className="flex items-center gap-2 text-[11px] font-mono text-[#4B5563] bg-white/80 px-3 py-1.5 rounded-xl border border-[#E5E7EB] shrink-0 font-semibold shadow-2xs">
-            <span className={`w-2 h-2 rounded-full ${!isComplete && !isPaused ? 'bg-[#059669] animate-ping' : 'bg-[#059669]'}`} />
-            <span>{isPaused ? 'MISSION PAUSED' : isComplete ? 'MISSION COMPLETED' : 'ORCHESTRATOR ACTIVE'}</span>
+            <span className={`w-2 h-2 rounded-full ${!isComplete && !isPaused && investigation.status !== 'INTERRUPTED' ? 'bg-[#059669] animate-ping' : 'bg-[#059669]'}`} />
+            <span>{isPaused ? 'MISSION PAUSED' : investigation.status === 'INTERRUPTED' ? 'MISSION INTERRUPTED' : isComplete ? 'MISSION COMPLETED' : 'ORCHESTRATOR ACTIVE'}</span>
           </div>
         </div>
       </div>
 
-      {/* Planned Tasks Decomposition with Dependencies */}
+      {/* Dynamic Mission Plan & Planner Decomposition */}
       {tasks.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
-            <Shield className="w-4 h-4 text-[#8C6D13]" />
-            MISSION TASK DECOMPOSITION & DEPENDENCY QUEUE ({tasks.length})
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {tasks.map((task, idx) => (
-              <div
-                key={`${task.id}-${idx}`}
-                className={`p-3.5 rounded-xl border text-xs font-mono space-y-2 shadow-2xs transition-all ${
-                  task.status === 'RUNNING'
-                    ? 'bg-[#D4AF37]/15 border-[#D4AF37]/45 shadow-sm'
-                    : task.status === 'COMPLETED'
-                    ? 'bg-white border-[#059669]/30'
-                    : 'bg-white/80 border-[#E5E7EB]'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-[#111827] truncate">{task.title}</span>
-                  <span
-                    className={`text-[9px] font-extrabold px-2 py-0.5 rounded ${
-                      task.status === 'COMPLETED'
-                        ? 'bg-[#059669]/15 text-[#047857]'
-                        : task.status === 'RUNNING'
-                        ? 'bg-[#D4AF37]/25 text-[#7A5E0A]'
-                        : 'bg-[#F3F4F6] text-[#6B7280]'
-                    }`}
-                  >
-                    {task.status}
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#4B5563] font-sans leading-tight line-clamp-2">
-                  {task.description}
-                </p>
-                {task.dependencies.length > 0 && (
-                  <div className="text-[9px] text-[#6B7280] pt-1 border-t border-[#E5E7EB]">
-                    Depends on: {task.dependencies.join(', ')}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <DynamicMissionPlan tasks={tasks} investigation={investigation} />
       )}
 
-      {/* Additive Mandatory Capabilities Panels */}
+      {/* Adversarial Testing & Fault Injection Console */}
+      <div className="glass-level-2 p-5 space-y-4 border border-red-200/50 shadow-md font-mono text-xs bg-red-50/5 rounded-2xl">
+        <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
+          <h3 className="font-extrabold text-[#111827] uppercase tracking-wider flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" />
+            ADVERSARIAL FAULT INJECTION & RECOVERY TESTING CONSOLE
+          </h3>
+          <span className="text-[9px] bg-red-100 text-red-800 font-extrabold px-2.5 py-0.5 rounded border border-red-300">
+            HACKATHON DESTRUCTIVE TESTS
+          </span>
+        </div>
+        
+        <p className="text-[11px] font-sans text-[#4B5563] leading-relaxed">
+          Select fault scenarios below to simulate provider outages, evidence conflicts, and resource bounds. 
+          The LangGraph engine will autonomously adapt, retry, trigger fallbacks, and update confidence values without crashing.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-1 text-[11px] font-sans">
+          <label className="flex items-center gap-3.5 p-3.5 bg-white border border-[#E5E7EB] rounded-2xl cursor-pointer hover:bg-red-50/10 transition-all">
+            <input
+              type="checkbox"
+              checked={!!investigation.metadata?.forceResearchFail}
+              onChange={() => handleToggleAdversarial('forceResearchFail')}
+              className="w-4 h-4 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+            />
+            <div>
+              <span className="font-bold text-[#111827] block font-mono text-[10px]">FORCE RESEARCH FAIL</span>
+              <span className="text-[10px] text-[#6B7280] block">Forces Crossref API timeout/degradation.</span>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3.5 p-3.5 bg-white border border-[#E5E7EB] rounded-2xl cursor-pointer hover:bg-red-50/10 transition-all">
+            <input
+              type="checkbox"
+              checked={!!investigation.metadata?.forcePatentTimeout}
+              onChange={() => handleToggleAdversarial('forcePatentTimeout')}
+              className="w-4 h-4 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+            />
+            <div>
+              <span className="font-bold text-[#111827] block font-mono text-[10px]">FORCE PATENT TIMEOUT</span>
+              <span className="text-[10px] text-[#6B7280] block">Forces USPTO timeout. Triggers Web fallback.</span>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3.5 p-3.5 bg-white border border-[#E5E7EB] rounded-2xl cursor-pointer hover:bg-red-50/10 transition-all">
+            <input
+              type="checkbox"
+              checked={!!investigation.metadata?.injectConflictingEvidence}
+              onChange={() => handleToggleAdversarial('injectConflictingEvidence')}
+              className="w-4 h-4 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+            />
+            <div>
+              <span className="font-bold text-[#111827] block font-mono text-[10px]">INJECT CONFLICTING EVIDENCE</span>
+              <span className="text-[10px] text-[#6B7280] block">Triggers Conflict Resolution agent logic.</span>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3.5 p-3.5 bg-white border border-[#E5E7EB] rounded-2xl cursor-pointer hover:bg-red-50/10 transition-all">
+            <input
+              type="checkbox"
+              checked={!!investigation.metadata?.forceLowConfidence}
+              onChange={() => handleToggleAdversarial('forceLowConfidence')}
+              className="w-4 h-4 text-red-600 rounded focus:ring-red-500 cursor-pointer"
+            />
+            <div>
+              <span className="font-bold text-[#111827] block font-mono text-[10px]">FORCE CRITIC REPLAN</span>
+              <span className="text-[10px] text-[#6B7280] block">Forces critic rejection. Triggers replan cycle.</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* Stage 5I Master LangGraph Visual Flow */}
+      <InvestigationFlowGraph tasks={tasks} investigation={investigation} />
+
+      {/* Stage 5H Resource Budget, Active Task Queue & Loop/Deadlock Notices */}
+      <ExecutionBudgetPanel investigation={investigation} />
+      <LoopDeadlockNoticePanel investigation={investigation} />
+      <ActiveTaskQueuePanel tasks={tasks} />
+
+      {/* Stage 5G Self-Evaluation, Hypotheses & Conclusion Revisions */}
+      <SelfEvaluationPanel evaluation={selfEvaluation} isEvaluating={investigation.orchestratorStatus?.includes('CRITIC') || investigation.orchestratorStatus?.includes('SELF_EVALUATION')} />
+      <ConclusionRevisionPanel versions={conclusions} />
+      <HypothesisPanel hypotheses={hypotheses} />
+
+      {/* Stage 5I Autonomous Decision Explanation Stream */}
+      <DecisionExplanationStream decisions={decisions} />
+
       <InvestigationTracePanel events={events} decisions={decisions} />
       <ToolSelectionPanel evidence={evidenceList} />
       <InvestigationMemoryPanel investigationId={id} />
-      <AgentNetworkPanel tasks={tasks} />
+      <AgentNetworkPanel tasks={tasks} investigation={investigation} />
       <KnowledgeGapPanel gaps={gaps} tasks={tasks} />
 
       {/* Grid: Mission Event Log & Evidence Stream */}

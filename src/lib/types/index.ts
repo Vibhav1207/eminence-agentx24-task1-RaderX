@@ -35,7 +35,8 @@ export type InvestigationStatus =
   | 'SYNTHESIZING'
   | 'COMPLETED'
   | 'FAILED'
-  | 'PAUSED';
+  | 'PAUSED'
+  | 'INTERRUPTED';
 
 // Agent Types
 export type AgentType =
@@ -131,6 +132,19 @@ export interface AgentModel {
 }
 
 // 3. Evidence Item Model
+export type EvidenceStatus = 'ACTIVE' | 'SUPERSEDED' | 'RETRACTED' | 'DISPUTED' | 'CORROBORATED';
+
+export interface EvidenceProvenance {
+  provider: string;          // e.g. 'Crossref REST API', 'USPTO Patent Index'
+  organization?: string;     // Publishing org or assignee
+  doi?: string;              // Digital Object Identifier if academic
+  retrievalUrl?: string;     // Exact URL retrieved from
+  retrievedAt: string;       // ISO timestamp of retrieval
+  primaryOrSecondary: 'PRIMARY' | 'SECONDARY' | 'AGGREGATED' | 'UNKNOWN';
+  peerReviewed?: boolean;    // True if academic peer-reviewed source
+  officialAnnouncement?: boolean; // True if direct company announcement
+}
+
 export interface EvidenceModel {
   id: string;
   investigationId: string;
@@ -138,6 +152,8 @@ export interface EvidenceModel {
   agentId?: string;
   title: string;
   summary: string;
+  // Stage 5F: Normalized claim extracted from this evidence
+  claim?: string;
   content?: string;
   url?: string;
   publishedAt?: string;
@@ -156,6 +172,15 @@ export interface EvidenceModel {
   journal?: string[];
   metrics?: Array<{ label: string; value: string }>;
   metadata?: Record<string, unknown>;
+  // Stage 5F: Provenance tracking
+  provenance?: EvidenceProvenance;
+  // Stage 5F: Content hash for deduplication
+  contentHash?: string;
+  // Stage 5F: Linked claim IDs
+  supportingClaimIds?: string[];
+  contradictingClaimIds?: string[];
+  // Stage 5F: Lifecycle status
+  status?: EvidenceStatus;
   createdAt: string;
 }
 
@@ -601,15 +626,80 @@ export interface KnowledgeGapModel {
   resolvedAt?: string;
 }
 
+// Stage 5F: Contradiction conflict classification
+export type ConflictType =
+  | 'DIRECT'         // Claims flatly contradict each other
+  | 'NUMERIC'        // Different numbers for the same metric
+  | 'TEMPORAL'       // Same claim at different time scopes
+  | 'SCOPE'          // Different scope/geography/segment
+  | 'ENTITY'         // Confusion between different entities
+  | 'DEFINITION'     // Different definitions of the same term
+  | 'APPARENT';      // Looks like contradiction but is not
+
+export type ConflictResolutionStrategy =
+  | 'SOURCE_QUALITY_WINS'   // Higher quality source preferred
+  | 'TEMPORAL_WINS'         // Newer evidence preferred for dynamic facts
+  | 'SCOPE_CLARIFIED'       // Apparent conflict resolved by scope difference
+  | 'CORROBORATION'         // Third-party evidence confirmed one side
+  | 'PRESERVED_UNCERTAINTY' // Could not resolve — uncertainty preserved
+  | 'REFUTED';              // One claim definitively disproven
+
 export interface ContradictionModel {
   id: string;
   investigationId: string;
-  claims: string[];
-  evidenceIds: string[];
+  claims: string[];          // The two conflicting claim statements
+  evidenceIds: string[];     // Evidence items supporting each claim
+  claimIds?: string[];       // Linked ClaimModel IDs
   severity: ImpactLevel;
+  conflictType?: ConflictType;
   status: 'UNRESOLVED' | 'INVESTIGATING' | 'RESOLVED';
-  resolution?: string;
+  resolutionStrategy?: ConflictResolutionStrategy;
+  resolution?: string;       // Human-readable resolution explanation
+  unresolvedReason?: string; // Why it could not be resolved (if applicable)
+  confidenceDelta?: number;  // How much this affected overall confidence
   createdAt: string;
+  resolvedAt?: string;
+}
+
+// ==================================================
+// STAGE 5F: CLAIM MODEL — Normalized semantic claim representation
+// ==================================================
+export type ClaimStatus =
+  | 'SUPPORTED'            // Evidence from multiple sources confirms this
+  | 'PARTIALLY_SUPPORTED'  // Some evidence supports, but incomplete
+  | 'CONTRADICTED'         // Another source directly contradicts this
+  | 'UNRESOLVED'           // Conflict detected but resolution inconclusive
+  | 'INSUFFICIENT_EVIDENCE'// Not enough evidence to assess
+  | 'REFUTED';             // Evidence conclusively disproves this
+
+export interface ClaimModel {
+  id: string;
+  investigationId: string;
+  // The normalized, human-readable claim statement
+  statement: string;
+  // Topic/entity this claim is about (e.g. "NVIDIA AI infrastructure spending")
+  topic: string;
+  // Entities referenced in the claim
+  entities: string[];
+  // Evidence that mentions this claim
+  evidenceIds: string[];
+  // Evidence specifically supporting this claim
+  supportingEvidenceIds: string[];
+  // Evidence specifically contradicting this claim
+  contradictingEvidenceIds: string[];
+  // Claim confidence 0-100 based on source quality + corroboration
+  confidence: number;
+  status: ClaimStatus;
+  // Temporal context: the period the claim applies to (e.g. "2026-Q1")
+  temporalScope?: string;
+  // Geographic/segment scope (e.g. "US market", "enterprise segment")
+  scopeNote?: string;
+  // Which contradiction ID this is linked to (if any)
+  contradictionId?: string;
+  // Source quality score 0-100 (weighted average of contributing evidence)
+  sourceQualityScore?: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export type DecisionType =
@@ -622,12 +712,24 @@ export type DecisionType =
   | 'STOP'
   | 'ABORT';
 
+export type AutonomousStopReason =
+  | 'SUFFICIENT_EVIDENCE'
+  | 'OBJECTIVE_SATISFIED'
+  | 'RESOURCE_LIMIT'
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'UNRESOLVED_CRITICAL_CONFLICT'
+  | 'MAX_ITERATIONS'
+  | 'UNRECOVERABLE_FAILURE';
+
 export interface DecisionLogModel {
   id: string;
   investigationId: string;
   decision: DecisionType;
   reason: string;
   trigger: string;
+  agentType?: AgentType;
+  relatedTaskId?: string;
+  decisionExplanation?: string;
   createdTaskIds: string[];
   resolvedGapIds: string[];
   timestamp: string;
@@ -862,7 +964,12 @@ export type TaskStatus =
   | 'COMPLETED'
   | 'FAILED'
   | 'BLOCKED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'INTERRUPTED'
+  | 'RETRYING'
+  | 'PARTIAL'
+  | 'VERIFYING'
+  | 'REPLANNED';
 
 export interface TaskModel {
   id: string;
@@ -883,6 +990,10 @@ export interface TaskModel {
   retryCount: number;
   maxRetries: number;
   parentTaskId?: string;
+  whyThisTask?: string;
+  infoGain?: string;
+  verificationRequired?: boolean;
+  skipReason?: string;
 }
 
 export interface AgentResultModel {
@@ -928,7 +1039,24 @@ export type MissionEventType =
   | 'MISSION_COMPLETED'
   | 'MISSION_PAUSED'
   | 'MISSION_RESUMED'
-  | 'MISSION_CANCELLED';
+  | 'MISSION_CANCELLED'
+  | 'LOOP_DETECTED'
+  | 'TOOL_FAILURE'
+  | 'FALLBACK_UNAVAILABLE'
+  | 'RECOVERED'
+  | 'REPLANNING'
+  | 'CONTRADICTION_DETECTED'
+  | 'CORRELATING'
+  | 'CRITIC'
+  | 'ROUTER_DECISION'
+  // Stage 5G: Self-Evaluation events
+  | 'SELF_EVALUATION_STARTED'
+  | 'SELF_EVALUATION_COMPLETE'
+  | 'HYPOTHESIS_FORMED'
+  | 'CLAIM_GAP_DETECTED'
+  | 'VERIFICATION_REQUESTED'
+  | 'CONCLUSION_UPDATED'
+  | 'REASONING_LIMIT_REACHED';
 
 export interface MissionEventModel {
   id: string;
@@ -1020,4 +1148,124 @@ export interface CoverageAssessmentModel {
   overallConfidence: number;
   missingAreas: string[];
   detectedConflicts: Array<{ topic: string; claimA: string; claimB: string }>;
+}
+
+// ==================================================
+// STAGE 5G: SELF-EVALUATION + HYPOTHESIS MODELS
+// ==================================================
+
+export type HypothesisStatus =
+  | 'SUPPORTED'
+  | 'PARTIALLY_SUPPORTED'
+  | 'UNSUPPORTED'
+  | 'CONTRADICTED'
+  | 'UNRESOLVED';
+
+export interface HypothesisModel {
+  id: string;
+  investigationId: string;
+  /** The explicit, falsifiable hypothesis statement */
+  statement: string;
+  supportingEvidenceIds: string[];
+  contradictingEvidenceIds: string[];
+  /** 0–100 confidence computed from source quality + corroboration */
+  confidence: number;
+  status: HypothesisStatus;
+  /** Task IDs generated to verify this hypothesis */
+  verificationTasks: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type EvidenceStrength = 'STRONG' | 'MEDIUM' | 'WEAK' | 'NONE';
+
+export type AssumptionLabel = 'SUPPORTED' | 'PLAUSIBLE' | 'SPECULATIVE' | 'UNSUPPORTED';
+
+export interface ClaimEvaluation {
+  claimId: string;
+  statement: string;
+  /** Total evidence items referencing this claim */
+  evidenceCount: number;
+  /** Unique providers/domains (independent source count) */
+  independentSourceCount: number;
+  /** Primary source count (patent, peer-reviewed, official announcement) */
+  primarySourceCount: number;
+  /** Contradiction count touching this claim */
+  conflictCount: number;
+  status: ClaimStatus;
+  confidence: number;
+  /** True if statement uses inferential/predictive language */
+  isAssumption: boolean;
+  assumptionLabel?: AssumptionLabel;
+  /** Source types absent for this claim */
+  missingEvidenceTypes: SourceType[];
+  /** Would more investigation materially improve this claim? */
+  informationGain: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export type SelfEvaluationStatus =
+  | 'PASS'
+  | 'NEEDS_VERIFICATION'
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'CONTRADICTED'
+  | 'REPLAN_REQUIRED'
+  | 'FAILED';
+
+export interface SelfEvaluationResult {
+  id: string;
+  investigationId: string;
+  iterationNumber: number;
+  overallStatus: SelfEvaluationStatus;
+  confidence: number;
+  evidenceStrength: EvidenceStrength;
+  /** 0–100 percentage: (supported + 0.5×partial) / totalMajorClaims */
+  evidenceCoverage: number;
+  totalMajorClaims: number;
+  supportedClaims: number;
+  partiallySupportedClaims: number;
+  /** Statements of claims that have no supporting evidence */
+  unsupportedClaims: string[];
+  /** Inferential claims that lack direct evidence support */
+  unverifiedAssumptions: string[];
+  /** Contradiction IDs that are still unresolved */
+  conflicts: string[];
+  /** Human-readable descriptions of what evidence is missing */
+  missingEvidence: string[];
+  /** Structured actions recommended as next steps */
+  recommendedActions: string[];
+  /** Per-claim breakdown */
+  claimEvaluations: ClaimEvaluation[];
+  /** Concise explanation of the overall evaluation decision */
+  reasoning: string;
+  shouldReplan: boolean;
+  /** True when MAX_EVALUATION_ROUNDS was reached */
+  reasoningLimitReached?: boolean;
+  createdAt: string;
+}
+
+export interface ConclusionVersion {
+  id: string;
+  investigationId: string;
+  /** Monotonically increasing — 1 = original, 2+ = revised */
+  version: number;
+  conclusion: string;
+  confidence: number;
+  /** Which SelfEvaluationResult triggered this version */
+  evaluationId: string;
+  /** Why the conclusion was revised */
+  reason: string;
+  createdAt: string;
+}
+
+export interface VerificationTaskRequest {
+  id: string;
+  investigationId: string;
+  hypothesisId: string;
+  description: string;
+  /** Which agent type is needed to close this verification gap */
+  missingEvidenceType: AgentType;
+  priority: PriorityLevel;
+  reason: string;
+  informationGain: 'HIGH' | 'MEDIUM' | 'LOW';
+  createdAt: string;
 }

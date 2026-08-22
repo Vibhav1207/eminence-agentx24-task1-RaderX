@@ -111,6 +111,7 @@ export const PatchInvestigationApiSchema = z.object({
   threatScore: z.number().optional(),
   opportunityScore: z.number().optional(),
   executiveSummary: z.string().optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const WatchConfigSchema = z.object({

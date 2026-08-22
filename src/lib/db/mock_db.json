@@ -1,0 +1,2560 @@
+{
+  "investigations": [
+    {
+      "_id": "inv-1787420381148",
+      "id": "inv-1787420381148",
+      "title": "Crash Recovery Integration Audit",
+      "objective": "Validate state preservation and recovery boundaries",
+      "status": "COMPLETED",
+      "priority": "HIGH",
+      "timeHorizon": "Last 30 days",
+      "primaryEntities": [],
+      "strategicQuestion": "Validate state preservation and recovery boundaries",
+      "confidenceScore": 92,
+      "progress": 100,
+      "activeAgents": [
+        "RESEARCH",
+        "PATENT",
+        "NEWS",
+        "COMPETITOR",
+        "WEB"
+      ],
+      "evidenceCount": 6,
+      "signalCount": 0,
+      "createdAt": "2026-08-22T17:39:41.147Z",
+      "updatedAt": "2026-08-22T17:39:55.245Z",
+      "lastHeartbeatAt": "2026-08-22T17:39:55.201Z",
+      "metadata": {
+        "langGraph": {
+          "investigationId": "inv-1787420381148",
+          "plan": [
+            {
+              "id": "TASK-RES",
+              "missionId": "mission-inv-1787420381148",
+              "investigationId": "inv-1787420381148",
+              "agentType": "RESEARCH",
+              "title": "Research specs",
+              "description": "Find silicon specs",
+              "status": "PARTIAL",
+              "priority": "HIGH",
+              "dependencies": [],
+              "input": {},
+              "evidenceIds": [
+                "ev-res-1"
+              ],
+              "createdAt": "2026-08-22T17:39:46.390Z",
+              "retryCount": 0,
+              "maxRetries": 2,
+              "startedAt": "2026-08-22T17:39:46.501Z",
+              "completedAt": "2026-08-22T17:39:47.131Z"
+            },
+            {
+              "id": "TASK-PAT",
+              "missionId": "mission-inv-1787420381148",
+              "investigationId": "inv-1787420381148",
+              "agentType": "PATENT",
+              "title": "Patent filings",
+              "description": "Find silicon patents",
+              "status": "PARTIAL",
+              "priority": "HIGH",
+              "dependencies": [
+                "TASK-RES"
+              ],
+              "input": {},
+              "evidenceIds": [
+                "ev-pat-1"
+              ],
+              "createdAt": "2026-08-22T17:39:46.391Z",
+              "retryCount": 1,
+              "maxRetries": 2,
+              "startedAt": "2026-08-22T17:39:54.154Z",
+              "completedAt": "2026-08-22T17:39:54.606Z"
+            },
+            {
+              "id": "task-dynamic-1787420387323",
+              "missionId": "mission-inv-1787420381148",
+              "investigationId": "inv-1787420381148",
+              "agentType": "COMPETITOR",
+              "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+              "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+              "status": "COMPLETED",
+              "priority": "CRITICAL",
+              "dependencies": [],
+              "input": {
+                "topic": "Validate state preservation and recovery boundaries"
+              },
+              "evidenceIds": [
+                "ev-norm-news-media-0-1787420387550",
+                "ev-norm-news-media-1-1787420387550"
+              ],
+              "createdAt": "2026-08-22T17:39:47.323Z",
+              "retryCount": 0,
+              "maxRetries": 1,
+              "startedAt": "2026-08-22T17:39:47.507Z",
+              "completedAt": "2026-08-22T17:39:47.551Z"
+            },
+            {
+              "id": "TASK-COMPETITOR",
+              "missionId": "mission-inv-1787420381148",
+              "investigationId": "inv-1787420381148",
+              "agentType": "COMPETITOR",
+              "title": "Analyze competitor strategies",
+              "description": "Examine competitors in the semiconductor foundry space",
+              "status": "COMPLETED",
+              "priority": "HIGH",
+              "dependencies": [],
+              "input": {},
+              "evidenceIds": [
+                "ev-norm-news-media-0-1787420394198",
+                "ev-norm-news-media-1-1787420394198"
+              ],
+              "createdAt": "2026-08-22T17:39:47.428Z",
+              "retryCount": 0,
+              "maxRetries": 2,
+              "verificationRequired": false,
+              "startedAt": "2026-08-22T17:39:54.153Z",
+              "completedAt": "2026-08-22T17:39:54.198Z"
+            }
+          ],
+          "hypotheses": [],
+          "openQuestions": [
+            "Evidence base is weak. We only have 1 items. What additional searches are required?"
+          ],
+          "executionStatus": "COMPLETED",
+          "resourceBudget": {
+            "maxIterations": 5,
+            "iterationCount": 3,
+            "maxToolCalls": 15,
+            "toolCallCount": 0,
+            "maxRetries": 2,
+            "totalRetries": 0,
+            "executionTimeMs": 0,
+            "maxConcurrentAgents": 3
+          },
+          "evidence": [
+            {
+              "id": "ev-pat-1",
+              "investigationId": "inv-1787420381148",
+              "title": "M4 packaging patents",
+              "summary": "Silicon packaging patent filings.",
+              "source": "Test Provider",
+              "sourceType": "PATENT",
+              "relevanceScore": 0.9,
+              "confidence": 95,
+              "publishedAt": "2026-08-22T00:00:00Z",
+              "createdAt": "2026-08-22T17:39:54.605Z",
+              "discoveredAt": "2026-08-22T17:39:54.605Z",
+              "entityIds": []
+            }
+          ],
+          "confidence": 80,
+          "toolFailures": [],
+          "conflictingEvidence": [],
+          "verifiedHypotheses": {
+            "Target inference hardware scaling represent competitive threat": "SUPPORTED"
+          }
+        },
+        "lastCheckpointId": "cp-1787420395201-3q43",
+        "lastCheckpointNode": "COMPLETED",
+        "lastCheckpointTimestamp": "2026-08-22T17:39:55.201Z",
+        "replanningReason": "Critic check rejected. Confidence below threshold due to tool failures.",
+        "replanningAction": "Research strategy modified dynamically. New competitor task created.",
+        "replanningNewTask": "DYNAMIC VERIFICATION: Competitor Threat Check"
+      },
+      "orchestratorStatus": "● COMPLETED",
+      "orchestratorAction": "Checkpoint saved: cp-1787420395201-3q43 (COMPLETED)",
+      "confidence": 80,
+      "signalsCount": 1,
+      "intelligence": {
+        "id": "synth-1787420395124",
+        "investigationId": "inv-1787420381148",
+        "executiveSummary": "Cross-source analysis of 6 verified evidence items for Crash Recovery Integration Audit reveals 1 high-confidence strategic signals across connected intelligence streams. Evidence indicates accelerating technical momentum in core domain with active research publications and published patent filings. However, emerging competitor disclosures suggest active substitution efforts. Actionable recommendations prioritize early technical benchmarking and continuous watchlist monitoring.",
+        "keyFindings": [
+          {
+            "title": "AI Infrastructure Acceleration",
+            "summary": "Cross-source evidence pointing to accelerated hardware acceleration for Target.",
+            "impact": "HIGH",
+            "confidence": 85,
+            "signalId": "sig-fb-1787420395010",
+            "evidenceIds": [
+              "ev-res-1",
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550",
+              "ev-norm-news-media-0-1787420394198",
+              "ev-norm-news-media-1-1787420394198",
+              "ev-pat-1"
+            ],
+            "entities": []
+          }
+        ],
+        "threats": [
+          {
+            "title": "AI Infrastructure Acceleration",
+            "description": "Cross-source evidence pointing to accelerated hardware acceleration for Target.",
+            "impact": "HIGH",
+            "confidence": 85,
+            "evidenceIds": [
+              "ev-res-1",
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550",
+              "ev-norm-news-media-0-1787420394198",
+              "ev-norm-news-media-1-1787420394198",
+              "ev-pat-1"
+            ],
+            "competitorEntities": [],
+            "recommendedResponse": "Monitor quarterly disclosure filings and establish automated watchlist alerts on Crash Recovery Integration Audit."
+          }
+        ],
+        "opportunities": [
+          {
+            "title": "AI Infrastructure Acceleration",
+            "description": "Cross-source evidence pointing to accelerated hardware acceleration for Target.",
+            "potentialImpact": "HIGH",
+            "confidence": 85,
+            "evidenceIds": [
+              "ev-res-1",
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550",
+              "ev-norm-news-media-0-1787420394198",
+              "ev-norm-news-media-1-1787420394198",
+              "ev-pat-1"
+            ],
+            "entities": [],
+            "recommendedAction": "Benchmark internal engineering workloads on early quantization and hardware simulators."
+          }
+        ],
+        "technologyTrends": [
+          "Sub-byte INT4/FP4 precision execution",
+          "Advanced 2.5D wafer packaging"
+        ],
+        "competitorMoves": [
+          "Custom ASIC capex substitution shift"
+        ],
+        "researchTrends": [
+          "M4 Neural Engine specs"
+        ],
+        "patentTrends": [
+          "M4 packaging patents"
+        ],
+        "recommendedActions": [
+          {
+            "action": "Benchmark internal LLM and inference workloads against target platform specifications",
+            "reason": "Correlated evidence indicates hardware-level execution optimizations capable of reducing operational token costs.",
+            "priority": "HIGH",
+            "supportingSignalIds": [
+              "sig-fb-1787420395010"
+            ],
+            "supportingEvidenceIds": [
+              "ev-res-1",
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550"
+            ],
+            "timeHorizon": "IMMEDIATE"
+          },
+          {
+            "action": "Establish continuous 24/7 background watchlist monitoring for Crash Recovery Integration Audit",
+            "priority": "HIGH",
+            "reason": "Prevents strategic surprise as competitor disclosures and patent applications publish.",
+            "supportingSignalIds": [
+              "sig-fb-1787420395010"
+            ],
+            "supportingEvidenceIds": [
+              "ev-res-1",
+              "ev-norm-news-media-0-1787420387550"
+            ],
+            "timeHorizon": "SHORT_TERM"
+          }
+        ],
+        "watchItems": [
+          {
+            "topic": "Crash Recovery Integration Audit Patent Application Publications",
+            "reason": "Early indicator of hardware architecture and software kernel changes.",
+            "trigger": "New USPTO or WIPO publication matching query",
+            "priority": "HIGH",
+            "relatedEntityIds": [],
+            "relatedSignalIds": [
+              "sig-fb-1787420395010"
+            ]
+          },
+          {
+            "topic": "Hyperscaler Custom ASIC Disclosures",
+            "reason": "Provides early signal on capex shift away from commercial hardware.",
+            "trigger": "Quarterly SEC 10-Q filing disclosure",
+            "priority": "MEDIUM",
+            "relatedEntityIds": [],
+            "relatedSignalIds": [
+              "sig-fb-1787420395010"
+            ]
+          }
+        ],
+        "confidence": 90,
+        "evidenceReferences": [
+          {
+            "id": "ev-res-1",
+            "title": "M4 Neural Engine specs",
+            "sourceType": "RESEARCH",
+            "provider": "Test Provider"
+          },
+          {
+            "id": "ev-norm-news-media-0-1787420387550",
+            "title": "Financial Times: Crash Recovery Integration Audit Expands Custom AI Chip Foundry Partnerships",
+            "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "sourceType": "NEWS",
+            "provider": "Financial Times (Financial Times Bureau)"
+          },
+          {
+            "id": "ev-norm-news-media-1-1787420387550",
+            "title": "TechCrunch: Strategic Shift in Crash Recovery Integration Audit competitor vs market share Enterprise Infrastructure",
+            "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "sourceType": "NEWS",
+            "provider": "TechCrunch (TechCrunch Bureau)"
+          },
+          {
+            "id": "ev-norm-news-media-0-1787420394198",
+            "title": "Financial Times: Crash Recovery Integration Audit Expands Custom AI Chip Foundry Partnerships",
+            "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "sourceType": "NEWS",
+            "provider": "Financial Times (Financial Times Bureau)"
+          },
+          {
+            "id": "ev-norm-news-media-1-1787420394198",
+            "title": "TechCrunch: Strategic Shift in Crash Recovery Integration Audit competitor vs market share Enterprise Infrastructure",
+            "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "sourceType": "NEWS",
+            "provider": "TechCrunch (TechCrunch Bureau)"
+          },
+          {
+            "id": "ev-pat-1",
+            "title": "M4 packaging patents",
+            "sourceType": "PATENT",
+            "provider": "Test Provider"
+          }
+        ],
+        "sourceCoverage": {
+          "RESEARCH": "AVAILABLE",
+          "PATENT": "AVAILABLE",
+          "NEWS": "AVAILABLE",
+          "COMPETITOR": "UNAVAILABLE",
+          "WEB": "UNAVAILABLE"
+        },
+        "generatedAt": "2026-08-22T17:39:55.123Z"
+      },
+      "executiveSummary": "Cross-source analysis of 6 verified evidence items for Crash Recovery Integration Audit reveals 1 high-confidence strategic signals across connected intelligence streams. Evidence indicates accelerating technical momentum in core domain with active research publications and published patent filings. However, emerging competitor disclosures suggest active substitution efforts. Actionable recommendations prioritize early technical benchmarking and continuous watchlist monitoring."
+    }
+  ],
+  "mission_events": [
+    {
+      "_id": "evt-1787420386419-ggsbj",
+      "id": "evt-1787420386419-ggsbj",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "PLAN_CREATED",
+      "agentType": "ORCHESTRATOR",
+      "message": "Planner analyzing goals for iteration 1.",
+      "createdAt": "2026-08-22T17:39:46.419Z"
+    },
+    {
+      "_id": "evt-1787420386474-jk5ag",
+      "id": "evt-1787420386474-jk5ag",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "ROUTER_DECISION",
+      "agentType": "ORCHESTRATOR",
+      "message": "ROUTER DECISION - Destination: [\"researchAgent\"]. Reason: Executing active queued tasks (concurrency limit: 3) or moving to validator.",
+      "createdAt": "2026-08-22T17:39:46.474Z"
+    },
+    {
+      "_id": "evt-1787420386501-c1o59",
+      "id": "evt-1787420386501-c1o59",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "TASK_STARTED",
+      "agentType": "RESEARCH",
+      "taskId": "TASK-RES",
+      "message": "Agent [RESEARCH] starting execution.",
+      "createdAt": "2026-08-22T17:39:46.501Z"
+    },
+    {
+      "_id": "evt-1787420387133-9q9w4",
+      "id": "evt-1787420387133-9q9w4",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "TASK_COMPLETED",
+      "agentType": "RESEARCH",
+      "taskId": "TASK-RES",
+      "message": "Agent [RESEARCH] completed successfully. Gathered 1 evidence items.",
+      "createdAt": "2026-08-22T17:39:47.133Z"
+    },
+    {
+      "_id": "evt-1787420387205-2p1ey",
+      "id": "evt-1787420387205-2p1ey",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "CORRELATING",
+      "agentType": "ORCHESTRATOR",
+      "message": "Validator checking evidence consistency, duplicates, and age.",
+      "createdAt": "2026-08-22T17:39:47.205Z"
+    },
+    {
+      "_id": "evt-1787420387274-94j0a",
+      "id": "evt-1787420387274-94j0a",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "ROUTER_DECISION",
+      "agentType": "ORCHESTRATOR",
+      "message": "ROUTER DECISION - Destination: critic. Reason: Consistency checks passed. routing to Self-Evaluation Critic.",
+      "createdAt": "2026-08-22T17:39:47.274Z"
+    },
+    {
+      "_id": "evt-1787420387292-h4w7q",
+      "id": "evt-1787420387292-h4w7q",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "CRITIC",
+      "agentType": "ORCHESTRATOR",
+      "message": "Critic node performing final validation check of investigation objectives.",
+      "createdAt": "2026-08-22T17:39:47.292Z"
+    },
+    {
+      "_id": "evt-1787420387320-mxj58",
+      "id": "evt-1787420387320-mxj58",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "REPLANNING",
+      "agentType": "ORCHESTRATOR",
+      "message": "Critic check rejected. Confidence 55% below quality threshold of 60%. Injecting dynamic verification tasks.",
+      "createdAt": "2026-08-22T17:39:47.320Z"
+    },
+    {
+      "_id": "evt-1787420387389-izr4w",
+      "id": "evt-1787420387389-izr4w",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "ROUTER_DECISION",
+      "agentType": "ORCHESTRATOR",
+      "message": "ROUTER DECISION - Destination: planner. Reason: Confidence below threshold or validation gaps detected. Replanning...",
+      "createdAt": "2026-08-22T17:39:47.389Z"
+    },
+    {
+      "_id": "evt-1787420387423-0ybrw",
+      "id": "evt-1787420387423-0ybrw",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "PLAN_CREATED",
+      "agentType": "ORCHESTRATOR",
+      "message": "Planner analyzing goals for iteration 2.",
+      "createdAt": "2026-08-22T17:39:47.423Z"
+    },
+    {
+      "_id": "evt-1787420387475-41ntb",
+      "id": "evt-1787420387475-41ntb",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "ROUTER_DECISION",
+      "agentType": "ORCHESTRATOR",
+      "message": "ROUTER DECISION - Destination: [\"patentAgent\",\"competitorAgent\"]. Reason: Executing active queued tasks (concurrency limit: 3) or moving to validator.",
+      "createdAt": "2026-08-22T17:39:47.475Z"
+    },
+    {
+      "_id": "evt-1787420387507-ele6u",
+      "id": "evt-1787420387507-ele6u",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "TASK_STARTED",
+      "agentType": "COMPETITOR",
+      "taskId": "task-dynamic-1787420387323",
+      "message": "Agent [COMPETITOR] starting execution.",
+      "createdAt": "2026-08-22T17:39:47.507Z"
+    },
+    {
+      "_id": "evt-1787420387507-b66oq",
+      "id": "evt-1787420387507-b66oq",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "TASK_STARTED",
+      "agentType": "PATENT",
+      "taskId": "TASK-PAT",
+      "message": "Agent [PATENT] starting execution.",
+      "createdAt": "2026-08-22T17:39:47.507Z"
+    },
+    {
+      "_id": "evt-1787420387571-5p0zy",
+      "id": "evt-1787420387571-5p0zy",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "TASK_COMPLETED",
+      "agentType": "COMPETITOR",
+      "taskId": "task-dynamic-1787420387323",
+      "message": "Agent [COMPETITOR] completed successfully. Gathered 2 evidence items.",
+      "createdAt": "2026-08-22T17:39:47.571Z"
+    },
+    {
+      "_id": "evt-1787420393972-0oiak",
+      "id": "evt-1787420393972-0oiak",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "RECOVERY_STARTED",
+      "message": "Recovery started. Restored checkpoint: cp-1787420387610-bga1. Resuming node: nodeTransition",
+      "createdAt": "2026-08-22T17:39:53.973Z"
+    },
+    {
+      "_id": "evt-1787420394020-gesnv",
+      "id": "evt-1787420394020-gesnv",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "PLAN_CREATED",
+      "agentType": "ORCHESTRATOR",
+      "message": "Planner analyzing goals for iteration 3.",
+      "createdAt": "2026-08-22T17:39:54.020Z"
+    },
+    {
+      "_id": "evt-1787420394026-jg7ei",
+      "id": "evt-1787420394026-jg7ei",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "PLAN_CREATED",
+      "agentType": "ORCHESTRATOR",
+      "message": "Resource limits near. Prioritizing critical paths and skipping enrichment tasks.",
+      "createdAt": "2026-08-22T17:39:54.026Z"
+    },
+    {
+      "_id": "evt-1787420394115-f30z7",
+      "id": "evt-1787420394115-f30z7",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "ROUTER_DECISION",
+      "agentType": "ORCHESTRATOR",
+      "message": "ROUTER DECISION - Destination: [\"patentAgent\",\"competitorAgent\"]. Reason: Executing active queued tasks (concurrency limit: 3) or moving to validator.",
+      "createdAt": "2026-08-22T17:39:54.115Z"
+    },
+    {
+      "_id": "evt-1787420394153-h4yfs",
+      "id": "evt-1787420394153-h4yfs",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "TASK_STARTED",
+      "agentType": "COMPETITOR",
+      "taskId": "TASK-COMPETITOR",
+      "message": "Agent [COMPETITOR] starting execution.",
+      "createdAt": "2026-08-22T17:39:54.153Z"
+    },
+    {
+      "_id": "evt-1787420394154-wgvac",
+      "id": "evt-1787420394154-wgvac",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "TASK_STARTED",
+      "agentType": "PATENT",
+      "taskId": "TASK-PAT",
+      "message": "Agent [PATENT] starting execution.",
+      "createdAt": "2026-08-22T17:39:54.154Z"
+    },
+    {
+      "_id": "evt-1787420394218-tfe6o",
+      "id": "evt-1787420394218-tfe6o",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "TASK_COMPLETED",
+      "agentType": "COMPETITOR",
+      "taskId": "TASK-COMPETITOR",
+      "message": "Agent [COMPETITOR] completed successfully. Gathered 2 evidence items.",
+      "createdAt": "2026-08-22T17:39:54.218Z"
+    },
+    {
+      "_id": "evt-1787420394608-2yp70",
+      "id": "evt-1787420394608-2yp70",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "TASK_COMPLETED",
+      "agentType": "PATENT",
+      "taskId": "TASK-PAT",
+      "message": "Agent [PATENT] completed successfully. Gathered 1 evidence items.",
+      "createdAt": "2026-08-22T17:39:54.608Z"
+    },
+    {
+      "_id": "evt-1787420394688-a5jui",
+      "id": "evt-1787420394688-a5jui",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "CORRELATING",
+      "agentType": "ORCHESTRATOR",
+      "message": "Validator checking evidence consistency, duplicates, and age.",
+      "createdAt": "2026-08-22T17:39:54.688Z"
+    },
+    {
+      "_id": "evt-1787420394782-wpoim",
+      "id": "evt-1787420394782-wpoim",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "ROUTER_DECISION",
+      "agentType": "ORCHESTRATOR",
+      "message": "ROUTER DECISION - Destination: critic. Reason: Consistency checks passed. routing to Self-Evaluation Critic.",
+      "createdAt": "2026-08-22T17:39:54.782Z"
+    },
+    {
+      "_id": "evt-1787420394804-gkbae",
+      "id": "evt-1787420394804-gkbae",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "CRITIC",
+      "agentType": "ORCHESTRATOR",
+      "message": "Critic node performing final validation check of investigation objectives.",
+      "createdAt": "2026-08-22T17:39:54.804Z"
+    },
+    {
+      "_id": "evt-1787420394837-n4vdo",
+      "id": "evt-1787420394837-n4vdo",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "CRITIC",
+      "agentType": "ORCHESTRATOR",
+      "message": "Critic check passed. Final assessment approved.",
+      "createdAt": "2026-08-22T17:39:54.837Z"
+    },
+    {
+      "_id": "evt-1787420394950-xy64p",
+      "id": "evt-1787420394950-xy64p",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "ROUTER_DECISION",
+      "agentType": "ORCHESTRATOR",
+      "message": "ROUTER DECISION - Destination: synthesis. Reason: Critic checks passed. Initiating intelligence synthesis.",
+      "createdAt": "2026-08-22T17:39:54.950Z"
+    },
+    {
+      "_id": "evt-1787420394972-unxbq",
+      "id": "evt-1787420394972-unxbq",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "SYNTHESIS_STARTED",
+      "agentType": "SYNTHESIS",
+      "message": "Synthesizing final executive intelligence assessment.",
+      "createdAt": "2026-08-22T17:39:54.972Z"
+    },
+    {
+      "_id": "evt-1787420395168-ob07x",
+      "id": "evt-1787420395168-ob07x",
+      "missionId": "mission-inv-1787420381148",
+      "investigationId": "inv-1787420381148",
+      "type": "MISSION_COMPLETED",
+      "message": "LangGraph pipeline execution completed successfully. Assessment saved.",
+      "createdAt": "2026-08-22T17:39:55.168Z"
+    }
+  ],
+  "investigation_checkpoints": [
+    {
+      "_id": "cp-1787420387355-301b",
+      "id": "cp-1787420387355-301b",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "PLANNING",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "BLOCKED",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 0,
+            "maxRetries": 2
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "PENDING",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "PLANNING",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 1,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-res-1",
+            "investigationId": "inv-1787420381148",
+            "title": "M4 Neural Engine specs",
+            "summary": "Verified M4 Neural Engine details.",
+            "source": "Test Provider",
+            "sourceType": "RESEARCH",
+            "relevanceScore": 0.9,
+            "confidence": 95,
+            "publishedAt": "2026-08-22T00:00:00Z",
+            "createdAt": "2026-08-22T17:39:47.131Z",
+            "discoveredAt": "2026-08-22T17:39:47.131Z",
+            "entityIds": []
+          }
+        ],
+        "confidence": 70,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "INSUFFICIENT EVIDENCE"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:47.355Z"
+    },
+    {
+      "_id": "cp-1787420387442-3sl8",
+      "id": "cp-1787420387442-3sl8",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "RUNNING",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "QUEUED",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 0,
+            "maxRetries": 2
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "QUEUED",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1
+          },
+          {
+            "id": "TASK-COMPETITOR",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "Analyze competitor strategies",
+            "description": "Examine competitors in the semiconductor foundry space",
+            "status": "QUEUED",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:47.428Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "verificationRequired": false
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "RUNNING",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 2,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-res-1",
+            "investigationId": "inv-1787420381148",
+            "title": "M4 Neural Engine specs",
+            "summary": "Verified M4 Neural Engine details.",
+            "source": "Test Provider",
+            "sourceType": "RESEARCH",
+            "relevanceScore": 0.9,
+            "confidence": 95,
+            "publishedAt": "2026-08-22T00:00:00Z",
+            "createdAt": "2026-08-22T17:39:47.131Z",
+            "discoveredAt": "2026-08-22T17:39:47.131Z",
+            "entityIds": []
+          }
+        ],
+        "confidence": 70,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "INSUFFICIENT EVIDENCE"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:47.442Z"
+    },
+    {
+      "_id": "cp-1787420387610-bga1",
+      "id": "cp-1787420387610-bga1",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "nodeTransition",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "RUNNING",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:47.507Z"
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "COMPLETED",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550"
+            ],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1,
+            "startedAt": "2026-08-22T17:39:47.507Z",
+            "completedAt": "2026-08-22T17:39:47.551Z"
+          },
+          {
+            "id": "TASK-COMPETITOR",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "Analyze competitor strategies",
+            "description": "Examine competitors in the semiconductor foundry space",
+            "status": "QUEUED",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:47.428Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "verificationRequired": false
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "RUNNING",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 2,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-norm-news-media-0-1787420387550",
+            "investigationId": "inv-1787420381148",
+            "title": "Financial Times: Crash Recovery Integration Audit Expands Custom AI Chip Foundry Partnerships",
+            "summary": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+            "source": "Financial Times (Financial Times Bureau)",
+            "sourceType": "NEWS",
+            "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "publishedAt": "2025-02-18",
+            "discoveredAt": "2026-08-22T17:39:47.549Z",
+            "entityIds": [
+              "ent-dyn-1787420387550-7634"
+            ],
+            "agentId": "agent-comp",
+            "relevanceScore": 0.9,
+            "confidence": 88,
+            "metrics": [
+              {
+                "label": "Publisher",
+                "value": "Financial Times"
+              }
+            ],
+            "metadata": {
+              "provider": "Financial Times",
+              "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+              "sourceQuality": "PRIMARY",
+              "retrievedAt": "2026-08-22T17:39:47.549Z"
+            },
+            "createdAt": "2026-08-22T17:39:47.550Z"
+          },
+          {
+            "id": "ev-norm-news-media-1-1787420387550",
+            "investigationId": "inv-1787420381148",
+            "title": "TechCrunch: Strategic Shift in Crash Recovery Integration Audit competitor vs market share Enterprise Infrastructure",
+            "summary": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+            "source": "TechCrunch (TechCrunch Bureau)",
+            "sourceType": "NEWS",
+            "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "publishedAt": "2025-02-16",
+            "discoveredAt": "2026-08-22T17:39:47.549Z",
+            "entityIds": [
+              "ent-dyn-1787420387550-7634"
+            ],
+            "agentId": "agent-comp",
+            "relevanceScore": 0.9,
+            "confidence": 88,
+            "metrics": [
+              {
+                "label": "Publisher",
+                "value": "TechCrunch"
+              }
+            ],
+            "metadata": {
+              "provider": "TechCrunch",
+              "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+              "sourceQuality": "PRIMARY",
+              "retrievedAt": "2026-08-22T17:39:47.549Z"
+            },
+            "createdAt": "2026-08-22T17:39:47.551Z"
+          }
+        ],
+        "confidence": 75,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "INSUFFICIENT EVIDENCE"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:47.610Z"
+    },
+    {
+      "_id": "cp-1787420393913-0lea",
+      "id": "cp-1787420393913-0lea",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "resumeRouting",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "QUEUED",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 1,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:47.507Z"
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "COMPLETED",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550"
+            ],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1,
+            "startedAt": "2026-08-22T17:39:47.507Z",
+            "completedAt": "2026-08-22T17:39:47.551Z"
+          },
+          {
+            "id": "TASK-COMPETITOR",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "Analyze competitor strategies",
+            "description": "Examine competitors in the semiconductor foundry space",
+            "status": "QUEUED",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:47.428Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "verificationRequired": false
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "RUNNING",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 2,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-norm-news-media-0-1787420387550",
+            "investigationId": "inv-1787420381148",
+            "title": "Financial Times: Crash Recovery Integration Audit Expands Custom AI Chip Foundry Partnerships",
+            "summary": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+            "source": "Financial Times (Financial Times Bureau)",
+            "sourceType": "NEWS",
+            "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "publishedAt": "2025-02-18",
+            "discoveredAt": "2026-08-22T17:39:47.549Z",
+            "entityIds": [
+              "ent-dyn-1787420387550-7634"
+            ],
+            "agentId": "agent-comp",
+            "relevanceScore": 0.9,
+            "confidence": 88,
+            "metrics": [
+              {
+                "label": "Publisher",
+                "value": "Financial Times"
+              }
+            ],
+            "metadata": {
+              "provider": "Financial Times",
+              "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+              "sourceQuality": "PRIMARY",
+              "retrievedAt": "2026-08-22T17:39:47.549Z"
+            },
+            "createdAt": "2026-08-22T17:39:47.550Z"
+          },
+          {
+            "id": "ev-norm-news-media-1-1787420387550",
+            "investigationId": "inv-1787420381148",
+            "title": "TechCrunch: Strategic Shift in Crash Recovery Integration Audit competitor vs market share Enterprise Infrastructure",
+            "summary": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+            "source": "TechCrunch (TechCrunch Bureau)",
+            "sourceType": "NEWS",
+            "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "publishedAt": "2025-02-16",
+            "discoveredAt": "2026-08-22T17:39:47.549Z",
+            "entityIds": [
+              "ent-dyn-1787420387550-7634"
+            ],
+            "agentId": "agent-comp",
+            "relevanceScore": 0.9,
+            "confidence": 88,
+            "metrics": [
+              {
+                "label": "Publisher",
+                "value": "TechCrunch"
+              }
+            ],
+            "metadata": {
+              "provider": "TechCrunch",
+              "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+              "sourceQuality": "PRIMARY",
+              "retrievedAt": "2026-08-22T17:39:47.549Z"
+            },
+            "createdAt": "2026-08-22T17:39:47.551Z"
+          }
+        ],
+        "confidence": 75,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "INSUFFICIENT EVIDENCE"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:53.913Z"
+    },
+    {
+      "_id": "cp-1787420394074-un0z",
+      "id": "cp-1787420394074-un0z",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "RUNNING",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "QUEUED",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 1,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:47.507Z"
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "COMPLETED",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550"
+            ],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1,
+            "startedAt": "2026-08-22T17:39:47.507Z",
+            "completedAt": "2026-08-22T17:39:47.551Z"
+          },
+          {
+            "id": "TASK-COMPETITOR",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "Analyze competitor strategies",
+            "description": "Examine competitors in the semiconductor foundry space",
+            "status": "QUEUED",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:47.428Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "verificationRequired": false
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "RUNNING",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 3,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-norm-news-media-0-1787420387550",
+            "investigationId": "inv-1787420381148",
+            "title": "Financial Times: Crash Recovery Integration Audit Expands Custom AI Chip Foundry Partnerships",
+            "summary": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+            "source": "Financial Times (Financial Times Bureau)",
+            "sourceType": "NEWS",
+            "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "publishedAt": "2025-02-18",
+            "discoveredAt": "2026-08-22T17:39:47.549Z",
+            "entityIds": [
+              "ent-dyn-1787420387550-7634"
+            ],
+            "agentId": "agent-comp",
+            "relevanceScore": 0.9,
+            "confidence": 88,
+            "metrics": [
+              {
+                "label": "Publisher",
+                "value": "Financial Times"
+              }
+            ],
+            "metadata": {
+              "provider": "Financial Times",
+              "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+              "sourceQuality": "PRIMARY",
+              "retrievedAt": "2026-08-22T17:39:47.549Z"
+            },
+            "createdAt": "2026-08-22T17:39:47.550Z"
+          },
+          {
+            "id": "ev-norm-news-media-1-1787420387550",
+            "investigationId": "inv-1787420381148",
+            "title": "TechCrunch: Strategic Shift in Crash Recovery Integration Audit competitor vs market share Enterprise Infrastructure",
+            "summary": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+            "source": "TechCrunch (TechCrunch Bureau)",
+            "sourceType": "NEWS",
+            "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "publishedAt": "2025-02-16",
+            "discoveredAt": "2026-08-22T17:39:47.549Z",
+            "entityIds": [
+              "ent-dyn-1787420387550-7634"
+            ],
+            "agentId": "agent-comp",
+            "relevanceScore": 0.9,
+            "confidence": 88,
+            "metrics": [
+              {
+                "label": "Publisher",
+                "value": "TechCrunch"
+              }
+            ],
+            "metadata": {
+              "provider": "TechCrunch",
+              "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+              "sourceQuality": "PRIMARY",
+              "retrievedAt": "2026-08-22T17:39:47.549Z"
+            },
+            "createdAt": "2026-08-22T17:39:47.551Z"
+          }
+        ],
+        "confidence": 75,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "INSUFFICIENT EVIDENCE"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:54.074Z"
+    },
+    {
+      "_id": "cp-1787420394252-zv9b",
+      "id": "cp-1787420394252-zv9b",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "nodeTransition",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "RUNNING",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 1,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:54.154Z"
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "COMPLETED",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550"
+            ],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1,
+            "startedAt": "2026-08-22T17:39:47.507Z",
+            "completedAt": "2026-08-22T17:39:47.551Z"
+          },
+          {
+            "id": "TASK-COMPETITOR",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "Analyze competitor strategies",
+            "description": "Examine competitors in the semiconductor foundry space",
+            "status": "COMPLETED",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420394198",
+              "ev-norm-news-media-1-1787420394198"
+            ],
+            "createdAt": "2026-08-22T17:39:47.428Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "verificationRequired": false,
+            "startedAt": "2026-08-22T17:39:54.153Z",
+            "completedAt": "2026-08-22T17:39:54.198Z"
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "RUNNING",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 3,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-norm-news-media-0-1787420394198",
+            "investigationId": "inv-1787420381148",
+            "title": "Financial Times: Crash Recovery Integration Audit Expands Custom AI Chip Foundry Partnerships",
+            "summary": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+            "source": "Financial Times (Financial Times Bureau)",
+            "sourceType": "NEWS",
+            "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "publishedAt": "2025-02-18",
+            "discoveredAt": "2026-08-22T17:39:54.197Z",
+            "entityIds": [
+              "ent-dyn-1787420394198-lb4w"
+            ],
+            "agentId": "agent-comp",
+            "relevanceScore": 0.9,
+            "confidence": 88,
+            "metrics": [
+              {
+                "label": "Publisher",
+                "value": "Financial Times"
+              }
+            ],
+            "metadata": {
+              "provider": "Financial Times",
+              "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+              "sourceQuality": "PRIMARY",
+              "retrievedAt": "2026-08-22T17:39:54.197Z"
+            },
+            "createdAt": "2026-08-22T17:39:54.198Z"
+          },
+          {
+            "id": "ev-norm-news-media-1-1787420394198",
+            "investigationId": "inv-1787420381148",
+            "title": "TechCrunch: Strategic Shift in Crash Recovery Integration Audit competitor vs market share Enterprise Infrastructure",
+            "summary": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+            "source": "TechCrunch (TechCrunch Bureau)",
+            "sourceType": "NEWS",
+            "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+            "publishedAt": "2025-02-16",
+            "discoveredAt": "2026-08-22T17:39:54.197Z",
+            "entityIds": [
+              "ent-dyn-1787420394198-lb4w"
+            ],
+            "agentId": "agent-comp",
+            "relevanceScore": 0.9,
+            "confidence": 88,
+            "metrics": [
+              {
+                "label": "Publisher",
+                "value": "TechCrunch"
+              }
+            ],
+            "metadata": {
+              "provider": "TechCrunch",
+              "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+              "sourceQuality": "PRIMARY",
+              "retrievedAt": "2026-08-22T17:39:54.197Z"
+            },
+            "createdAt": "2026-08-22T17:39:54.198Z"
+          }
+        ],
+        "confidence": 80,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "INSUFFICIENT EVIDENCE"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:54.252Z"
+    },
+    {
+      "_id": "cp-1787420394645-oj0q",
+      "id": "cp-1787420394645-oj0q",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "nodeTransition",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [
+              "ev-pat-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 1,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:54.154Z",
+            "completedAt": "2026-08-22T17:39:54.606Z"
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "COMPLETED",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550"
+            ],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1,
+            "startedAt": "2026-08-22T17:39:47.507Z",
+            "completedAt": "2026-08-22T17:39:47.551Z"
+          },
+          {
+            "id": "TASK-COMPETITOR",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "Analyze competitor strategies",
+            "description": "Examine competitors in the semiconductor foundry space",
+            "status": "COMPLETED",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420394198",
+              "ev-norm-news-media-1-1787420394198"
+            ],
+            "createdAt": "2026-08-22T17:39:47.428Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "verificationRequired": false,
+            "startedAt": "2026-08-22T17:39:54.153Z",
+            "completedAt": "2026-08-22T17:39:54.198Z"
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "RUNNING",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 3,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-pat-1",
+            "investigationId": "inv-1787420381148",
+            "title": "M4 packaging patents",
+            "summary": "Silicon packaging patent filings.",
+            "source": "Test Provider",
+            "sourceType": "PATENT",
+            "relevanceScore": 0.9,
+            "confidence": 95,
+            "publishedAt": "2026-08-22T00:00:00Z",
+            "createdAt": "2026-08-22T17:39:54.605Z",
+            "discoveredAt": "2026-08-22T17:39:54.605Z",
+            "entityIds": []
+          }
+        ],
+        "confidence": 80,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "INSUFFICIENT EVIDENCE"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:54.645Z"
+    },
+    {
+      "_id": "cp-1787420394726-a52r",
+      "id": "cp-1787420394726-a52r",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "CRITIC",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [
+              "ev-pat-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 1,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:54.154Z",
+            "completedAt": "2026-08-22T17:39:54.606Z"
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "COMPLETED",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550"
+            ],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1,
+            "startedAt": "2026-08-22T17:39:47.507Z",
+            "completedAt": "2026-08-22T17:39:47.551Z"
+          },
+          {
+            "id": "TASK-COMPETITOR",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "Analyze competitor strategies",
+            "description": "Examine competitors in the semiconductor foundry space",
+            "status": "COMPLETED",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420394198",
+              "ev-norm-news-media-1-1787420394198"
+            ],
+            "createdAt": "2026-08-22T17:39:47.428Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "verificationRequired": false,
+            "startedAt": "2026-08-22T17:39:54.153Z",
+            "completedAt": "2026-08-22T17:39:54.198Z"
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "CRITIC",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 3,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-pat-1",
+            "investigationId": "inv-1787420381148",
+            "title": "M4 packaging patents",
+            "summary": "Silicon packaging patent filings.",
+            "source": "Test Provider",
+            "sourceType": "PATENT",
+            "relevanceScore": 0.9,
+            "confidence": 95,
+            "publishedAt": "2026-08-22T00:00:00Z",
+            "createdAt": "2026-08-22T17:39:54.605Z",
+            "discoveredAt": "2026-08-22T17:39:54.605Z",
+            "entityIds": []
+          }
+        ],
+        "confidence": 80,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "SUPPORTED"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:54.726Z"
+    },
+    {
+      "_id": "cp-1787420394888-9ohq",
+      "id": "cp-1787420394888-9ohq",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "SYNTHESIZING",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [
+              "ev-pat-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 1,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:54.154Z",
+            "completedAt": "2026-08-22T17:39:54.606Z"
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "COMPLETED",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550"
+            ],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1,
+            "startedAt": "2026-08-22T17:39:47.507Z",
+            "completedAt": "2026-08-22T17:39:47.551Z"
+          },
+          {
+            "id": "TASK-COMPETITOR",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "Analyze competitor strategies",
+            "description": "Examine competitors in the semiconductor foundry space",
+            "status": "COMPLETED",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420394198",
+              "ev-norm-news-media-1-1787420394198"
+            ],
+            "createdAt": "2026-08-22T17:39:47.428Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "verificationRequired": false,
+            "startedAt": "2026-08-22T17:39:54.153Z",
+            "completedAt": "2026-08-22T17:39:54.198Z"
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "SYNTHESIZING",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 3,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-pat-1",
+            "investigationId": "inv-1787420381148",
+            "title": "M4 packaging patents",
+            "summary": "Silicon packaging patent filings.",
+            "source": "Test Provider",
+            "sourceType": "PATENT",
+            "relevanceScore": 0.9,
+            "confidence": 95,
+            "publishedAt": "2026-08-22T00:00:00Z",
+            "createdAt": "2026-08-22T17:39:54.605Z",
+            "discoveredAt": "2026-08-22T17:39:54.605Z",
+            "entityIds": []
+          }
+        ],
+        "confidence": 80,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "SUPPORTED"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:54.888Z"
+    },
+    {
+      "_id": "cp-1787420395201-3q43",
+      "id": "cp-1787420395201-3q43",
+      "investigationId": "inv-1787420381148",
+      "checkpointVersion": 1,
+      "currentNode": "COMPLETED",
+      "state": {
+        "investigationId": "inv-1787420381148",
+        "plan": [
+          {
+            "id": "TASK-RES",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "RESEARCH",
+            "title": "Research specs",
+            "description": "Find silicon specs",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-res-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.390Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:46.501Z",
+            "completedAt": "2026-08-22T17:39:47.131Z"
+          },
+          {
+            "id": "TASK-PAT",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "PATENT",
+            "title": "Patent filings",
+            "description": "Find silicon patents",
+            "status": "PARTIAL",
+            "priority": "HIGH",
+            "dependencies": [
+              "TASK-RES"
+            ],
+            "input": {},
+            "evidenceIds": [
+              "ev-pat-1"
+            ],
+            "createdAt": "2026-08-22T17:39:46.391Z",
+            "retryCount": 1,
+            "maxRetries": 2,
+            "startedAt": "2026-08-22T17:39:54.154Z",
+            "completedAt": "2026-08-22T17:39:54.606Z"
+          },
+          {
+            "id": "task-dynamic-1787420387323",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "DYNAMIC VERIFICATION: Competitor Threat Check",
+            "description": "Targeted investigation to resolve open validation gap regarding competitive capex moves.",
+            "status": "COMPLETED",
+            "priority": "CRITICAL",
+            "dependencies": [],
+            "input": {
+              "topic": "Validate state preservation and recovery boundaries"
+            },
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420387550",
+              "ev-norm-news-media-1-1787420387550"
+            ],
+            "createdAt": "2026-08-22T17:39:47.323Z",
+            "retryCount": 0,
+            "maxRetries": 1,
+            "startedAt": "2026-08-22T17:39:47.507Z",
+            "completedAt": "2026-08-22T17:39:47.551Z"
+          },
+          {
+            "id": "TASK-COMPETITOR",
+            "missionId": "mission-inv-1787420381148",
+            "investigationId": "inv-1787420381148",
+            "agentType": "COMPETITOR",
+            "title": "Analyze competitor strategies",
+            "description": "Examine competitors in the semiconductor foundry space",
+            "status": "COMPLETED",
+            "priority": "HIGH",
+            "dependencies": [],
+            "input": {},
+            "evidenceIds": [
+              "ev-norm-news-media-0-1787420394198",
+              "ev-norm-news-media-1-1787420394198"
+            ],
+            "createdAt": "2026-08-22T17:39:47.428Z",
+            "retryCount": 0,
+            "maxRetries": 2,
+            "verificationRequired": false,
+            "startedAt": "2026-08-22T17:39:54.153Z",
+            "completedAt": "2026-08-22T17:39:54.198Z"
+          }
+        ],
+        "hypotheses": [],
+        "openQuestions": [
+          "Evidence base is weak. We only have 1 items. What additional searches are required?"
+        ],
+        "executionStatus": "COMPLETED",
+        "resourceBudget": {
+          "maxIterations": 5,
+          "iterationCount": 3,
+          "maxToolCalls": 15,
+          "toolCallCount": 0,
+          "maxRetries": 2,
+          "totalRetries": 0,
+          "executionTimeMs": 0,
+          "maxConcurrentAgents": 3
+        },
+        "evidence": [
+          {
+            "id": "ev-pat-1",
+            "investigationId": "inv-1787420381148",
+            "title": "M4 packaging patents",
+            "summary": "Silicon packaging patent filings.",
+            "source": "Test Provider",
+            "sourceType": "PATENT",
+            "relevanceScore": 0.9,
+            "confidence": 95,
+            "publishedAt": "2026-08-22T00:00:00Z",
+            "createdAt": "2026-08-22T17:39:54.605Z",
+            "discoveredAt": "2026-08-22T17:39:54.605Z",
+            "entityIds": []
+          }
+        ],
+        "confidence": 80,
+        "toolFailures": [],
+        "conflictingEvidence": [],
+        "verifiedHypotheses": {
+          "Target inference hardware scaling represent competitive threat": "SUPPORTED"
+        }
+      },
+      "timestamp": "2026-08-22T17:39:55.201Z"
+    }
+  ],
+  "evidence": [
+    {
+      "_id": "ev-res-1",
+      "id": "ev-res-1",
+      "investigationId": "inv-1787420381148",
+      "title": "M4 Neural Engine specs",
+      "summary": "Verified M4 Neural Engine details.",
+      "source": "Test Provider",
+      "sourceType": "RESEARCH",
+      "relevanceScore": 0.9,
+      "confidence": 95,
+      "publishedAt": "2026-08-22T00:00:00Z",
+      "createdAt": "2026-08-22T17:39:47.131Z",
+      "discoveredAt": "2026-08-22T17:39:47.131Z",
+      "entityIds": []
+    },
+    {
+      "_id": "ev-norm-news-media-0-1787420387550",
+      "id": "ev-norm-news-media-0-1787420387550",
+      "investigationId": "inv-1787420381148",
+      "title": "Financial Times: Crash Recovery Integration Audit Expands Custom AI Chip Foundry Partnerships",
+      "summary": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+      "source": "Financial Times (Financial Times Bureau)",
+      "sourceType": "NEWS",
+      "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+      "publishedAt": "2025-02-18",
+      "discoveredAt": "2026-08-22T17:39:47.549Z",
+      "entityIds": [
+        "ent-dyn-1787420387550-7634"
+      ],
+      "agentId": "agent-comp",
+      "relevanceScore": 0.9,
+      "confidence": 88,
+      "metrics": [
+        {
+          "label": "Publisher",
+          "value": "Financial Times"
+        }
+      ],
+      "metadata": {
+        "provider": "Financial Times",
+        "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+        "sourceQuality": "PRIMARY",
+        "retrievedAt": "2026-08-22T17:39:47.549Z"
+      },
+      "createdAt": "2026-08-22T17:39:47.550Z"
+    },
+    {
+      "_id": "ev-norm-news-media-1-1787420387550",
+      "id": "ev-norm-news-media-1-1787420387550",
+      "investigationId": "inv-1787420381148",
+      "title": "TechCrunch: Strategic Shift in Crash Recovery Integration Audit competitor vs market share Enterprise Infrastructure",
+      "summary": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+      "source": "TechCrunch (TechCrunch Bureau)",
+      "sourceType": "NEWS",
+      "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+      "publishedAt": "2025-02-16",
+      "discoveredAt": "2026-08-22T17:39:47.549Z",
+      "entityIds": [
+        "ent-dyn-1787420387550-7634"
+      ],
+      "agentId": "agent-comp",
+      "relevanceScore": 0.9,
+      "confidence": 88,
+      "metrics": [
+        {
+          "label": "Publisher",
+          "value": "TechCrunch"
+        }
+      ],
+      "metadata": {
+        "provider": "TechCrunch",
+        "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+        "sourceQuality": "PRIMARY",
+        "retrievedAt": "2026-08-22T17:39:47.549Z"
+      },
+      "createdAt": "2026-08-22T17:39:47.551Z"
+    },
+    {
+      "_id": "ev-norm-news-media-0-1787420394198",
+      "id": "ev-norm-news-media-0-1787420394198",
+      "investigationId": "inv-1787420381148",
+      "title": "Financial Times: Crash Recovery Integration Audit Expands Custom AI Chip Foundry Partnerships",
+      "summary": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+      "source": "Financial Times (Financial Times Bureau)",
+      "sourceType": "NEWS",
+      "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+      "publishedAt": "2025-02-18",
+      "discoveredAt": "2026-08-22T17:39:54.197Z",
+      "entityIds": [
+        "ent-dyn-1787420394198-lb4w"
+      ],
+      "agentId": "agent-comp",
+      "relevanceScore": 0.9,
+      "confidence": 88,
+      "metrics": [
+        {
+          "label": "Publisher",
+          "value": "Financial Times"
+        }
+      ],
+      "metadata": {
+        "provider": "Financial Times",
+        "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+        "sourceQuality": "PRIMARY",
+        "retrievedAt": "2026-08-22T17:39:54.197Z"
+      },
+      "createdAt": "2026-08-22T17:39:54.198Z"
+    },
+    {
+      "_id": "ev-norm-news-media-1-1787420394198",
+      "id": "ev-norm-news-media-1-1787420394198",
+      "investigationId": "inv-1787420381148",
+      "title": "TechCrunch: Strategic Shift in Crash Recovery Integration Audit competitor vs market share Enterprise Infrastructure",
+      "summary": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+      "source": "TechCrunch (TechCrunch Bureau)",
+      "sourceType": "NEWS",
+      "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+      "publishedAt": "2025-02-16",
+      "discoveredAt": "2026-08-22T17:39:54.197Z",
+      "entityIds": [
+        "ent-dyn-1787420394198-lb4w"
+      ],
+      "agentId": "agent-comp",
+      "relevanceScore": 0.9,
+      "confidence": 88,
+      "metrics": [
+        {
+          "label": "Publisher",
+          "value": "TechCrunch"
+        }
+      ],
+      "metadata": {
+        "provider": "TechCrunch",
+        "queryUsed": "Crash Recovery Integration Audit competitor vs market share",
+        "sourceQuality": "PRIMARY",
+        "retrievedAt": "2026-08-22T17:39:54.197Z"
+      },
+      "createdAt": "2026-08-22T17:39:54.198Z"
+    },
+    {
+      "_id": "ev-pat-1",
+      "id": "ev-pat-1",
+      "investigationId": "inv-1787420381148",
+      "title": "M4 packaging patents",
+      "summary": "Silicon packaging patent filings.",
+      "source": "Test Provider",
+      "sourceType": "PATENT",
+      "relevanceScore": 0.9,
+      "confidence": 95,
+      "publishedAt": "2026-08-22T00:00:00Z",
+      "createdAt": "2026-08-22T17:39:54.605Z",
+      "discoveredAt": "2026-08-22T17:39:54.605Z",
+      "entityIds": []
+    }
+  ],
+  "graph_nodes": [
+    {
+      "_id": "node-1787420395011-s856",
+      "id": "node-1787420395011-s856",
+      "investigationId": "inv-1787420381148",
+      "type": "RESEARCH",
+      "label": "M4 Neural Engine specs",
+      "description": "Verified M4 Neural Engine details.",
+      "importance": 90,
+      "confidence": 9500,
+      "metadata": {
+        "source": "Test Provider",
+        "sourceType": "RESEARCH"
+      },
+      "createdAt": "2026-08-22T17:39:55.011Z",
+      "updatedAt": "2026-08-22T17:39:55.011Z"
+    },
+    {
+      "_id": "node-1787420395014-z9bx",
+      "id": "node-1787420395014-z9bx",
+      "investigationId": "inv-1787420381148",
+      "type": "NEWS",
+      "label": "Financial Times: Crash Recovery Integration A...",
+      "description": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+      "importance": 90,
+      "confidence": 8800,
+      "metadata": {
+        "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+        "source": "Financial Times (Financial Times Bureau)",
+        "sourceType": "NEWS"
+      },
+      "createdAt": "2026-08-22T17:39:55.014Z",
+      "updatedAt": "2026-08-22T17:39:55.014Z"
+    },
+    {
+      "_id": "node-1787420395032-iv77",
+      "id": "node-1787420395032-iv77",
+      "investigationId": "inv-1787420381148",
+      "type": "NEWS",
+      "label": "TechCrunch: Strategic Shift in Crash Recovery...",
+      "description": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+      "importance": 90,
+      "confidence": 8800,
+      "metadata": {
+        "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+        "source": "TechCrunch (TechCrunch Bureau)",
+        "sourceType": "NEWS"
+      },
+      "createdAt": "2026-08-22T17:39:55.032Z",
+      "updatedAt": "2026-08-22T17:39:55.032Z"
+    },
+    {
+      "_id": "node-1787420395047-ilkh",
+      "id": "node-1787420395047-ilkh",
+      "investigationId": "inv-1787420381148",
+      "type": "NEWS",
+      "label": "Financial Times: Crash Recovery Integration A...",
+      "description": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+      "importance": 90,
+      "confidence": 8800,
+      "metadata": {
+        "url": "https://www.ft.com/search?q=Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+        "source": "Financial Times (Financial Times Bureau)",
+        "sourceType": "NEWS"
+      },
+      "createdAt": "2026-08-22T17:39:55.047Z",
+      "updatedAt": "2026-08-22T17:39:55.047Z"
+    },
+    {
+      "_id": "node-1787420395064-wlkt",
+      "id": "node-1787420395064-wlkt",
+      "investigationId": "inv-1787420381148",
+      "type": "NEWS",
+      "label": "TechCrunch: Strategic Shift in Crash Recovery...",
+      "description": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+      "importance": 90,
+      "confidence": 8800,
+      "metadata": {
+        "url": "https://techcrunch.com/search/Crash%20Recovery%20Integration%20Audit%20competitor%20vs%20market%20share",
+        "source": "TechCrunch (TechCrunch Bureau)",
+        "sourceType": "NEWS"
+      },
+      "createdAt": "2026-08-22T17:39:55.064Z",
+      "updatedAt": "2026-08-22T17:39:55.064Z"
+    },
+    {
+      "_id": "node-1787420395083-2r4b",
+      "id": "node-1787420395083-2r4b",
+      "investigationId": "inv-1787420381148",
+      "type": "PATENT",
+      "label": "M4 packaging patents",
+      "description": "Silicon packaging patent filings.",
+      "importance": 90,
+      "confidence": 9500,
+      "metadata": {
+        "source": "Test Provider",
+        "sourceType": "PATENT"
+      },
+      "createdAt": "2026-08-22T17:39:55.083Z",
+      "updatedAt": "2026-08-22T17:39:55.083Z"
+    }
+  ],
+  "executive_recommendations": [
+    {
+      "_id": "rec-1787420395126-x7vz",
+      "id": "rec-1787420395126-x7vz",
+      "investigationId": "inv-1787420381148",
+      "title": "Strategic Technology Audit: Crash Recovery Integration Audit",
+      "action": "Initiate continuous monitoring on primary entities to track competitor roadmaps.",
+      "reason": "Primary evidence indicates ongoing industry acceleration requiring active intelligence monitoring.",
+      "priority": "MEDIUM",
+      "impact": "MEDIUM",
+      "confidence": 85,
+      "timeHorizon": "MEDIUM_TERM",
+      "evidenceIds": [
+        "ev-res-1",
+        "ev-norm-news-media-0-1787420387550",
+        "ev-norm-news-media-1-1787420387550"
+      ],
+      "signalIds": [
+        "sig-fb-1787420395010"
+      ],
+      "entityIds": [],
+      "status": "RECOMMENDED",
+      "createdAt": "2026-08-22T17:39:55.126Z"
+    }
+  ],
+  "executive_briefs": [
+    {
+      "_id": "brief-1787420395129-st2v",
+      "id": "brief-1787420395129-st2v",
+      "investigationId": "inv-1787420381148",
+      "version": 1,
+      "title": "RADARX EXECUTIVE BRIEF v1 • Crash Recovery Integration Audit",
+      "executiveSummary": "Executive intelligence assessment synthesized from 6 primary source evidence items and 1 correlated signals.",
+      "keyChanges": [
+        {
+          "id": "change-1",
+          "investigationId": "inv-1787420381148",
+          "title": "Material Discovery: M4 Neural Engine specs...",
+          "description": "Verified M4 Neural Engine details.",
+          "changeType": "EMERGING",
+          "magnitude": "HIGH",
+          "confidence": 9500,
+          "evidenceIds": [
+            "ev-res-1"
+          ],
+          "entityIds": [],
+          "detectedAt": "2026-08-22T17:39:47.131Z"
+        },
+        {
+          "id": "change-2",
+          "investigationId": "inv-1787420381148",
+          "title": "Material Discovery: Financial Times: Crash Recovery Integration A...",
+          "description": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+          "changeType": "COMPETITIVE_MOVE",
+          "magnitude": "HIGH",
+          "confidence": 8800,
+          "evidenceIds": [
+            "ev-norm-news-media-0-1787420387550"
+          ],
+          "entityIds": [
+            "ent-dyn-1787420387550-7634"
+          ],
+          "detectedAt": "2026-08-22T17:39:47.549Z"
+        },
+        {
+          "id": "change-3",
+          "investigationId": "inv-1787420381148",
+          "title": "Material Discovery: TechCrunch: Strategic Shift in Crash Recovery...",
+          "description": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+          "changeType": "COMPETITIVE_MOVE",
+          "magnitude": "HIGH",
+          "confidence": 8800,
+          "evidenceIds": [
+            "ev-norm-news-media-1-1787420387550"
+          ],
+          "entityIds": [
+            "ent-dyn-1787420387550-7634"
+          ],
+          "detectedAt": "2026-08-22T17:39:47.549Z"
+        },
+        {
+          "id": "change-4",
+          "investigationId": "inv-1787420381148",
+          "title": "Material Discovery: Financial Times: Crash Recovery Integration A...",
+          "description": "Major financial news reporting strategic multi-billion dollar semiconductor allocation and custom ASIC silicon expansion.",
+          "changeType": "COMPETITIVE_MOVE",
+          "magnitude": "HIGH",
+          "confidence": 8800,
+          "evidenceIds": [
+            "ev-norm-news-media-0-1787420394198"
+          ],
+          "entityIds": [
+            "ent-dyn-1787420394198-lb4w"
+          ],
+          "detectedAt": "2026-08-22T17:39:54.197Z"
+        },
+        {
+          "id": "change-5",
+          "investigationId": "inv-1787420381148",
+          "title": "Material Discovery: TechCrunch: Strategic Shift in Crash Recovery...",
+          "description": "Tech media coverage analyzing enterprise AI stack migration, developer adoption metrics, and API integration velocity.",
+          "changeType": "COMPETITIVE_MOVE",
+          "magnitude": "HIGH",
+          "confidence": 8800,
+          "evidenceIds": [
+            "ev-norm-news-media-1-1787420394198"
+          ],
+          "entityIds": [
+            "ent-dyn-1787420394198-lb4w"
+          ],
+          "detectedAt": "2026-08-22T17:39:54.197Z"
+        }
+      ],
+      "strategicImplications": [
+        {
+          "topic": "Technology Acceleration",
+          "implication": "Increased primary source activity across academic preprints and patent filings indicates rapid technical evolution.",
+          "evidenceIds": [
+            "ev-res-1",
+            "ev-norm-news-media-0-1787420387550",
+            "ev-norm-news-media-1-1787420387550"
+          ]
+        }
+      ],
+      "threats": [],
+      "opportunities": [],
+      "recommendedActions": [
+        {
+          "id": "rec-1787420395126-x7vz",
+          "investigationId": "inv-1787420381148",
+          "title": "Strategic Technology Audit: Crash Recovery Integration Audit",
+          "action": "Initiate continuous monitoring on primary entities to track competitor roadmaps.",
+          "reason": "Primary evidence indicates ongoing industry acceleration requiring active intelligence monitoring.",
+          "priority": "MEDIUM",
+          "impact": "MEDIUM",
+          "confidence": 85,
+          "timeHorizon": "MEDIUM_TERM",
+          "evidenceIds": [
+            "ev-res-1",
+            "ev-norm-news-media-0-1787420387550",
+            "ev-norm-news-media-1-1787420387550"
+          ],
+          "signalIds": [
+            "sig-fb-1787420395010"
+          ],
+          "entityIds": [],
+          "status": "RECOMMENDED",
+          "createdAt": "2026-08-22T17:39:55.126Z"
+        }
+      ],
+      "watchItems": [],
+      "confidence": 92,
+      "sourceCoverage": {
+        "RESEARCH": "AVAILABLE",
+        "PATENT": "AVAILABLE",
+        "NEWS": "AVAILABLE",
+        "COMPETITOR": "AVAILABLE",
+        "WEB": "AVAILABLE"
+      },
+      "evidenceIds": [
+        "ev-res-1",
+        "ev-norm-news-media-0-1787420387550",
+        "ev-norm-news-media-1-1787420387550",
+        "ev-norm-news-media-0-1787420394198",
+        "ev-norm-news-media-1-1787420394198",
+        "ev-pat-1"
+      ],
+      "signalIds": [
+        "sig-fb-1787420395010"
+      ],
+      "entityIds": [],
+      "generatedAt": "2026-08-22T17:39:55.129Z"
+    }
+  ]
+}
