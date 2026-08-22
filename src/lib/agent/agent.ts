@@ -247,7 +247,8 @@ You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not
     throw e;
   }
 
-  const content = finalResponse.text || "";
+  let content = finalResponse.text || "";
+  content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
   console.log("[Pipeline Debug] -> Final report generated. Attempting to parse JSON.");
 
   try {
