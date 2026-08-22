@@ -69,13 +69,11 @@ Our solution is an **Autonomous Strategic Intelligence Agent** built using the O
    Click on "New Investigation", enter your strategic question, and watch the agent execute its timeline!
 
 ## Screenshots / Demo Link
-*Demo Link:* [Insert Vercel Deployment Link Here]
+*Demo Link:* [https://eminence-agentx24-task1.vercel.app/](https://eminence-agentx24-task1.vercel.app/)
 
-### Dashboard
-*[Insert Screenshot of Dashboard Here]*
+### Intelligence Dashboard
+![Dashboard](/dashboard.png)
 
-### Investigation Workspace (Monitoring)
-*[Insert Screenshot of the Execution Timeline Here]*
+### How to Use Guide
+![How to Use](/how-to-use.png)
 
-### Intelligence Report
-*[Insert Screenshot of the Final Report Here]*

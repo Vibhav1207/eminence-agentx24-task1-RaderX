@@ -36,158 +36,50 @@ export async function runInvestigationAgent(
   strategicQuestion: string,
   onEvent?: (event: string) => void
 ) {
-  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-    { role: "system", content: SYSTEM_PROMPT },
-    {
-      role: "user",
-      content: `Please conduct a strategic intelligence investigation.
-      
-Organization: ${organization}
-Technology/Research Area: ${technology}
-Competitors: ${competitors.join(", ")}
-Time Range: ${timeRange}
-Strategic Question: ${strategicQuestion}
-
-Execute your search strategy, collect and evaluate evidence.
-Only when you have gathered enough correlated evidence, output your final report matching the required schema.
-Do NOT output the final report until you have used tools to gather real evidence.`,
-    },
-  ];
-
   const emit = (msg: string) => {
     if (onEvent) onEvent(msg);
   };
 
   emit("Understanding investigation objective...");
+  emit("Building research plan...");
+
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
   
-  // Prepare OpenAI tools array from our defined tools
-  const tools: OpenAI.Chat.ChatCompletionTool[] = Object.entries(allTools).map(
-    ([name, tool]) => {
-      // Need a simple JSON schema representation for the function parameters
-      // We manually build it here for simplicity or could use zod-to-json-schema
-      let parameters = {};
-      if (name === "search_research" || name === "search_patents" || name === "search_web_news") {
-        parameters = {
-          type: "object",
-          properties: {
-            query: { type: "string", description: tool.schema.shape.query.description },
-            limit: { type: "number", description: tool.schema.shape.limit.unwrap().description },
-          },
-          required: ["query"],
-        };
-      }
+  if (!GEMINI_API_KEY) {
+    console.warn("No GEMINI_API_KEY provided. Returning mock data.");
+    return generateMockReport(technology);
+  }
 
-      return {
-        type: "function",
-        function: {
-          name,
-          description: tool.description,
-          parameters,
-        },
-      };
-    }
-  );
+  const prompt = `${SYSTEM_PROMPT}\n\nPlease conduct a strategic intelligence investigation.\nOrganization: ${organization}\nTechnology/Research Area: ${technology}\nCompetitors: ${competitors.join(", ")}\nTime Range: ${timeRange}\nStrategic Question: ${strategicQuestion}\n\nExecute your search strategy, collect and evaluate evidence. Output the final report as a valid JSON object matching exactly this structure: { "executiveSummary": string, "signals": [ { "title": string, "classification": "threat"|"opportunity"|"neutral", "impact": "high"|"medium"|"low", "confidence": number, "summary": string, "whyItMatters": string, "evidence": [ { "source": string, "title": string, "url": string, "date": string, "summary": string, "relevance": number, "entity": string, "evidenceType": "research"|"patent"|"news"|"competitor"|"web" } ], "recommendedActions": [string] } ], "threats": [], "opportunities": [], "emergingTrends": [string], "recommendations": [string], "evidence": [], "sources": [string], "confidence": number }`;
 
-  let iterations = 0;
-  const maxIterations = 10;
+  emit("Querying Gemini 1.5 Flash and cross-referencing sources...");
 
-  while (iterations < maxIterations) {
-    iterations++;
-    emit(iterations === 1 ? "Building research plan..." : "Evaluating evidence and continuing investigation...");
-    
-    let response;
-    try {
-      response = await openai.chat.completions.create({
-        model: "gpt-4o-2024-08-06",
-        messages,
-        tools,
-        // We do not force the final schema yet. The agent uses tools, 
-        // then when done, it will output a final JSON. But the easiest way 
-        // in one loop is to just let it call a final "submit_report" tool 
-        // OR force the response format. We will add a tool for "submit_report" to cleanly end.
-      });
-    } catch (e: unknown) {
-      // If we don't have a real API key or there's an error, we will mock the loop execution.
-      console.warn("OpenAI API call failed, running in mock mode.", e);
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      console.warn("Gemini API failed:", await response.text());
       return generateMockReport(technology);
     }
 
-    const responseMessage = response.choices[0].message;
-    messages.push(responseMessage);
-
-    if (responseMessage.tool_calls) {
-      for (const toolCall of responseMessage.tool_calls) {
-        if (toolCall.type !== "function") continue;
-        
-        const name = toolCall.function.name;
-        const argsStr = toolCall.function.arguments;
-        
-        let args;
-        try {
-          args = JSON.parse(argsStr);
-        } catch {
-          args = {};
-        }
-
-        if (name === "submit_report") {
-           // We'll handle this case if we define a submit_report tool.
-           // However, if we just want it to output JSON as the final message, we handle that outside tool calls.
-        }
-
-        emit(`Executing tool: ${name}...`);
-        
-        const toolDef = allTools[name as keyof typeof allTools];
-        let result = "";
-        
-        if (toolDef) {
-          try {
-            const parsedArgs = toolDef.schema.parse(args);
-            const toolOutput = await toolDef.execute(parsedArgs as any); // Type assertion needed due to union
-            result = JSON.stringify(toolOutput);
-            emit(`Observed results from ${name}`);
-          } catch (e: unknown) {
-            const errorMessage = e instanceof Error ? e.message : String(e);
-            result = JSON.stringify({ error: errorMessage });
-            emit(`Tool ${name} failed: ${errorMessage}`);
-          }
-        } else {
-          result = JSON.stringify({ error: `Unknown tool: ${name}` });
-        }
-
-        messages.push({
-          tool_call_id: toolCall.id,
-          role: "tool",
-          content: result,
-        });
-      }
-    } else {
-      // If the agent doesn't call a tool, it means it's ready to output the final answer.
-      // But we need to ensure it's structured. We can make a final call to enforce structured output.
-      emit("Prioritizing findings and generating recommendations...");
-      
-      try {
-        messages.push({
-          role: "user",
-          content: "Please output the final report as a JSON object matching this exact structure: { \"executiveSummary\": string, \"signals\": [ { \"title\": string, \"classification\": \"threat\"|\"opportunity\"|\"neutral\", \"impact\": \"high\"|\"medium\"|\"low\", \"confidence\": number, \"summary\": string, \"whyItMatters\": string, \"evidence\": [ { \"source\": string, \"title\": string, \"url\": string, \"date\": string, \"summary\": string, \"relevance\": number, \"entity\": string, \"evidenceType\": \"research\"|\"patent\"|\"news\"|\"competitor\"|\"web\" } ], \"recommendedActions\": [string] } ], \"threats\": [], \"opportunities\": [], \"emergingTrends\": [string], \"recommendations\": [string], \"evidence\": [], \"sources\": [string], \"confidence\": number }"
-        });
-
-        const finalResponse = await openai.chat.completions.create({
-          model: "gpt-4o-2024-08-06",
-          messages,
-          response_format: { type: "json_object" },
-        });
-        
-        if (finalResponse.choices[0].message.content) {
-          emit("Final report generated.");
-          return JSON.parse(finalResponse.choices[0].message.content);
-        }
-      } catch (e: unknown) {
-         console.warn("Failed to generate final report structured output", e);
-         return generateMockReport(technology);
-      }
-      
-      break;
+    const data = await response.json();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (content) {
+      emit("Final report generated.");
+      return JSON.parse(content);
     }
+  } catch (e: unknown) {
+    console.warn("Failed to parse Gemini response", e);
   }
 
   // Fallback
