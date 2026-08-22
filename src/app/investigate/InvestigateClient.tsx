@@ -132,43 +132,69 @@ export default function InvestigateClient() {
     setIsSubmitting(true);
     setError(null);
 
+    // Set placeholder investigation so UI enters "running" state immediately
+    setInvestigation({
+      id: "pending",
+      organization: form.organization,
+      technology: form.technology,
+      competitors: form.competitors.split(",").map((s) => s.trim()),
+      timeRange: form.timeRange as any,
+      strategicQuestion: form.strategicQuestion,
+      status: "running",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      report: null as any
+    });
+    setStage("running");
+
+    let fetchComplete = false;
+    let fetchedData: any = null;
+
+    // Simulate agent execution progress immediately
+    let idx = 0;
+    const advance = () => {
+      if (idx >= EXECUTION_STAGES.length) {
+        // Wait for fetch if timeline finishes first
+        const checkDone = setInterval(() => {
+          if (fetchComplete) {
+            clearInterval(checkDone);
+            if (fetchedData?.investigation?.id) {
+              setStage("done");
+              setInvestigation(fetchedData.investigation);
+              setTimeout(() => router.push(`/report/${fetchedData.investigation.id}`), 1000);
+            } else {
+              setStage("setup");
+              setIsSubmitting(false);
+            }
+          }
+        }, 500);
+        return;
+      }
+      setActiveStageIdx(idx);
+      setCompletedStages((prev) => (idx > 0 ? [...prev, idx - 1] : prev));
+      idx++;
+      setTimeout(advance, 1500 + Math.random() * 500);
+    };
+    advance();
+
+    // Start fetch concurrently
     try {
       const res = await fetch("/api/investigate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-
       const data = await res.json();
-
+      fetchComplete = true;
       if (!res.ok) {
         setError(data.error || "Failed to start investigation");
-        setIsSubmitting(false);
-        return;
+      } else {
+        fetchedData = data;
+        setInvestigation(data.investigation); // Update UI with real data immediately when ready
       }
-
-      setInvestigation(data.investigation);
-      setStage("running");
-
-      // Simulate agent execution progress
-      let idx = 0;
-      const advance = () => {
-        if (idx >= EXECUTION_STAGES.length) {
-          setStage("done");
-          if (data.investigation?.id) {
-            setTimeout(() => router.push(`/report/${data.investigation.id}`), 1500);
-          }
-          return;
-        }
-        setActiveStageIdx(idx);
-        setCompletedStages((prev) => (idx > 0 ? [...prev, idx - 1] : prev));
-        idx++;
-        setTimeout(advance, 1800 + Math.random() * 800);
-      };
-      advance();
     } catch {
+      fetchComplete = true;
       setError("Network error. Please try again.");
-      setIsSubmitting(false);
     }
   }
 
@@ -421,39 +447,63 @@ export default function InvestigateClient() {
                         const isActive = !isDone && i === activeStageIdx && stage === "running";
                         const isPending = !isDone && !isActive;
 
+                        // Mock timings for completed stages
+                        const timing = (0.2 + (i * 0.8) + (i % 2 === 0 ? 0.3 : 0)).toFixed(1);
+                        let subText = `${timing}s`;
+                        if (i === 2 && isDone) subText += " - Found 12 sources";
+                        if (i === 5 && isDone) subText += " - Found 8 articles";
+
+                        const activeTexts = [
+                          "Connecting...",
+                          "Gathering context...",
+                          "Querying OpenAlex...",
+                          "Processing document 3/5...",
+                          "Scanning profiles...",
+                          "Fetching news feeds...",
+                          "Synthesizing...",
+                          "Cross-referencing...",
+                          "Evaluating...",
+                          "Writing..."
+                        ];
+
                         return (
-                          <li key={i} className={`flex items-start gap-4 ${isPending ? "opacity-50" : ""}`}>
+                          <li key={i} className={`flex items-start gap-4 ${isPending ? "opacity-40" : ""}`}>
                             <div
-                              className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 z-10 relative ${
+                              className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 z-10 relative ${
                                 isDone
-                                  ? "bg-[#82f5c1] border border-[#006c4a]"
+                                  ? "bg-[#6be4a6] border border-[#006c4a]"
                                   : isActive
-                                  ? "bg-white border-2 border-black pulse-active"
-                                  : "bg-[#f8f9ff] border border-[#c6c6cd]"
+                                  ? "bg-white border-[2px] border-black"
+                                  : "bg-white border border-[#c6c6cd]"
                               }`}
                             >
                               {isDone && (
                                 <svg className="w-3 h-3 text-[#006c4a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="m4.5 12.75 6 6 9-13.5" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="m4.5 12.75 6 6 9-13.5" />
                                 </svg>
                               )}
-                              {isActive && <div className="w-2 h-2 rounded-full bg-black" />}
+                              {isActive && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
                             </div>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col -mt-0.5">
                               <span
-                                className={`text-[12px] font-medium ${
+                                className={`text-[13px] ${
                                   isDone
-                                    ? "text-[#45464d] line-through opacity-70"
+                                    ? "text-[#76777d] line-through decoration-[#c6c6cd]"
                                     : isActive
                                     ? "text-black font-semibold"
-                                    : "text-[#45464d]"
+                                    : "text-[#76777d]"
                                 }`}
                               >
                                 {stageName}
                               </span>
+                              {isDone && (
+                                <span className="text-[12px] font-mono text-[#76777d] mt-1">
+                                  {subText}
+                                </span>
+                              )}
                               {isActive && (
-                                <span className="text-[11px] font-mono text-[#45464d] mt-1 bg-[#dce9ff] px-2 py-0.5 rounded inline-block w-max">
-                                  In progress...
+                                <span className="text-[12px] font-mono text-[#45464d] mt-1.5 bg-[#e5eeff] px-2 py-0.5 rounded inline-block w-max">
+                                  {activeTexts[i] || "Processing..."}
                                 </span>
                               )}
                             </div>

@@ -48,6 +48,10 @@ Our solution is an **Autonomous Strategic Intelligence Agent** built using the O
    OPENAI_API_KEY=your_openai_api_key
    MONGODB_URI=your_mongodb_connection_string
    
+   # Optional (for Web Search & Patent Tools)
+   SERP_API_KEY=your_serp_api_key
+   PATENT_API_KEY=your_patent_api_key
+   
    # Optional (for Vercel Cron authorization)
    CRON_SECRET=your_secret_string
    MONGODB_DB=task1web

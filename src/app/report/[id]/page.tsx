@@ -1,16 +1,20 @@
+export const dynamic = 'force-dynamic';
+
 import { notFound } from "next/navigation";
 import ReportClient from "./ReportClient";
 import type { Investigation } from "@/lib/schemas";
 
+import { getDb } from "@/lib/mongodb";
+
 async function getInvestigation(id: string): Promise<Investigation | null> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/investigations/${id}`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.investigation ?? null;
+    const db = await getDb();
+    const investigation = await db.collection("investigations").findOne({ id });
+    if (!investigation) return null;
+    
+    // Convert ObjectId to string if necessary, but we can just return it as any
+    // since the schema only cares about the fields it defines.
+    return investigation as unknown as Investigation;
   } catch {
     return null;
   }

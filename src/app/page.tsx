@@ -1,18 +1,20 @@
+export const dynamic = 'force-dynamic';
+
 import TopNav from "@/components/TopNav";
 import Link from "next/link";
 import { Investigation } from "@/lib/schemas";
 
+import { getDb } from "@/lib/mongodb";
 import { WatchConfig } from "@/lib/schemas";
 
 async function getWatches(): Promise<WatchConfig[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/watches`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.watches ?? [];
+    const db = await getDb();
+    const watches = await db.collection("watches").find({}).sort({ createdAt: -1 }).toArray();
+    return watches.map(w => {
+      const { _id, ...rest } = w;
+      return rest as unknown as WatchConfig;
+    });
   } catch {
     return [];
   }
@@ -54,13 +56,17 @@ async function WatchesSection() {
 
 async function getInvestigations(): Promise<Investigation[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/investigations`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.investigations ?? [];
+    const db = await getDb();
+    const investigations = await db
+      .collection("investigations")
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .toArray();
+    return investigations.map(i => {
+      const { _id, ...rest } = i;
+      return rest as unknown as Investigation;
+    });
   } catch {
     return [];
   }
