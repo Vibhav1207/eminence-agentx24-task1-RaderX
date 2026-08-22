@@ -196,7 +196,7 @@ export async function runInvestigationAgent(
     }
     
     try {
-      response = await chat.sendMessage({ message: functionResponses as any });
+      response = await chat.sendMessage(functionResponses);
     } catch (e) {
       console.error(`[Pipeline Debug] -> API Error during tool loop iteration ${iteration}:`, e);
       throw e; // Throw to fail the pipeline and let route.ts catch it
