@@ -198,13 +198,13 @@ export async function runInvestigationAgent(
     try {
       // Add a small 1-second delay before sending the message to avoid bursting the rate limit
       await new Promise(resolve => setTimeout(resolve, 1000));
-      response = await chat.sendMessage(functionResponses);
+      response = await chat.sendMessage({ message: functionResponses as any });
     } catch (e: any) {
       if (e?.status === 429 || e?.message?.includes('429')) {
         console.log(`[Pipeline Debug] -> Rate limit hit. Retrying after 3 seconds...`);
         emit("Rate limit reached. Waiting a few seconds before retrying...");
         await new Promise(resolve => setTimeout(resolve, 3000));
-        response = await chat.sendMessage(functionResponses);
+        response = await chat.sendMessage({ message: functionResponses as any });
       } else {
         console.error(`[Pipeline Debug] -> API Error during tool loop iteration ${iteration}:`, e);
         throw e; // Throw to fail the pipeline and let route.ts catch it
