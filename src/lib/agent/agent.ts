@@ -59,7 +59,7 @@ export async function runInvestigationAgent(
   }
 
   const chat = ai.chats.create({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-3.6-flash',
     config: {
       systemInstruction: SYSTEM_PROMPT,
       tools: tools as any,
@@ -136,7 +136,7 @@ You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not
 }`;
 
   const finalResponse = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-3.6-flash',
     contents: [
       ...history,
       { role: 'user', parts: [{ text: finalPrompt }] }
