@@ -79,36 +79,36 @@ export async function runInvestigationAgent(
     const functionResponses = [];
 
     for (const call of response.functionCalls) {
-      console.log(`[Pipeline Debug] -> Tool selected: ${call.name}`);
-      emit(`Executing tool: ${call.name}...`);
+      const toolName = call.name || "unknown_tool";
+      console.log(`[Pipeline Debug] -> Tool selected: ${toolName}`);
       
       try {
         const args = call.args as any;
-        const toolHandler = allTools[call.name as keyof typeof allTools];
+        const toolHandler = allTools[toolName as keyof typeof allTools];
         
         // Show the user exactly what is being searched
         if (args.query) {
-          emit(`Searching ${call.name.replace('search_', '')} for: "${args.query}"...`);
+          emit(`Searching ${toolName.replace('search_', '')} for: "${args.query}"...`);
         } else {
-          emit(`Executing tool: ${call.name}...`);
+          emit(`Executing tool: ${toolName}...`);
         }
 
         if (toolHandler) {
           const result = await toolHandler.execute(args);
-          console.log(`[Pipeline Debug] -> Tool result received from ${call.name}. Items count: ${Array.isArray(result) ? result.length : 1}`);
+          console.log(`[Pipeline Debug] -> Tool result received from ${toolName}. Items count: ${Array.isArray(result) ? result.length : 1}`);
           
           functionResponses.push({
-            functionResponse: { name: call.name, response: result }
+            functionResponse: { name: toolName, response: result }
           });
         } else {
           functionResponses.push({
-            functionResponse: { name: call.name, response: { error: "Tool not found" } }
+            functionResponse: { name: toolName, response: { error: "Tool not found" } }
           });
         }
       } catch (e) {
-        console.error(`[Pipeline Debug] -> Error in tool ${call.name}:`, e);
+        console.error(`[Pipeline Debug] -> Error in tool ${toolName}:`, e);
         functionResponses.push({
-          functionResponse: { name: call.name, response: { error: String(e) } }
+          functionResponse: { name: toolName, response: { error: String(e) } }
         });
       }
     }
