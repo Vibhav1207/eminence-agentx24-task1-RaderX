@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f9ff;
-  --foreground: #0b1c30;
+  --background: #F7F6F2;
+  --foreground: #111827;
+  --card: rgba(255, 255, 255, 0.78);
+  --card-elevated: rgba(255, 255, 255, 0.88);
+  --card-premium: rgba(255, 255, 255, 0.96);
+  --border-subtle: rgba(229, 231, 235, 0.9);
+  --border-gold: rgba(212, 175, 55, 0.35);
+  --gold-primary: #D4AF37;
+  --gold-dark: #C9A227;
+  --gold-light: #F7E7B4;
+  --gold-text: #A38018;
+  --threat-burgundy: #991B1B;
+  --opportunity-emerald: #059669;
+  --warning-amber: #D97706;
+  --charcoal-dark: #111827;
+  --charcoal-muted: #4B5563;
 }
 
 @theme inline {
@@ -13,33 +27,91 @@
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
 }
 
-/* Custom scrollbar */
+/* Ambient Radial Gold Background Lighting */
+.bg-ambient-gold {
+  background-image: 
+    radial-gradient(circle at 50% -10%, rgba(212, 175, 55, 0.12) 0%, transparent 60%),
+    radial-gradient(circle at 100% 40%, rgba(212, 175, 55, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 0% 80%, rgba(212, 175, 55, 0.05) 0%, transparent 45%);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F7F6F2;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #D1D5DB;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #9CA3AF;
+}
+
 .custom-scroll::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 .custom-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scroll::-webkit-scrollbar-thumb {
-  background-color: #c6c6cd;
+  background-color: #E5E7EB;
   border-radius: 4px;
 }
 
-/* Pulse animation for active stage */
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 0.5; }
-  100% { transform: scale(1.5); opacity: 0; }
+/* 3-Tier Glassmorphism System */
+.glass-level-1 {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 231, 235, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(17, 24, 39, 0.03);
+  border-radius: 16px;
 }
-.pulse-active::before {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background-color: #000000;
-  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+
+.glass-level-2 {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  box-shadow: 0 10px 30px -4px rgba(17, 24, 39, 0.05);
+  border-radius: 16px;
+}
+
+.glass-level-3 {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow: 0 12px 35px -4px rgba(212, 175, 55, 0.15), 0 4px 12px -2px rgba(17, 24, 39, 0.04);
+  border-radius: 18px;
+}
+
+/* Radar Sweep Animation - Gold Aesthetic */
+@keyframes radar-gold-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-radar-sweep {
+  animation: radar-gold-sweep 4s linear infinite;
+}
+
+/* Pulsing Gold Glow */
+@keyframes gold-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.15); }
+}
+
+.pulse-gold {
+  animation: gold-pulse 2.2s ease-in-out infinite;
 }

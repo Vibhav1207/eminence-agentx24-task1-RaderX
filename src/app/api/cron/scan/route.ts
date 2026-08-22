@@ -1,7 +1,6 @@
-import { getDb } from "@/lib/mongodb";
-import { runInvestigationAgent } from "@/lib/agent/agent";
-import { WatchConfig, Investigation } from "@/lib/schemas";
-import { randomUUID } from "crypto";
+import { dbRepository } from "@/lib/db/repository";
+import { orchestratorService } from "@/lib/orchestrator/orchestratorService";
+import { apiSuccess, apiError } from "@/lib/api/response";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -11,83 +10,33 @@ export async function GET(request: Request) {
       process.env.CRON_SECRET &&
       authHeader !== `Bearer ${process.env.CRON_SECRET}`
     ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return apiError("Unauthorized", "UNAUTHORIZED", 401);
     }
 
-    const db = await getDb();
-    const watches = await db
-      .collection<WatchConfig>("watches")
-      .find({ status: "active" })
-      .toArray();
-
+    const watchlists = await dbRepository.getWatchlists();
+    const activeWatchlists = watchlists.filter((w) => w.status === "ACTIVE" || w.status === "INVESTIGATING");
     const results = [];
 
-    for (const watch of watches) {
-      console.log(`Running scan for watch: ${watch.id}`);
+    for (const watch of activeWatchlists) {
       try {
-        const report = await runInvestigationAgent(
-          watch.organization,
-          watch.technology,
-          watch.competitors,
-          watch.timeRange,
-          watch.strategicQuestion
-        );
-
-        // Fetch previous investigation for this watch to find new signals
-        const previousInv = await db
-          .collection("investigations")
-          .findOne(
-            { watchId: watch.id },
-            { sort: { createdAt: -1 } }
-          ) as unknown as Investigation | null;
-        
-        let newSignalsCount = 0;
-
-        if (previousInv?.report) {
-          const oldTitles = new Set(previousInv.report.signals.map((s: any) => s.title));
-          const newSignals = report.signals.filter((s: any) => !oldTitles.has(s.title));
-          newSignalsCount = newSignals.length;
-        } else {
-          newSignalsCount = report.signals.length;
-        }
-
-        const now = new Date().toISOString();
-        const investigation = {
-          id: randomUUID(),
-          watchId: watch.id,
-          organization: watch.organization,
-          technology: watch.technology,
-          competitors: watch.competitors,
-          timeRange: watch.timeRange,
-          strategicQuestion: watch.strategicQuestion,
-          status: "completed" as const,
-          report,
-          createdAt: now,
-          updatedAt: now,
-        };
-
-        // Save investigation
-        await db.collection("investigations").insertOne({
-          ...investigation,
-          _id: investigation.id as any,
+        const inv = await dbRepository.createInvestigation({
+          title: `${watch.organization} × ${watch.technology} Automated Watch`,
+          objective: watch.objective || `Continuous background monitoring for ${watch.organization}`,
+          priority: "HIGH",
+          timeHorizon: "Last 7 days",
+          primaryEntities: [watch.organization, watch.technology],
         });
 
-        // Update watch last scan
-        await db.collection("watches").updateOne(
-          { _id: watch._id as any },
-          { $set: { lastScan: now } }
-        );
-
-        results.push({ watchId: watch.id, newSignalsCount, success: true });
-      } catch (err: unknown) {
-        console.error(`Failed to scan watch ${watch.id}:`, err);
-        results.push({ watchId: watch.id, success: false });
+        await orchestratorService.startMission(inv.id);
+        await dbRepository.updateWatchlist(watch.id, { lastCheckedAt: new Date().toISOString() });
+        results.push({ watchlistId: watch.id, investigationId: inv.id, status: "DISPATCHED" });
+      } catch (err: any) {
+        results.push({ watchlistId: watch.id, status: "FAILED", error: err.message });
       }
     }
 
-    return NextResponse.json({ message: "Scan complete", results });
-  } catch (error: unknown) {
-    console.error("Cron execution failed:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiSuccess({ message: "Cron scan execution complete", results });
+  } catch (error: any) {
+    return apiError(error.message || "Cron execution failed", "CRON_ERROR", 500);
   }
 }

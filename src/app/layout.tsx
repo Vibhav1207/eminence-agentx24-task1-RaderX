@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import AppShell from "@/components/layout/AppShell";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -9,15 +10,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Task 1 of the Web — Autonomous Intelligence Platform",
-  description: "Autonomous competitive and research intelligence platform",
+  title: "RADARX — Autonomous Intelligence Platform",
+  description: "Autonomous multi-agent intelligence platform for organizations, startups, and research teams.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className={`${inter.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-[#f8f9ff] text-[#0b1c30] antialiased font-sans">
-        {children}
+      <body className="h-full bg-[#F7F6F2] text-[#111827] bg-ambient-gold antialiased font-sans">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

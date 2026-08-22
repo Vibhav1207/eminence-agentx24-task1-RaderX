@@ -1,18 +1,42 @@
-import { getDb } from "@/lib/mongodb";
+import { dbRepository } from '@/lib/db/repository';
+import { apiSuccess, apiError } from '@/lib/api/response';
+import { CreateInvestigationApiSchema } from '@/lib/schemas';
 
 export async function GET() {
   try {
-    const db = await getDb();
-    const investigations = await db
-      .collection("investigations")
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(20)
-      .toArray();
+    const investigations = await dbRepository.getInvestigations();
+    return apiSuccess(investigations);
+  } catch (error: any) {
+    return apiError(error.message || 'Failed to fetch investigations', 'FETCH_ERROR', 500);
+  }
+}
 
-    return Response.json({ investigations });
-  } catch {
-    // MongoDB not configured — return empty list
-    return Response.json({ investigations: [] });
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const parseResult = CreateInvestigationApiSchema.safeParse(body);
+
+    if (!parseResult.success) {
+      return apiError(
+        'Validation failed for investigation payload',
+        'VALIDATION_ERROR',
+        400,
+        parseResult.error.flatten()
+      );
+    }
+
+    const { organization, technology, strategicQuestion, priority, timeHorizon, primaryEntities } = parseResult.data;
+
+    const newInv = await dbRepository.createInvestigation({
+      title: `${organization} × ${technology}`,
+      objective: strategicQuestion,
+      priority,
+      timeHorizon,
+      primaryEntities: primaryEntities.length > 0 ? primaryEntities : [organization, technology],
+    });
+
+    return apiSuccess(newInv, 201);
+  } catch (error: any) {
+    return apiError(error.message || 'Failed to create investigation', 'CREATE_ERROR', 500);
   }
 }

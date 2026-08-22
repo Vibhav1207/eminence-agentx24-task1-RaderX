@@ -1,90 +1,104 @@
-import TopNav from "@/components/TopNav";
-import SideNav from "@/components/SideNav";
-import Link from "next/link";
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { Shield, Zap, Eye, Bot, Cpu, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { JudgeOverview } from '@/components/ui/JudgeOverview';
 
 export default function HowToUsePage() {
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <TopNav />
-      <div className="flex flex-1 overflow-hidden">
-        <SideNav />
-        <main className="flex-1 overflow-y-auto bg-[#f8f9ff] p-8 custom-scroll">
-          <div className="max-w-[800px] mx-auto bg-white border border-[#c6c6cd] rounded-lg p-8">
-            <h1 className="text-[32px] font-semibold text-black tracking-tight mb-4">
-              How to Use RaderX
-            </h1>
-            <p className="text-[16px] text-[#45464d] leading-6 mb-8">
-              RaderX is an autonomous strategic intelligence agent that monitors your competitors, tracks scientific research, and identifies market opportunities before they become obvious.
-            </p>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="p-6 md:p-8 max-w-[1400px] mx-auto space-y-10"
+    >
+      {/* Hackathon Judge Overview & Agentic Proof Guide */}
+      <JudgeOverview />
 
-            <div className="space-y-10">
-              {/* Step 1 */}
-              <section>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold">1</div>
-                  <h2 className="text-[20px] font-semibold text-black">Start an Investigation</h2>
-                </div>
-                <p className="text-[15px] text-[#45464d] leading-6 mb-4 ml-11">
-                  Navigate to the <Link href="/investigate" className="text-black font-semibold underline">Investigations</Link> tab and configure your analysis parameters. Tell the AI exactly what you want to know.
-                </p>
-                <div className="ml-11 bg-[#f8f9ff] border border-[#c6c6cd] p-5 rounded">
-                  <h3 className="font-semibold text-black mb-2 text-[14px]">Example Scenario:</h3>
-                  <ul className="text-[14px] text-[#45464d] space-y-2 font-mono">
-                    <li><span className="font-semibold text-black">Organization:</span> NVIDIA</li>
-                    <li><span className="font-semibold text-black">Technology:</span> AI Inference Chips</li>
-                    <li><span className="font-semibold text-black">Competitors:</span> AMD, Intel, Google</li>
-                    <li><span className="font-semibold text-black">Strategic Question:</span> What new architectural advantages are competitors developing to challenge our inference market share?</li>
-                  </ul>
-                </div>
-              </section>
-
-              {/* Step 2 */}
-              <section>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold">2</div>
-                  <h2 className="text-[20px] font-semibold text-black">Review the Intelligence Report</h2>
-                </div>
-                <p className="text-[15px] text-[#45464d] leading-6 mb-4 ml-11">
-                  Once the agent finishes dynamically searching through research papers, patents, and web news, it correlates the data and generates a highly structured report.
-                </p>
-                <div className="ml-11 grid grid-cols-2 gap-4">
-                  <div className="bg-[#ffdad6] border border-[#ba1a1a]/20 p-4 rounded">
-                    <h3 className="font-semibold text-[#ba1a1a] mb-1 text-[14px]">Strategic Threats</h3>
-                    <p className="text-[12px] text-[#ba1a1a]">Identify high-impact risks where competitors are gaining an edge.</p>
-                  </div>
-                  <div className="bg-[#82f5c1]/30 border border-[#006c4a]/20 p-4 rounded">
-                    <h3 className="font-semibold text-[#006c4a] mb-1 text-[14px]">Market Opportunities</h3>
-                    <p className="text-[12px] text-[#006c4a]">Discover whitespace in the market based on patent voids or emerging research.</p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Step 3 */}
-              <section>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold">3</div>
-                  <h2 className="text-[20px] font-semibold text-black">Save as an Active Watch</h2>
-                </div>
-                <p className="text-[15px] text-[#45464d] leading-6 mb-4 ml-11">
-                  Don't want to run this manually every time? At the end of any investigation, click <strong>"Save as Watch"</strong>.
-                </p>
-                <p className="text-[14px] text-[#45464d] leading-5 ml-11">
-                  RaderX will continuously scan these parameters in the background (via cron jobs). When new signals are detected, they are automatically cross-referenced against past findings so you only see net-new critical intelligence on your Dashboard.
-                </p>
-              </section>
-
-              <div className="pt-6 mt-8 border-t border-[#c6c6cd] text-center">
-                <Link
-                  href="/investigate"
-                  className="bg-black text-white text-[14px] font-semibold px-6 py-3 rounded-lg hover:opacity-90 transition-opacity inline-block"
-                >
-                  Start Your First Investigation Now
-                </Link>
-              </div>
+      {/* Guide Steps */}
+      <div className="space-y-6">
+        {/* Step 1 */}
+        <div className="glass-level-2 p-6 space-y-4 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#C9A227] text-[#111827] flex items-center justify-center font-mono font-extrabold text-sm shadow-md">
+              1
+            </div>
+            <h2 className="text-lg font-extrabold text-[#111827] font-sans">
+              Formulate a Strategic Objective
+            </h2>
+          </div>
+          <p className="text-xs text-[#374151] font-sans leading-relaxed pl-11">
+            Navigate to <Link href="/investigations/new" className="text-[#8C6D13] font-bold hover:underline">New Investigation</Link> and enter ONE strategic question along with target entities (organizations and technologies).
+          </p>
+          <div className="ml-11 bg-[#FAF9F6] p-4 rounded-xl border border-[#E5E7EB] space-y-1 font-mono text-xs">
+            <div className="text-[#8C6D13] font-bold">EXAMPLE STRATEGIC QUESTION:</div>
+            <div className="text-[#111827]">
+              "Analyze NVIDIA's position in Generative AI inference chips and identify emerging competitive threats and opportunities."
             </div>
           </div>
-        </main>
+        </div>
+
+        {/* Step 2 */}
+        <div className="glass-level-2 p-6 space-y-4 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#C9A227] text-[#111827] flex items-center justify-center font-mono font-extrabold text-sm shadow-md">
+              2
+            </div>
+            <h2 className="text-lg font-extrabold text-[#111827] font-sans">
+              Autonomous Agent Orchestration & Real Evidence Discovery
+            </h2>
+          </div>
+          <p className="text-xs text-[#374151] font-sans leading-relaxed pl-11">
+            RadarX Master Orchestrator decomposes your objective into a dynamic task dependency queue. Specialized agents query real APIs (Crossref DOIs, USPTO Patents, Global News, Web Repositories) simultaneously without returning fake fallbacks.
+          </p>
+          <div className="ml-11 grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+            <div className="p-3 bg-white border border-[#E5E7EB] rounded-xl">
+              <span className="text-[10px] font-bold text-[#8C6D13] block">RESEARCH AGENT</span>
+              <span className="text-[#111827]">Crossref DOIs & arXiv Preprints</span>
+            </div>
+            <div className="p-3 bg-white border border-[#E5E7EB] rounded-xl">
+              <span className="text-[10px] font-bold text-[#D97706] block">PATENT AGENT</span>
+              <span className="text-[#111827]">USPTO & Global Patent Filings</span>
+            </div>
+            <div className="p-3 bg-white border border-[#E5E7EB] rounded-xl">
+              <span className="text-[10px] font-bold text-[#059669] block">SIGNAL ENGINE</span>
+              <span className="text-[#111827]">Multi-Stream Event Correlation</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Step 3 */}
+        <div className="glass-level-2 p-6 space-y-4 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#C9A227] text-[#111827] flex items-center justify-center font-mono font-extrabold text-sm shadow-md">
+              3
+            </div>
+            <h2 className="text-lg font-extrabold text-[#111827] font-sans">
+              AI Synthesis & Continuous Autonomous Watchlists
+            </h2>
+          </div>
+          <p className="text-xs text-[#374151] font-sans leading-relaxed pl-11">
+            Once correlation completes, the Synthesis Engine generates an executive brief with 100% evidence citation traceability. Click <strong>"START AUTONOMOUS MONITORING"</strong> to convert findings into 24/7 background watchlists.
+          </p>
+        </div>
       </div>
-    </div>
+
+      {/* CTA Button */}
+      <div className="pt-4 flex justify-center">
+        <Link href="/investigations/new">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-xs font-extrabold px-6 py-3.5 rounded-xl shadow-lg shadow-[#D4AF37]/25 transition-all cursor-pointer"
+          >
+            <Zap className="w-4 h-4 text-[#111827]" />
+            <span>START YOUR FIRST AUTONOMOUS INVESTIGATION</span>
+            <ArrowRight className="w-4 h-4" />
+          </motion.div>
+        </Link>
+      </div>
+    </motion.div>
   );
 }

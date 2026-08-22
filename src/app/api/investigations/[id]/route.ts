@@ -1,4 +1,6 @@
-import { getDb } from "@/lib/mongodb";
+import { dbRepository } from '@/lib/db/repository';
+import { apiSuccess, apiError } from '@/lib/api/response';
+import { PatchInvestigationApiSchema } from '@/lib/schemas';
 
 export async function GET(
   _request: Request,
@@ -6,17 +8,49 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const db = await getDb();
-    const investigation = await db
-      .collection("investigations")
-      .findOne({ id });
+    const inv = await dbRepository.getInvestigationById(id);
+    if (!inv) {
+      return apiError(`Investigation with ID ${id} not found`, 'NOT_FOUND', 404);
+    }
+    return apiSuccess(inv);
+  } catch (error: any) {
+    return apiError(error.message || 'Failed to fetch investigation', 'FETCH_ERROR', 500);
+  }
+}
 
-    if (!investigation) {
-      return Response.json({ error: "Investigation not found" }, { status: 404 });
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const parseResult = PatchInvestigationApiSchema.safeParse(body);
+
+    if (!parseResult.success) {
+      return apiError('Invalid patch payload', 'VALIDATION_ERROR', 400, parseResult.error.flatten());
     }
 
-    return Response.json({ investigation });
-  } catch {
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    const updated = await dbRepository.updateInvestigation(id, parseResult.data);
+    if (!updated) {
+      return apiError(`Investigation with ID ${id} not found`, 'NOT_FOUND', 404);
+    }
+
+    return apiSuccess(updated);
+  } catch (error: any) {
+    return apiError(error.message || 'Failed to update investigation', 'UPDATE_ERROR', 500);
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await dbRepository.deleteInvestigation(id);
+    return apiSuccess({ deleted: true, id });
+  } catch (error: any) {
+    return apiError(error.message || 'Failed to delete investigation', 'DELETE_ERROR', 500);
   }
 }

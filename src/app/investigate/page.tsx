@@ -1,5 +1,5 @@
-import InvestigateClient from "./InvestigateClient";
+import { redirect } from 'next/navigation';
 
 export default function InvestigatePage() {
-  return <InvestigateClient />;
+  redirect('/investigations/new');
 }

@@ -1,75 +1,124 @@
-# RaderX - Strategic Intelligence Agent
+# RADARX — Autonomous Multi-Agent Intelligence Platform
 
-## Team Members
-* Vibhav Patel
-* Mahesh Banger 
-* Saksham Patil
-* Saisha Asane
-* Yuvraj Kumar
+## Tagline
+**AUTONOMOUS INTELLIGENCE FOR ORGANIZATIONS, STARTUPS, AND RESEARCH TEAMS**
 
-## Problem Statement
-Organizations, startups, and research institutions operate in highly competitive and rapidly evolving environments where staying updated on research trends, patent developments, competitor strategies, and industry news is critical. However, manually monitoring scientific publications, patent databases, news platforms, and social media sources is time-consuming, inefficient, and prone to missing important updates. The lack of timely insights can result in lost opportunities, delayed innovation, and weakened competitive positioning. Therefore, there is a need for an autonomous AI agent capable of continuously tracking research and competitor activities, analyzing vast information sources, and delivering concise, actionable insights in real time.
+---
 
-## Project Description
-Our solution is an **Autonomous Strategic Intelligence Agent** built using the OpenAI API. Instead of relying on a hardcoded pipeline, our intelligent agent dynamically queries multiple data sources (academic research via OpenAlex, patent databases, and news/web trends) based on the user's strategic question. It autonomously correlates evidence across these distinct sources to identify verified strategic signals, classifies them as Threats or Opportunities, scores their confidence and impact, and outputs a prioritized, structured intelligence report.
+## Architecture Overview
 
-## Technologies Used
-- **Frontend:** Next.js 16, React 19, Tailwind CSS
-- **Backend:** Next.js API Routes, Vercel Serverless Functions
-- **Database:** MongoDB
-- **AI/Agents:** OpenAI Node.js SDK (GPT-4o) with strict structured outputs (Zod)
-- **APIs/Tools:** OpenAlex API (Research), Simulated Patent/Web News endpoints
-- **Infrastructure:** Vercel Cron Jobs (for automated monitoring/watches)
+RADARX is an autonomous multi-agent intelligence platform designed to answer strategic questions with 100% evidence-backed, cross-source correlated intelligence.
 
-## Features
-- **Autonomous Agentic Loop:** The AI decides which tools to call, evaluates the evidence, and searches again if needed, never relying on a deterministic, hardcoded sequence.
-- **Cross-Source Correlation:** Discovers relationships between scientific research, patent filings, and market news to derive high-value strategic signals.
-- **Threat/Opportunity Classification:** Automatically grades signals on confidence and impact metrics.
-- **Continuous Monitoring (Watches):** Save any investigation as a "Watch" to be automatically re-scanned weekly via Vercel Cron Jobs, persisting only net-new signals to MongoDB.
-- **Full Dashboard Integration:** Beautiful, functional UI to track active monitoring, recent reports, and top-level critical discoveries.
+```
+USER STRATEGIC OBJECTIVE
+          ↓
+RADARX MASTER ORCHESTRATOR
+          ↓
+MISSION PLANNER & TASK DECOMPOSITION QUEUE
+          ↓
+SPECIALIZED INTELLIGENCE AGENTS
+  ├── Research Agent (Crossref DOIs & arXiv)
+  ├── Patent Agent (USPTO & Patent Index)
+  ├── News Agent (Global News Syndicate)
+  ├── Competitor Agent (SEC Disclosures & Corporate Moves)
+  └── Web Intelligence Agent (Public Repositories & Tech Web)
+          ↓
+PROVENANCE EVIDENCE STORE
+          ↓
+CROSS-SOURCE CORRELATION & SIGNAL ENGINE
+          ↓
+AI SYNTHESIS ENGINE (Google Gemini API)
+          ↓
+UNIFIED EXECUTIVE BRIEF & 24/7 BACKGROUND WATCHLISTS
+```
 
-## Installation / Setup Steps
+---
 
-1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd eminence-agentx24-task1
-   ```
+## Key Features
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+1. **Autonomous Master Orchestrator**:
+   - Accepts a single strategic question and dynamically decomposes execution into an adaptive task dependency tree.
+   - Evaluates intermediate evidence and generates follow-up tasks (e.g., deep-dive patent audits).
 
-3. **Environment Variables:**
-   Create a `.env` or `.env.local` file in the root directory and add:
-   ```env
-   # Required
-   OPENAI_API_KEY=your_openai_api_key
-   MONGODB_URI=your_mongodb_connection_string
-   
-   # Optional (for Web Search & Patent Tools)
-   SERP_API_KEY=your_serp_api_key
-   PATENT_API_KEY=your_patent_api_key
-   
-   # Optional (for Vercel Cron authorization)
-   CRON_SECRET=your_secret_string
-   MONGODB_DB=task1web
-   ```
+2. **100% Real External Source Providers (Zero Fake Fallbacks)**:
+   - **Crossref REST Provider**: Live academic DOIs with polite mailto headers.
+   - **USPTO Patent Provider**: Live patent filings index.
+   - **Global News Syndicate Provider**: Live tech and financial news feeds with XML parsing and deduplication.
+   - **Web Intelligence Provider**: Live web and repository data.
+   - Surfaces `DEGRADED` or `OFFLINE` status honestly if an external source fails.
 
-## How to Run the Project
+3. **Cross-Source Correlation Engine**:
+   - Deduplicates syndicated news clusters.
+   - Extracts multi-source technical and strategic themes.
+   - Calculates source diversity scores and evidence strength.
 
-1. **Start the Development Server:**
-   ```bash
-   npm run dev
-   ```
-2. **Access the Application:**
-   Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
-3. **Run an Investigation:**
-   Click on "New Investigation", enter your strategic question, and watch the agent execute its timeline!
+4. **Structured AI Synthesis Engine**:
+   - Generates executive briefs, findings, threats, opportunities, recommendations, and source coverage metrics powered by Google Gemini API.
+   - **100% Citation Traceability**: Every claim links back to verified evidence items.
 
-## Screenshots / Demo Link
-*Demo Link:* [https://eminence-agentx24-task1.vercel.app/](https://eminence-agentx24-task1.vercel.app/)
+5. **24/7 Autonomous Watchlists**:
+   - Converts investigation findings into continuous background monitoring.
 
+---
 
+## Technology Stack
 
+- **Framework**: Next.js 16 (App Router, Turbopack, Serverless API Routes)
+- **UI / Styling**: React 19, Vanilla CSS Glassmorphism, Framer Motion, Lucide Icons
+- **Database**: MongoDB & Memory Repository
+- **AI / LLM**: Google Gemini REST API (`gemini-2.5-flash` / `gemini-2.0-flash` / `gemini-1.5-pro`)
+- **Language**: TypeScript
+
+---
+
+## Configuration & Environment Setup
+
+Create `.env` or `.env.local` in the root directory:
+
+```env
+# Application Mode: 'production' (100% real data) or 'demo' (optional seed dataset)
+APP_MODE=production
+
+# Database Configuration
+MONGODB_URI=your_mongodb_connection_string
+MONGODB_DB=radarx
+
+# Crossref REST API Contact Header
+CROSSREF_MAILTO=research@radarx.ai
+
+# Google Gemini LLM API Configuration
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+---
+
+## Running the Application
+
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Run Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) to view RADARX.
+
+### 3. Production Build & Typecheck
+```bash
+npm run build
+```
+Runs Next.js production compilation and TypeScript verification across all 22 static and dynamic routes.
+
+---
+
+## Project Structure
+
+- `src/app`: Application page routes & REST API endpoints
+- `src/components`: UI design system, cards, indicators, overlays, layout shells
+- `src/lib/orchestrator`: Master Orchestrator, mission planner, adaptive evaluator, task runner, Gemini LLM provider
+- `src/lib/providers`: Live external REST data providers (Crossref, Patent, News, Web)
+- `src/lib/intelligence`: Event clusterer, theme detector, correlation engine, signal engine, synthesis engine
+- `src/lib/db`: Database repository & seed data

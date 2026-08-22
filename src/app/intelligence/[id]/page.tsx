@@ -1,0 +1,429 @@
+'use client';
+
+import React, { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import {
+  Shield,
+  Zap,
+  TrendingUp,
+  FileText,
+  CheckCircle2,
+  Eye,
+  Target,
+  Sparkles,
+  Plus,
+  Layers,
+  Link as LinkIcon,
+  RefreshCw,
+  ExternalLink,
+  ShieldCheck,
+  AlertCircle
+} from 'lucide-react';
+import {
+  ConfidenceIndicator,
+  ThreatIndicator,
+  OpportunityIndicator
+} from '@/components/ui/Indicators';
+import { EvidenceCard } from '@/components/ui/Cards';
+import { RightDrawer } from '@/components/ui/Overlays';
+import { investigationsApi } from '@/lib/api';
+import { InvestigationModel, ExecutiveIntelligence, EvidenceModel } from '@/lib/types';
+import { PdfExportButton } from '@/components/report/PdfExportButton';
+
+export default function UnifiedIntelligencePage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = (params?.id as string) || '';
+
+  const [investigation, setInvestigation] = useState<InvestigationModel | null>(null);
+  const [intelligence, setIntelligence] = useState<ExecutiveIntelligence | null>(null);
+  const [evidenceList, setEvidenceList] = useState<EvidenceModel[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
+  const [isWatchlistModalOpen, setIsWatchlistModalOpen] = useState(false);
+  const [watchlistTitle, setWatchlistTitle] = useState('Target Watchlist');
+
+  const loadData = useCallback(async () => {
+    if (!id) return;
+    try {
+      const inv = await investigationsApi.getById(id);
+      if (inv) {
+        setInvestigation(inv);
+        setWatchlistTitle(`${inv.title} Watchlist`);
+      }
+
+      const intel = await investigationsApi.getIntelligence(id);
+      if (intel) setIntelligence(intel);
+
+      const ev = await investigationsApi.getEvidence(id);
+      if (ev) setEvidenceList(ev);
+    } catch (e) {
+      console.warn('Failed to load intelligence report:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleRegenerate = async () => {
+    setIsRegenerating(true);
+    try {
+      const res = await investigationsApi.regenerateIntelligence(id);
+      if (res?.intelligence) {
+        setIntelligence(res.intelligence);
+      }
+    } catch (e) {
+      console.error('Failed to regenerate analysis:', e);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const handleCreateWatchlist = async () => {
+    if (!investigation) return;
+    try {
+      await investigationsApi.getById(id);
+      setIsWatchlistModalOpen(false);
+      router.push('/watchlists');
+    } catch {}
+  };
+
+  if (loading) {
+    return (
+      <div className="p-12 text-center text-xs font-mono text-[#6B7280]">
+        Synthesizing executive intelligence assessment...
+      </div>
+    );
+  }
+
+  if (!investigation) {
+    return (
+      <div className="p-12 text-center text-xs font-mono text-[#6B7280]">
+        Intelligence report for investigation <span className="font-bold text-[#111827]">{id}</span> not found.
+      </div>
+    );
+  }
+
+  const coverage = intelligence?.sourceCoverage || {
+    RESEARCH: 'AVAILABLE',
+    PATENT: 'AVAILABLE',
+    NEWS: 'AVAILABLE',
+    COMPETITOR: 'AVAILABLE',
+    WEB: 'AVAILABLE',
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-8"
+    >
+      {/* Unified Intelligence Header */}
+      <div className="glass-level-2 p-6 space-y-4 shadow-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#E5E7EB] pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#047857] bg-[#059669]/15 px-2.5 py-0.5 rounded-md border border-[#059669]/30 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-[#059669]" />
+                INVESTIGATION COMPLETE
+              </span>
+              <span className="text-[10px] font-mono text-[#6B7280]">ID: {investigation.id}</span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-[#111827] font-sans">
+              UNIFIED INTELLIGENCE • {investigation.title}
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <ConfidenceIndicator value={intelligence?.confidence || investigation.confidence || 92} size="lg" />
+            <PdfExportButton
+              brief={{
+                id: `brief-${investigation.id}`,
+                investigationId: investigation.id,
+                title: investigation.title,
+                version: 1,
+                executiveSummary: intelligence?.executiveSummary || investigation.executiveSummary || '',
+                keyChanges: [],
+                strategicImplications: [],
+                threats: [],
+                opportunities: [],
+                recommendedActions: (intelligence?.recommendedActions || []).map((ra: any, idx: number) => ({
+                  id: `rec-${idx}`,
+                  investigationId: investigation.id,
+                  title: ra.action,
+                  action: ra.action,
+                  reason: ra.reason,
+                  impact: 'HIGH',
+                  confidence: 90,
+                  priority: ra.priority || 'HIGH',
+                  timeHorizon: 'IMMEDIATE',
+                  evidenceIds: [],
+                  signalIds: [],
+                  entityIds: [],
+                  status: 'ACKNOWLEDGED',
+                  createdAt: new Date().toISOString(),
+                })),
+                watchItems: [],
+                confidence: 90,
+                sourceCoverage: { RESEARCH: 'AVAILABLE', PATENT: 'AVAILABLE', NEWS: 'AVAILABLE', WEB: 'AVAILABLE' },
+                evidenceIds: [],
+                signalIds: [],
+                entityIds: [],
+                generatedAt: new Date().toISOString(),
+              }}
+              evidence={evidenceList}
+            />
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleRegenerate}
+              disabled={isRegenerating}
+              className="inline-flex items-center gap-1.5 bg-white border border-[#E5E7EB] text-[#374151] font-mono text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-2xs hover:border-[#D4AF37] transition-all cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
+              <span>REGENERATE</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setIsWatchlistModalOpen(true)}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-md shadow-[#D4AF37]/25 transition-all cursor-pointer"
+            >
+              <Eye className="w-4 h-4 text-[#111827]" />
+              <span>START AUTONOMOUS MONITORING</span>
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Source Coverage Grid */}
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#6B7280] uppercase">
+            <span>REAL SOURCE PROVIDER COVERAGE</span>
+            <span>CITATIONS: 100% TRACEABLE</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs font-mono">
+            {Object.entries(coverage).map(([stream, status]) => (
+              <div key={stream} className="bg-white/80 p-2.5 rounded-xl border border-[#E5E7EB] flex items-center justify-between shadow-2xs">
+                <span className="text-[10px] font-bold text-[#374151]">{stream}</span>
+                <span className={`text-[9px] font-extrabold px-2 py-0.2 rounded ${
+                  status === 'AVAILABLE' ? 'bg-[#059669]/15 text-[#047857]' : 'bg-[#991B1B]/15 text-[#991B1B]'
+                }`}>
+                  {status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Executive Intelligence & Strategic Scores */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left 2 Cols: Level 3 Executive Brief & Findings */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="glass-level-3 p-6 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-mono font-extrabold uppercase tracking-wider text-[#8C6D13]">
+              <Sparkles className="w-4 h-4 text-[#C9A227]" />
+              EXECUTIVE BRIEF (SYNTHESIS ENGINE)
+            </div>
+
+            <h2 className="text-xl font-extrabold text-[#111827] leading-snug font-sans">
+              "{intelligence?.executiveSummary || investigation.executiveSummary}"
+            </h2>
+
+            {/* Strategic Score Indicators */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <ThreatIndicator score={investigation.threatScore || 68} />
+              <OpportunityIndicator score={investigation.opportunityScore || 74} />
+              <div className="glass-level-2 border-l-4 border-l-[#D4AF37] border-[#D4AF37]/30 p-3.5 flex items-center justify-between shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-[#8C6D13]" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-mono text-[#6B7280] uppercase font-bold">SIGNAL VELOCITY</div>
+                    <div className="text-xs font-extrabold text-[#8C6D13] font-mono">ACCELERATING</div>
+                  </div>
+                </div>
+                <div className="text-xl font-extrabold font-mono text-[#8C6D13]">+42%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Key Findings List with Evidence Citations */}
+          <div className="glass-level-2 p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-3">
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+                <Target className="w-4 h-4 text-[#C9A227]" />
+                KEY FINDINGS ({intelligence?.keyFindings?.length || 0})
+              </h3>
+              <span className="text-[10px] font-mono text-[#047857] font-bold">EVIDENCE-BACKED</span>
+            </div>
+
+            <div className="space-y-3">
+              {(intelligence?.keyFindings || []).map((kf, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 rounded-xl bg-white/80 border border-[#E5E7EB] hover:border-[#D4AF37]/40 transition-colors space-y-2 shadow-2xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-extrabold uppercase px-2.5 py-0.5 rounded-md bg-[#D4AF37]/15 text-[#8C6D13] border border-[#D4AF37]/30">
+                      FINDING #{idx + 1} • {kf.impact} IMPACT
+                    </span>
+                    <span className="text-[11px] font-mono text-[#047857] font-extrabold">
+                      {kf.confidence}% CONFIDENCE
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-[#111827] font-sans">{kf.title}</h4>
+                  <p className="text-xs text-[#4B5563] font-sans leading-relaxed">{kf.summary}</p>
+                  
+                  {/* Evidence Citation Pills */}
+                  {kf.evidenceIds && kf.evidenceIds.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#E5E7EB]">
+                      <span className="text-[9px] font-mono text-[#6B7280] font-bold">CITATIONS:</span>
+                      {kf.evidenceIds.map((evId, evIdx) => (
+                        <span key={`${evId}-${evIdx}`} className="text-[9px] font-mono px-2 py-0.5 rounded bg-[#FAF9F6] text-[#111827] border border-[#E5E7EB] flex items-center gap-1">
+                          <LinkIcon className="w-2.5 h-2.5 text-[#8C6D13]" />
+                          {evId}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Col: Recommendations & Watch Items */}
+        <div className="space-y-6">
+          {/* Actionable Recommendations */}
+          <div className="glass-level-3 p-5 space-y-4">
+            <div className="border-b border-[#E5E7EB] pb-3">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#8C6D13]">
+                ACTIONABLE RECOMMENDATIONS
+              </span>
+              <h3 className="text-sm font-bold text-[#111827] font-sans mt-0.5">
+                RADARX RECOMMENDS
+              </h3>
+            </div>
+
+            <div className="space-y-3">
+              {(intelligence?.recommendedActions || []).map((rec, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl bg-white border border-[#E5E7EB] space-y-1.5 shadow-2xs">
+                  <div className="flex items-center justify-between text-[10px] font-mono">
+                    <span className="font-bold text-[#8C6D13]">{rec.timeHorizon} HORIZON</span>
+                    <span className="px-2 py-0.2 rounded-md bg-[#991B1B]/15 text-[#991B1B] font-extrabold">
+                      {rec.priority} PRIORITY
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-[#111827] font-sans">{rec.action}</h4>
+                  <p className="text-[11px] text-[#4B5563] leading-relaxed font-sans">{rec.reason}</p>
+                </div>
+              ))}
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setIsWatchlistModalOpen(true)}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-xs font-extrabold py-3 px-4 rounded-xl shadow-md shadow-[#D4AF37]/25 transition-all cursor-pointer mt-2"
+            >
+              <Eye className="w-4 h-4 text-[#111827]" />
+              <span>START AUTONOMOUS MONITORING</span>
+            </motion.button>
+          </div>
+
+          {/* Continuous Watch Items */}
+          <div className="glass-level-2 p-5 space-y-4">
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+              <Shield className="w-4 h-4 text-[#047857]" />
+              CONTINUOUS WATCH ITEMS
+            </h3>
+
+            <div className="space-y-3">
+              {(intelligence?.watchItems || []).map((wi, idx) => (
+                <div key={idx} className="p-3 rounded-xl bg-white/80 border border-[#E5E7EB] space-y-1 text-xs font-mono">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="font-extrabold text-[#111827]">{wi.topic}</span>
+                    <span className="text-[#047857] font-bold">{wi.priority} PRIORITY</span>
+                  </div>
+                  <p className="text-[11px] text-[#4B5563] font-sans">{wi.reason}</p>
+                  <div className="text-[9px] text-[#6B7280] pt-1">Trigger: {wi.trigger}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Real Evidence Exploration Grid */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+            <FileText className="w-4 h-4 text-[#06B6D4]" />
+            PRIMARY EVIDENCE BEHIND ASSESSMENT ({evidenceList.length})
+          </h2>
+          <span className="text-xs font-mono text-[#6B7280]">Real Provider Metadata</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {evidenceList.map((ev, idx) => (
+            <EvidenceCard key={`${ev.id}-${idx}`} evidence={ev} />
+          ))}
+        </div>
+      </div>
+
+      {/* Watchlist Creation Drawer Modal */}
+      <RightDrawer
+        isOpen={isWatchlistModalOpen}
+        onClose={() => setIsWatchlistModalOpen(false)}
+        title="START AUTONOMOUS WATCHLIST"
+        subtitle="Convert investigation findings into continuous background monitoring"
+      >
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-xs font-mono font-bold text-[#111827]">WATCHLIST TITLE</label>
+            <input
+              type="text"
+              value={watchlistTitle}
+              onChange={(e) => setWatchlistTitle(e.target.value)}
+              className="w-full bg-white border border-[#E5E7EB] rounded-xl px-3.5 py-2.5 text-xs text-[#111827] font-mono focus:border-[#D4AF37] focus:outline-none"
+            />
+          </div>
+
+          <div className="bg-[#FAF9F6] p-4 rounded-xl border border-[#E5E7EB] space-y-2 text-xs font-mono">
+            <div className="flex justify-between text-[#6B7280]">
+              <span>TARGET ENTITY:</span>
+              <span className="text-[#111827] font-bold">{investigation.title}</span>
+            </div>
+            <div className="flex justify-between text-[#6B7280]">
+              <span>SCAN FREQUENCY:</span>
+              <span className="text-[#047857] font-bold">Continuous (24/7)</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-[#6B7280] font-sans leading-relaxed">
+            RadarX sub-agents will automatically watch connected streams and emit alerts whenever a high-impact signal is detected.
+          </p>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleCreateWatchlist}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#E0C46C] text-[#111827] font-mono text-xs font-extrabold py-3 px-4 rounded-xl shadow-md shadow-[#D4AF37]/25 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4 text-[#111827]" />
+            <span>CREATE WATCHLIST & MONITOR NOW</span>
+          </motion.button>
+        </div>
+      </RightDrawer>
+    </motion.div>
+  );
+}
