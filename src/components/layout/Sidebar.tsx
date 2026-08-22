@@ -88,9 +88,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <>
       <CommandPalette />
-      {/* Mobile Sidebar */}
+      {/* Mobile Sidebar - responsive navigation drawer */}
       <aside 
-        className={`fixed top-0 left-0 h-full w-[280px] max-w-[85vw] bg-white z-50 md:hidden transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 h-full w-[280px] max-w-[85vw] bg-white z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         role="navigation"
         aria-label="Main navigation"
       >

@@ -171,20 +171,24 @@ export async function recordHeartbeat(investigationId: string): Promise<void> {
  * 6. Stale run detection (e.g. heartbeat older than configured period)
  */
 export async function detectStaleInvestigations(staleThresholdMs: number = 120000): Promise<void> {
-  const db = await getDb();
-  const thresholdTime = new Date(Date.now() - staleThresholdMs).toISOString();
+  try {
+    const db = await getDb();
+    const thresholdTime = new Date(Date.now() - staleThresholdMs).toISOString();
 
-  // Find investigations marked running but with stale heartbeats
-  const staleInvs = await db.collection("investigations")
-    .find({
-      status: 'INVESTIGATING',
-      lastHeartbeatAt: { $lt: thresholdTime }
-    })
-    .toArray();
+    // Find investigations marked running but with stale heartbeats
+    const staleInvs = await db.collection("investigations")
+      .find({
+        status: 'INVESTIGATING',
+        lastHeartbeatAt: { $lt: thresholdTime }
+      })
+      .toArray();
 
-  for (const inv of staleInvs) {
-    console.log(`[LANGGRAPH STALE] Detected stale running investigation: ${inv.id}. Marking INTERRUPTED.`);
-    await markInterrupted(inv.id);
+    for (const inv of staleInvs) {
+      console.log(`[LANGGRAPH STALE] Detected stale running investigation: ${inv.id}. Marking INTERRUPTED.`);
+      await markInterrupted(inv.id);
+    }
+  } catch (err) {
+    // Fail-safe in memory mode if database is unconfigured or unreachable
   }
 }
 

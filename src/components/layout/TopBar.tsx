@@ -31,10 +31,10 @@ export default function TopBar({ onOpenCommandPalette, onOpenSidebar }: TopBarPr
 
   return (
     <header className="h-14 bg-white/80 backdrop-blur-md border-b border-[#E5E7EB] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shrink-0 shadow-2xs">
-      {/* Mobile Menu Button */}
+      {/* Mobile Menu Button - visible on all screen sizes for responsive navigation */}
       <button
         onClick={onOpenSidebar}
-        className="md:hidden p-2 rounded-xl bg-white border border-[#E5E7EB] text-[#4B5563] hover:text-[#111827] hover:border-[#D4AF37]/50 shadow-xs transition-colors touch-target"
+        className="p-2 rounded-xl bg-white border border-[#E5E7EB] text-[#4B5563] hover:text-[#111827] hover:border-[#D4AF37]/50 shadow-xs transition-colors touch-target lg:hidden"
         aria-label="Open navigation menu"
       >
         <Menu className="w-5 h-5" />

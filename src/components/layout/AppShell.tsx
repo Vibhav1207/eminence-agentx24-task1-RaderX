@@ -19,10 +19,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#F7F6F2] text-[#111827] bg-ambient-gold antialiased font-sans relative">
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile Sidebar Overlay - works on all screen sizes */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+          className="fixed inset-0 bg-black/50 z-40" 
           onClick={() => setIsSidebarOpen(false)}
           aria-hidden="true"
         />
