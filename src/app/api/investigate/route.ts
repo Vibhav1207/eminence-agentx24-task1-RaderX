@@ -1,6 +1,7 @@
 import { CreateInvestigationSchema } from "@/lib/schemas";
 import { getDb } from "@/lib/mongodb";
 import { randomUUID } from "crypto";
+import { runInvestigationAgent } from "@/lib/agent/agent";
 
 export async function POST(request: Request) {
   try {
@@ -18,6 +19,17 @@ export async function POST(request: Request) {
       parsed.data;
 
     const now = new Date().toISOString();
+    
+    // Run the agent synchronously for now, as the frontend awaits the fetch call
+    const report = await runInvestigationAgent(
+      organization,
+      technology,
+      competitors.split(",").map(c => c.trim()),
+      timeRange,
+      strategicQuestion,
+      (event) => console.log(`[Agent Event]: ${event}`)
+    );
+
     const investigation = {
       id: randomUUID(),
       organization,
@@ -25,7 +37,8 @@ export async function POST(request: Request) {
       competitors: competitors.split(",").map((c) => c.trim()).filter(Boolean),
       timeRange,
       strategicQuestion,
-      status: "pending" as const,
+      status: "completed" as const,
+      report,
       createdAt: now,
       updatedAt: now,
     };
@@ -38,7 +51,8 @@ export async function POST(request: Request) {
     }
 
     return Response.json({ investigation }, { status: 201 });
-  } catch {
+  } catch (error: unknown) {
+    console.error("Agent execution failed:", error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
