@@ -11,7 +11,8 @@ export type AgentEventType =
   | "EVIDENCE_EVALUATED"
   | "NEXT_ACTION_SELECTED"
   | "INVESTIGATION_COMPLETED"
-  | "INVESTIGATION_FAILED";
+  | "INVESTIGATION_FAILED"
+  | "MEMORY";
 
 export interface AgentEvent {
   investigationId: string;
