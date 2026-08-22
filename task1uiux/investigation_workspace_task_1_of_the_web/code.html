@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Task 1 of the Web - Investigation Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary-container": "#7c839b",
+                        "tertiary-container": "#271901",
+                        "on-surface-variant": "#45464d",
+                        "tertiary": "#000000",
+                        "surface-variant": "#d3e4fe",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "outline": "#76777d",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#98805d",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#cbdbf5",
+                        "surface-tint": "#565e74",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#85f8c4",
+                        "background": "#f8f9ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface": "#f8f9ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-container-high": "#dce9ff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#574425",
+                        "secondary-container": "#82f5c1",
+                        "on-background": "#0b1c30",
+                        "inverse-primary": "#bec6e0",
+                        "primary-fixed": "#dae2fd",
+                        "on-tertiary-fixed": "#271901",
+                        "on-primary-fixed": "#131b2e",
+                        "on-secondary-container": "#00714e",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#002114",
+                        "on-secondary-fixed-variant": "#005137",
+                        "on-surface": "#0b1c30",
+                        "surface-container-low": "#eff4ff",
+                        "secondary": "#006c4a",
+                        "surface-bright": "#f8f9ff",
+                        "outline-variant": "#c6c6cd",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#e5eeff",
+                        "inverse-surface": "#213145",
+                        "tertiary-fixed": "#fcdeb5",
+                        "on-secondary": "#ffffff",
+                        "primary": "#000000",
+                        "primary-fixed-dim": "#bec6e0",
+                        "primary-container": "#131b2e",
+                        "tertiary-fixed-dim": "#dec29a",
+                        "secondary-fixed-dim": "#68dba9"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "gutter": "16px",
+                        "margin-mobile": "16px",
+                        "container-max": "1440px",
+                        "unit": "4px",
+                        "stack-md": "16px",
+                        "stack-xs": "4px",
+                        "margin-desktop": "32px",
+                        "stack-sm": "8px",
+                        "stack-lg": "24px"
+                    },
+                    fontFamily: {
+                        "headline-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "mono-sm": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Grid Alignment Helper */
+        .grid-align {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 16px;
+        }
+        @media (max-width: 1024px) {
+            .grid-align {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+        /* Custom scrollbar for timeline */
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #c6c6cd; /* outline-variant */
+            border-radius: 4px;
+        }
+        
+        /* Pulse Animation for Active Stage */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .pulse-active::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #000000;
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md h-screen overflow-hidden flex flex-col antialiased">
+<!-- TopNavBar (Web/Tablet) -->
+<nav class="hidden md:flex bg-surface-container-lowest border-b border-outline-variant docked full-width top-0 z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop h-16 max-w-container-max mx-auto">
+<!-- Brand -->
+<div class="flex items-center gap-stack-md">
+<span class="font-headline-md text-headline-md font-bold text-primary">Task 1 of the Web</span>
+</div>
+<!-- Navigation Links -->
+<div class="flex gap-stack-lg items-center">
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">Workspace</a>
+<a class="text-on-surface-variant font-medium font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">Dashboard</a>
+<a class="text-on-surface-variant font-medium font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">Insights</a>
+<a class="text-on-surface-variant font-medium font-label-md text-label-md hover:text-primary transition-colors duration-200" href="#">Library</a>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-stack-md">
+<button aria-label="notifications" class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button aria-label="help" class="text-on-surface-variant hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant border border-outline-variant overflow-hidden flex items-center justify-center">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A small, professional headshot photo of a business analyst in a minimal, bright office setting. High contrast, clean lighting, representing a modern user profile image." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfijf8IXmI-SftK6rLlWF5TJX4P0hCzV8SjObqOSLrHKg7TvIxLyPxkJHq1_muqWfrPBjWeFsutPH-4pq4DrjPlk5bOZVYgo2Hd4-vDPm04M5DuGjVT7tNQC7CxcJZnkwicLWQN0UOKSTuCjc7Hz_ORRLA0eFKwO-plNlVYvWNIh1ytV24jvq9D4Y0PrabiklPkXrr6Z2IhSMh3z2j0N_H8OabohWM9ywwkMA9BblPrV5kKs1uqvcI"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Layout Container -->
+<div class="flex flex-1 overflow-hidden relative">
+<!-- SideNavBar (Desktop) - Hidden on smaller screens as per 'docked left-0 h-screen w-64' and 'hidden lg:flex' -->
+<aside class="hidden lg:flex flex-col bg-surface border-r border-outline-variant docked left-0 h-full w-64 p-4 gap-stack-md shrink-0 z-40">
+<!-- Header -->
+<div class="flex items-center gap-stack-sm mb-stack-md p-2">
+<div class="w-10 h-10 rounded bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden shrink-0">
+<img alt="Organization Logo" class="w-full h-full object-contain p-1" data-alt="A minimalist, geometric logo design featuring sharp intersecting lines in dark grey and white, representing an abstract 'Intelligence Unit' corporate emblem. Flat design, no gradients." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgHIWGZJNyMCcyKMouIg5NjXv0mSelxC0YipvhTwqNxa7LPHanV9Y3zdSqmSd5lTW0mfpyHg-g8GRHwPEsk_2VVV8modFPp6dAXgZNo5cSjNZ58I4pPlx_ga6fHMU7ee7j2BubgcGvXlkp8UgANHZ_v2gD0TUG5Hb4UL4xKSwoThCIGYxiu5DTyk0VJwunpvAh8Ss262JKi8IJH9XvnAO8Q0DE1WSDe8JxSnuzsRehn_QjhUe3GtQP"/>
+</div>
+<div class="flex flex-col overflow-hidden">
+<span class="font-headline-sm text-headline-sm font-semibold text-primary truncate">Intelligence Unit</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Strategic Analysis</span>
+</div>
+</div>
+<!-- CTA -->
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 mb-stack-md hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                New Investigation
+            </button>
+<!-- Navigation Tabs -->
+<nav class="flex flex-col gap-stack-xs flex-1">
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md font-medium group-hover:text-primary transition-colors">Home</span>
+</a>
+<a class="flex items-center gap-3 p-3 bg-surface-container-high text-primary font-semibold rounded-lg transition-all duration-150 opacity-80 scale-95" href="#">
+<span class="material-symbols-outlined text-[20px] fill" data-icon="search_insight" data-weight="fill">drive_file_rename</span>
+<span class="font-label-md text-label-md">Research</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors" data-icon="visibility">visibility</span>
+<span class="font-label-md text-label-md font-medium group-hover:text-primary transition-colors">Monitoring</span>
+</a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors" data-icon="description">description</span>
+<span class="font-label-md text-label-md font-medium group-hover:text-primary transition-colors">Reports</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant pt-stack-md">
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md font-medium group-hover:text-primary transition-colors">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Canvas Area -->
+<main class="flex-1 overflow-y-auto custom-scroll relative bg-surface" id="main-content">
+<!-- Setup State (Initially Hidden in JS, shown here for structure, but focus is Active State as requested) -->
+<div class="hidden max-w-[800px] mx-auto py-margin-desktop px-gutter" id="setup-state">
+<div class="mb-stack-lg">
+<h1 class="font-display-lg text-display-lg text-primary mb-stack-xs">New Investigation</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Configure parameters for the strategic analysis agent.</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-stack-lg flex flex-col gap-stack-lg">
+<div class="grid grid-cols-2 gap-stack-md">
+<div class="flex flex-col gap-stack-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Organization</label>
+<input class="w-full border-outline-variant bg-surface-container-lowest text-primary font-body-md text-body-md rounded h-10 px-3 focus:ring-0 focus:border-secondary transition-colors" placeholder="e.g., NVIDIA" type="text" value="NVIDIA"/>
+</div>
+<div class="flex flex-col gap-stack-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Technology / Research Area</label>
+<input class="w-full border-outline-variant bg-surface-container-lowest text-primary font-body-md text-body-md rounded h-10 px-3 focus:ring-0 focus:border-secondary transition-colors" placeholder="e.g., AI Inference" type="text" value="AI Inference"/>
+</div>
+</div>
+<div class="flex flex-col gap-stack-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Competitors</label>
+<input class="w-full border-outline-variant bg-surface-container-lowest text-primary font-body-md text-body-md rounded h-10 px-3 focus:ring-0 focus:border-secondary transition-colors" placeholder="Comma separated list" type="text" value="AMD, Google, Intel"/>
+</div>
+<div class="flex flex-col gap-stack-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Time Period</label>
+<select class="w-full border-outline-variant bg-surface-container-lowest text-primary font-body-md text-body-md rounded h-10 px-3 focus:ring-0 focus:border-secondary transition-colors appearance-none">
+<option>Last 30 days</option>
+<option>Last 90 days</option>
+<option>Year to Date</option>
+</select>
+</div>
+<div class="flex flex-col gap-stack-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Strategic Question</label>
+<textarea class="w-full border-outline-variant bg-surface-container-lowest text-primary font-body-md text-body-md rounded p-3 focus:ring-0 focus:border-secondary transition-colors min-h-[100px] resize-none" placeholder="What are we trying to determine?">Is AMD becoming a stronger competitive threat in AI inference?</textarea>
+</div>
+<div class="flex justify-end mt-stack-md pt-stack-md border-t border-outline-variant">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-6 py-2.5 rounded-lg hover:opacity-90 transition-opacity" id="start-btn">Start Investigation</button>
+</div>
+</div>
+</div>
+<!-- Active State (Visible by default) -->
+<div class="h-full flex flex-col md:flex-row" id="active-state">
+<!-- Main Workspace (Evidence / Signals) -->
+<div class="flex-1 p-margin-desktop overflow-y-auto custom-scroll border-r border-outline-variant">
+<!-- Context Header -->
+<div class="mb-stack-lg border-b border-outline-variant pb-stack-lg">
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-1 bg-surface-container-high rounded font-mono-sm text-mono-sm text-on-surface-variant">INV-2049</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-secondary tracking-widest uppercase">Investigation Active</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary mb-2">Is AMD becoming a stronger competitive threat in AI inference?</h1>
+<div class="flex gap-2 flex-wrap">
+<span class="px-2 py-1 bg-[#F1F5F9] rounded border border-outline-variant font-label-md text-label-md text-on-surface-variant">Org: NVIDIA</span>
+<span class="px-2 py-1 bg-[#F1F5F9] rounded border border-outline-variant font-label-md text-label-md text-on-surface-variant">Tech: AI Inference</span>
+<span class="px-2 py-1 bg-[#F1F5F9] rounded border border-outline-variant font-label-md text-label-md text-on-surface-variant">Period: Last 30 Days</span>
+</div>
+</div>
+<!-- Signal Card Area -->
+<div class="flex flex-col gap-stack-lg">
+<h2 class="font-headline-sm text-headline-sm text-primary">Strategic Signals Detected</h2>
+<!-- High Impact Signal Card -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-6 relative overflow-hidden transition-all duration-300 hover:shadow-[0_4px_6px_-1px_rgb(0,0,0,0.05)]">
+<!-- Threat Accent Line -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[18px]">warning</span>
+<span class="font-label-sm text-label-sm text-error uppercase tracking-wider">Classification: Threat</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-primary">AMD increasing activity in AI inference</h3>
+</div>
+<div class="flex flex-col items-end gap-1">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface-variant">Confidence</span>
+<span class="font-mono-sm text-mono-sm font-semibold text-primary bg-surface-container-high px-2 py-0.5 rounded">87%</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface-variant">Impact</span>
+<span class="font-label-sm text-label-sm font-semibold text-error bg-error-container px-2 py-0.5 rounded">HIGH</span>
+</div>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">
+                                Evidence suggests a concentrated effort by AMD to capture market share in inference workloads, specifically targeting edge deployments and cost-sensitive enterprise applications where massive parallelization isn't strictly required.
+                            </p>
+<!-- Evidence Snippets (Bento-ish internal grid) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 border-t border-outline-variant pt-4">
+<div class="bg-surface p-3 rounded border border-outline-variant">
+<div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">description</span>
+<span class="font-label-sm text-label-sm uppercase">Patent Filing (Active Analysis)</span>
+</div>
+<p class="font-body-sm text-body-sm text-primary line-clamp-2">"Method and apparatus for optimizing low-precision matrix multiplication in edge compute environments." (US2024019...)</p>
+</div>
+<div class="bg-surface p-3 rounded border border-outline-variant opacity-75">
+<div class="flex items-center gap-2 mb-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">article</span>
+<span class="font-label-sm text-label-sm uppercase">Industry News</span>
+</div>
+<p class="font-body-sm text-body-sm text-primary line-clamp-2">Pending extraction of latest PR regarding ROCm 6.0 optimizations for LLM inference on consumer hardware.</p>
+</div>
+</div>
+<div class="mt-4 flex justify-end">
+<button class="border border-outline-variant text-primary font-label-md text-label-md px-4 py-1.5 rounded bg-surface-container-lowest hover:bg-surface-container-low transition-colors">Review Evidence</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Execution Timeline Sidebar -->
+<div class="w-full md:w-80 bg-surface-container-lowest flex flex-col border-l border-outline-variant shrink-0">
+<div class="p-4 border-b border-outline-variant bg-surface flex justify-between items-center sticky top-0 z-10">
+<span class="font-label-md text-label-md font-semibold text-primary">Execution Timeline</span>
+<div class="flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
+</span>
+<span class="font-mono-sm text-mono-sm text-secondary">Analyzing</span>
+</div>
+</div>
+<div class="p-4 flex-1 overflow-y-auto custom-scroll">
+<div class="relative">
+<!-- Vertical Line -->
+<div class="absolute left-[11px] top-2 bottom-4 w-px bg-outline-variant"></div>
+<ul class="flex flex-col gap-6 relative z-10">
+<!-- Completed Stage 1 -->
+<li class="flex items-start gap-4 group">
+<div class="w-6 h-6 rounded-full bg-surface-container-lowest border border-outline-variant flex items-center justify-center shrink-0 mt-0.5 bg-secondary-container border-secondary z-10">
+<span class="material-symbols-outlined text-[14px] text-secondary">check</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant line-through opacity-70">Understanding objective</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant opacity-50">0.2s</span>
+</div>
+</li>
+<!-- Completed Stage 2 -->
+<li class="flex items-start gap-4 group">
+<div class="w-6 h-6 rounded-full bg-surface-container-lowest border border-outline-variant flex items-center justify-center shrink-0 mt-0.5 bg-secondary-container border-secondary z-10">
+<span class="material-symbols-outlined text-[14px] text-secondary">check</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant line-through opacity-70">Creating research plan</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant opacity-50">1.4s</span>
+</div>
+</li>
+<!-- Completed Stage 3 -->
+<li class="flex items-start gap-4 group">
+<div class="w-6 h-6 rounded-full bg-surface-container-lowest border border-outline-variant flex items-center justify-center shrink-0 mt-0.5 bg-secondary-container border-secondary z-10">
+<span class="material-symbols-outlined text-[14px] text-secondary">check</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant line-through opacity-70">Searching research</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant opacity-50">4.1s - Found 12 sources</span>
+</div>
+</li>
+<!-- Active Stage 4 -->
+<li class="flex items-start gap-4 group">
+<div class="w-6 h-6 rounded-full bg-surface-container-lowest border-[2px] border-primary flex items-center justify-center shrink-0 mt-0.5 z-10 relative pulse-active">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-primary font-semibold">Analyzing patents</span>
+<span class="font-mono-sm text-mono-sm text-on-surface-variant mt-1 bg-surface-container-high px-2 py-1 rounded inline-block w-max">Processing document 3/5...</span>
+</div>
+</li>
+<!-- Pending Stage 5 -->
+<li class="flex items-start gap-4 group opacity-50">
+<div class="w-6 h-6 rounded-full bg-surface border border-outline-variant flex items-center justify-center shrink-0 mt-0.5 z-10"></div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Investigating competitors</span>
+</div>
+</li>
+<!-- Pending Stage 6 -->
+<li class="flex items-start gap-4 group opacity-50">
+<div class="w-6 h-6 rounded-full bg-surface border border-outline-variant flex items-center justify-center shrink-0 mt-0.5 z-10"></div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Searching industry/news</span>
+</div>
+</li>
+<!-- Pending Stage 7 -->
+<li class="flex items-start gap-4 group opacity-50">
+<div class="w-6 h-6 rounded-full bg-surface border border-outline-variant flex items-center justify-center shrink-0 mt-0.5 z-10"></div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Correlating evidence</span>
+</div>
+</li>
+<!-- Pending Stage 8 -->
+<li class="flex items-start gap-4 group opacity-50">
+<div class="w-6 h-6 rounded-full bg-surface border border-outline-variant flex items-center justify-center shrink-0 mt-0.5 z-10"></div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Verifying signals</span>
+</div>
+</li>
+<!-- Pending Stage 9 -->
+<li class="flex items-start gap-4 group opacity-50">
+<div class="w-6 h-6 rounded-full bg-surface border border-outline-variant flex items-center justify-center shrink-0 mt-0.5 z-10"></div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface-variant">Generating recommendations</span>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Minimal JS to handle state toggle for demonstration -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // For the sake of the static design, we start in 'Active' state as requested,
+            // but here is the logic if a user wanted to toggle back to 'Setup'.
+            const setupState = document.getElementById('setup-state');
+            const activeState = document.getElementById('active-state');
+            const startBtn = document.getElementById('start-btn');
+
+            startBtn.addEventListener('click', () => {
+                setupState.classList.add('hidden');
+                activeState.classList.remove('hidden');
+                activeState.classList.add('flex'); // maintain flex layout
+            });
+            
+            // To view setup state during dev, uncomment below:
+            // setupState.classList.remove('hidden');
+            // activeState.classList.add('hidden');
+            // activeState.classList.remove('flex');
+        });
+    </script>
+</body></html>

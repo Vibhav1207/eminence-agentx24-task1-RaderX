@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Intelligence Report</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-background": "#0b1c30",
+                      "primary-fixed": "#dae2fd",
+                      "on-primary-container": "#7c839b",
+                      "secondary-container": "#82f5c1",
+                      "on-surface": "#0b1c30",
+                      "surface-dim": "#cbdbf5",
+                      "secondary-fixed-dim": "#68dba9",
+                      "error-container": "#ffdad6",
+                      "surface-tint": "#565e74",
+                      "on-secondary-fixed-variant": "#005137",
+                      "on-error": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#3f465c",
+                      "outline-variant": "#c6c6cd",
+                      "secondary-fixed": "#85f8c4",
+                      "tertiary-container": "#271901",
+                      "on-surface-variant": "#45464d",
+                      "inverse-surface": "#213145",
+                      "tertiary-fixed": "#fcdeb5",
+                      "on-secondary-fixed": "#002114",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed-dim": "#dec29a",
+                      "surface-bright": "#f8f9ff",
+                      "surface-container": "#e5eeff",
+                      "error": "#ba1a1a",
+                      "on-tertiary-container": "#98805d",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-container": "#00714e",
+                      "on-secondary": "#ffffff",
+                      "surface": "#f8f9ff",
+                      "background": "#f8f9ff",
+                      "inverse-primary": "#bec6e0",
+                      "on-primary-fixed": "#131b2e",
+                      "on-tertiary-fixed": "#271901",
+                      "primary": "#000000",
+                      "surface-container-high": "#dce9ff",
+                      "outline": "#76777d",
+                      "tertiary": "#000000",
+                      "primary-container": "#131b2e",
+                      "surface-container-highest": "#d3e4fe",
+                      "surface-container-low": "#eff4ff",
+                      "inverse-on-surface": "#eaf1ff",
+                      "primary-fixed-dim": "#bec6e0",
+                      "secondary": "#006c4a",
+                      "on-tertiary-fixed-variant": "#574425",
+                      "surface-variant": "#d3e4fe"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-md": "16px",
+                      "container-max": "1440px",
+                      "stack-lg": "24px",
+                      "unit": "4px",
+                      "margin-mobile": "16px",
+                      "stack-sm": "8px",
+                      "margin-desktop": "32px",
+                      "gutter": "16px",
+                      "stack-xs": "4px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "mono-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "mono-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "11px",
+                              {
+                                      "lineHeight": "14px",
+                                      "letterSpacing": "0.03em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-on-background text-on-surface dark:text-primary-fixed font-headline-sm text-headline-sm font-body-md text-body-md docked full-width top-0 border-b border-outline-variant dark:border-outline flat no shadows flex justify-between items-center w-full px-margin-desktop h-16 max-w-container-max mx-auto shrink-0 z-50">
+<div class="flex items-center gap-stack-md">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface dark:text-primary-fixed">Task 1 Intelligence</span>
+</div>
+<nav class="hidden md:flex items-center gap-stack-lg">
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-primary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Dashboard</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim pb-1 hover:text-primary dark:hover:text-primary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Reports</a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-primary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Signals</a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:text-primary dark:hover:text-primary-fixed transition-colors cursor-pointer active:opacity-80" href="#">Sources</a>
+</nav>
+<div class="flex items-center gap-stack-md">
+<div class="hidden lg:flex items-center bg-surface-container-low border border-outline-variant rounded px-3 py-1.5 focus-within:border-secondary">
+<span class="material-symbols-outlined text-outline text-[20px] mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm text-on-surface outline-none w-48" placeholder="Search..." type="text"/>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded text-label-md font-label-md hover:opacity-90 transition-opacity">Export PDF</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<img alt="Analyst Profile" class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="A professional headshot of a corporate intelligence analyst in a modern office setting. The lighting is bright and clean, fitting a modern light-mode enterprise software aesthetic. Minimalist background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_zEfj3HA3fB3vP3gdO4lIbwQYSACi9hSIDArpJz5y_ayFnH5erMKUKSOODFDVawwC2xnv-P0Xvh0Ku5KUoLoqPREiHBKqwwYJg4geEAzD_-cZD7uJRwayjoXWtLugga-1m5drWLPWF0SyT4hb8Q0BpUgQa3h5DdHllI_VJ1DHFs-WFzCtMqG1Dnf-2mSE3U_TFXKiDg0A1-TIsgUwenv-EwPPPxVbUiwdiimcHbFoaveIIPvnBZzH"/>
+</div>
+</header>
+<div class="flex flex-1 max-w-container-max mx-auto w-full relative">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col w-64 bg-surface-container-low dark:bg-inverse-surface text-on-surface dark:text-primary-fixed-dim border-r border-outline-variant dark:border-outline fixed left-0 top-16 h-[calc(100vh-64px)] py-stack-md z-40">
+<div class="px-margin-desktop mb-stack-lg flex items-center gap-3">
+<img alt="Organization Logo" class="w-10 h-10 rounded object-cover border border-outline-variant" data-alt="A minimalist, geometric organization logo for a high-tech intelligence platform. Deep blues and slate grays, clean vector style, light background. Conveys precision and authority." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYuXf3nv9Z6vCGDj78FWRLuzXD_sIepW7tqYTb5Z5AdGbC1xzakJurSALsb8sbmFmLBCexM_q-x3lCsZNdGgzrvh-m_e63_6ufT9TdstRRZet-mNqBQSuvaiNF0-TfsQaobAq0jHdpdd0zGazF_0Tj9RH9Bua5KBgQfyha7SKZmU7j0qvjRP1Vj5IYLdQLXVs-ENJnV0N5fPPzRmVkASFz2PN34MDs_CrvKCg21vopleKyXxmH5Roa"/>
+<div>
+<div class="font-headline-sm text-headline-sm font-bold text-on-surface dark:text-primary-fixed">Project Alpha</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant">Confidential Research</div>
+</div>
+</div>
+<button class="mx-margin-desktop mb-stack-lg bg-primary text-on-primary border border-outline-variant px-4 py-2 rounded text-label-md font-label-md hover:bg-surface-tint transition-colors flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                New Analysis
+            </button>
+<nav class="flex-1 flex flex-col font-label-md text-label-md transition-all duration-200 ease-in-out">
+<a class="text-on-surface-variant dark:text-on-primary-container hover:bg-surface-container-high dark:hover:bg-surface-variant px-margin-desktop py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+                    Overview
+                </a>
+<a class="bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary font-bold px-margin-desktop py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined text-[20px]">sensors</span>
+                    Strategic Signals
+                </a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:bg-surface-container-high dark:hover:bg-surface-variant px-margin-desktop py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined text-[20px]">menu_book</span>
+                    Evidence
+                </a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:bg-surface-container-high dark:hover:bg-surface-variant px-margin-desktop py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined text-[20px]">file_png</span>
+                    Impact Analysis
+                </a>
+<a class="text-on-surface-variant dark:text-on-primary-container hover:bg-surface-container-high dark:hover:bg-surface-variant px-margin-desktop py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined text-[20px]">rule</span>
+                    Recommendations
+                </a>
+</nav>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop overflow-y-auto">
+<!-- Header Section -->
+<div class="mb-stack-lg">
+<div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface mb-2">Competitive Threat Analysis: AMD in AI Inference</h1>
+<div class="flex flex-wrap gap-2 items-center text-body-sm font-body-sm text-on-surface-variant">
+<span class="bg-surface-container-low px-2 py-1 border border-outline-variant rounded flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">domain</span> NVIDIA</span>
+<span class="bg-surface-container-low px-2 py-1 border border-outline-variant rounded flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">memory</span> AI Inference</span>
+<span class="bg-surface-container-low px-2 py-1 border border-outline-variant rounded flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">group</span> AMD, Google, Intel</span>
+</div>
+</div>
+<div class="text-right">
+<div class="text-label-sm font-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Date</div>
+<div class="text-body-md font-body-md font-medium">Oct 24, 2023</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-stack-md flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[24px] text-primary">verified</span>
+<span class="text-headline-sm font-headline-sm">Overall Confidence</span>
+</div>
+<span class="text-display-lg font-display-lg text-primary">92%</span>
+</div>
+</div>
+<!-- Executive Summary -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-stack-lg mb-stack-lg">
+<h2 class="text-headline-md font-headline-md mb-stack-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">summarize</span>
+                    Executive Summary
+                </h2>
+<p class="text-body-lg font-body-lg text-on-surface-variant leading-relaxed">
+                    "AMD shows increasing activity around AI inference, supported by recent research, patent, and industry signals. This represents a high-impact shift in the competitive landscape over the last quarter."
+                </p>
+</div>
+<!-- Grid Layout for Signals & Recommendations -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-stack-lg">
+<!-- Strategic Signals Column -->
+<div class="lg:col-span-8 flex flex-col gap-stack-md">
+<h2 class="text-headline-md font-headline-md flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">radar</span>
+                        Strategic Signals
+                    </h2>
+<!-- Signal 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded overflow-hidden">
+<div class="border-b border-outline-variant p-stack-md bg-surface flex justify-between items-start">
+<div>
+<h3 class="text-headline-sm font-headline-sm mb-1">AMD Increasing AI Inference Investment</h3>
+<div class="flex gap-2">
+<span class="text-label-md font-label-md bg-[#fee2e2] text-[#991b1b] px-2 py-0.5 rounded">Threat</span>
+<span class="text-label-md font-label-md bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded">High Impact</span>
+<span class="text-label-md font-label-md bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded">87% Confidence</span>
+</div>
+</div>
+</div>
+<div class="p-stack-md">
+<p class="text-body-md font-body-md text-on-surface-variant mb-stack-md"><span class="font-semibold text-on-surface">Explanation:</span> Concentrated effort to capture market share in edge deployment workloads.</p>
+<h4 class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-stack-sm">Supporting Evidence</h4>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-stack-sm">
+<!-- Evidence Card: Research -->
+<div class="border border-outline-variant rounded p-stack-sm bg-surface-bright flex flex-col gap-2">
+<div class="flex items-center gap-1 text-label-md font-label-md text-primary">
+<span class="material-symbols-outlined text-[16px]">science</span> Research
+                                    </div>
+<p class="text-body-sm font-body-sm flex-1">"Efficiency gains in low-precision matrix multiplication"</p>
+<div class="text-mono-sm font-mono-sm text-on-surface-variant">ID: AI-204</div>
+</div>
+<!-- Evidence Card: Patents -->
+<div class="border border-outline-variant rounded p-stack-sm bg-surface-bright flex flex-col gap-2">
+<div class="flex items-center gap-1 text-label-md font-label-md text-primary">
+<span class="material-symbols-outlined text-[16px]">pixel_7_pro</span> Patents
+                                    </div>
+<p class="text-body-sm font-body-sm flex-1">"Method for optimizing low-precision matrix operations"</p>
+<div class="text-mono-sm font-mono-sm text-on-surface-variant">US Pat 11,234,567</div>
+</div>
+<!-- Evidence Card: News -->
+<div class="border border-outline-variant rounded p-stack-sm bg-surface-bright flex flex-col gap-2">
+<div class="flex items-center gap-1 text-label-md font-label-md text-primary">
+<span class="material-symbols-outlined text-[16px]">newspaper</span> News
+                                    </div>
+<p class="text-body-sm font-body-sm flex-1">"AMD announces strategic partnership for edge AI deployments"</p>
+<div class="text-mono-sm font-mono-sm text-on-surface-variant">Industry Journal</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Signal 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded overflow-hidden">
+<div class="border-b border-outline-variant p-stack-md bg-surface flex justify-between items-start">
+<div>
+<h3 class="text-headline-sm font-headline-sm mb-1">Expansion of ROCm Software Ecosystem</h3>
+<div class="flex gap-2">
+<span class="text-label-md font-label-md bg-[#fef3c7] text-[#92400e] px-2 py-0.5 rounded">Opportunity (Monitoring)</span>
+<span class="text-label-md font-label-md bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded">Medium Impact</span>
+<span class="text-label-md font-label-md bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded">75% Confidence</span>
+</div>
+</div>
+</div>
+<div class="p-stack-md">
+<p class="text-body-md font-body-md text-on-surface-variant"><span class="font-semibold text-on-surface">Explanation:</span> Potential for cross-platform software compatibility to lower switching costs.</p>
+</div>
+</div>
+</div>
+<!-- Context & Actions Column -->
+<div class="lg:col-span-4 flex flex-col gap-stack-md">
+<!-- Why It Matters -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-stack-md">
+<h2 class="text-headline-sm font-headline-sm mb-stack-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">lightbulb</span>
+                            Why It Matters
+                        </h2>
+<p class="text-body-md font-body-md text-on-surface-variant">
+                            This concentrated push into low-precision optimization indicates AMD is aggressively targeting the edge AI market. If their ROCm software ecosystem matures alongside these hardware-level efficiency gains, it could significantly lower switching costs for enterprise customers, directly challenging NVIDIA's current strategic positioning in scalable edge deployments.
+                        </p>
+</div>
+<!-- Recommended Actions -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-stack-md flex-1">
+<h2 class="text-headline-sm font-headline-sm mb-stack-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">task_alt</span>
+                            Recommended Actions
+                        </h2>
+<ul class="flex flex-col gap-3">
+<li class="flex items-start gap-2 text-body-md font-body-md">
+<span class="bg-primary text-on-primary w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</span>
+                                Increase monitoring of AMD's inference activity.
+                            </li>
+<li class="flex items-start gap-2 text-body-md font-body-md">
+<span class="bg-primary text-on-primary w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</span>
+                                Evaluate internal R&amp;D investment in low-precision technology.
+                            </li>
+<li class="flex items-start gap-2 text-body-md font-body-md">
+<span class="bg-primary text-on-primary w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</span>
+                                Track new patent activity over the next 3 months.
+                            </li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Optional Chart Section (Simulated with simple HTML/CSS bars for data density) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-stack-md">
+<h2 class="text-headline-sm font-headline-sm mb-stack-md flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">bar_chart</span>
+                    Inference Patent Filings Trend (Trailing 12 Months)
+                </h2>
+<div class="flex flex-col gap-4 max-w-2xl">
+<!-- Row 1 -->
+<div class="flex items-center gap-4">
+<div class="w-24 text-label-sm font-label-sm text-right">AMD</div>
+<div class="flex-1 h-6 bg-surface-container-low rounded overflow-hidden flex items-center">
+<div class="h-full bg-primary" style="width: 65%;"></div>
+</div>
+<div class="w-12 text-label-sm font-label-sm">65%</div>
+</div>
+<!-- Row 2 -->
+<div class="flex items-center gap-4">
+<div class="w-24 text-label-sm font-label-sm text-right">Industry Avg</div>
+<div class="flex-1 h-6 bg-surface-container-low rounded overflow-hidden flex items-center">
+<div class="h-full bg-outline-variant" style="width: 40%;"></div>
+</div>
+<div class="w-12 text-label-sm font-label-sm text-on-surface-variant">40%</div>
+</div>
+</div>
+<div class="mt-4 text-mono-sm font-mono-sm text-on-surface-variant text-right max-w-2xl">
+                    *Indexed relative to baseline Q3 2022
+                </div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest dark:bg-on-background text-on-surface-variant dark:text-on-primary-container font-label-sm text-label-sm font-headline-sm text-headline-sm text-primary docked bottom-0 full-width border-t border-outline-variant dark:border-outline flat no shadows text-on-surface-variant hover:text-primary underline transition-opacity duration-150 w-full py-stack-sm px-margin-desktop flex justify-between items-center z-50">
+<div>© 2024 Intelligence Platform. Proprietary &amp; Confidential.</div>
+<div class="flex gap-4">
+<a class="hover:text-primary underline transition-opacity duration-150" href="#">Privacy Policy</a>
+<a class="hover:text-primary underline transition-opacity duration-150" href="#">Terms of Service</a>
+<a class="hover:text-primary underline transition-opacity duration-150" href="#">Security Protocols</a>
+</div>
+</footer>
+</body></html>
