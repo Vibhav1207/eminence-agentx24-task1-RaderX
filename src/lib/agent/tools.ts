@@ -119,17 +119,17 @@ export async function searchWebNews(args: z.infer<typeof searchWebNewsSchema>) {
 
 export const allTools = {
   search_research: {
-    description: "Find relevant scientific publications, research trends, authors, institutions and recent research using OpenAlex.",
+    description: "Search scholarly publications and research activity related to a technology, organization, or research question. Use this when scientific or academic evidence is required.",
     schema: searchResearchSchema,
     execute: searchResearch
   },
   search_patents: {
-    description: "Find relevant patent activity, assignees, recent filings and technology-related patents.",
+    description: "Search patent activity related to a technology, organization, or competitor. Use this when intellectual-property or technology investment evidence is required.",
     schema: searchPatentsSchema,
     execute: searchPatents
   },
   search_web_news: {
-    description: "Find recent competitor activity, product announcements, industry developments, market signals and relevant news.",
+    description: "Search current web/news information about companies, competitors, products, announcements, and industry activity. Use this when current market or competitor evidence is required.",
     schema: searchWebNewsSchema,
     execute: searchWebNews
   }
