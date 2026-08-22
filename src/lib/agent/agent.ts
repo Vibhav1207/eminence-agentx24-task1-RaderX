@@ -196,10 +196,19 @@ export async function runInvestigationAgent(
     }
     
     try {
-      response = await chat.sendMessage({ message: functionResponses as any });
-    } catch (e) {
-      console.error(`[Pipeline Debug] -> API Error during tool loop iteration ${iteration}:`, e);
-      throw e; // Throw to fail the pipeline and let route.ts catch it
+      // Add a small 1-second delay before sending the message to avoid bursting the rate limit
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      response = await chat.sendMessage(functionResponses);
+    } catch (e: any) {
+      if (e?.status === 429 || e?.message?.includes('429')) {
+        console.log(`[Pipeline Debug] -> Rate limit hit. Retrying after 3 seconds...`);
+        emit("Rate limit reached. Waiting a few seconds before retrying...");
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        response = await chat.sendMessage(functionResponses);
+      } else {
+        console.error(`[Pipeline Debug] -> API Error during tool loop iteration ${iteration}:`, e);
+        throw e; // Throw to fail the pipeline and let route.ts catch it
+      }
     }
   }
 
@@ -232,6 +241,7 @@ You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not
 
   let finalResponse;
   try {
+    await new Promise(resolve => setTimeout(resolve, 1000));
     finalResponse = await ai.models.generateContent({
       model: 'gemini-3.6-flash',
       contents: [
@@ -242,9 +252,25 @@ You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not
         responseMimeType: "application/json",
       }
     });
-  } catch (e) {
-    console.error(`[Pipeline Debug] -> API Error during final report generation:`, e);
-    throw e;
+  } catch (e: any) {
+    if (e?.status === 429 || e?.message?.includes('429')) {
+      console.log(`[Pipeline Debug] -> Rate limit hit during final generation. Retrying after 3 seconds...`);
+      emit("Rate limit reached. Waiting a few seconds before final generation...");
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      finalResponse = await ai.models.generateContent({
+        model: 'gemini-3.6-flash',
+        contents: [
+          ...history,
+          { role: 'user', parts: [{ text: finalPrompt }] }
+        ],
+        config: {
+          responseMimeType: "application/json",
+        }
+      });
+    } else {
+      console.error(`[Pipeline Debug] -> API Error during final report generation:`, e);
+      throw e;
+    }
   }
 
   let content = finalResponse.text || "";
