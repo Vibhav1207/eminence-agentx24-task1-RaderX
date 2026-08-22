@@ -156,7 +156,7 @@ async function runMemorySystemTest() {
   console.log(`Strategic Question Injected Context:`);
   console.log(parentContextInjected);
 
-  if (parentContextInjected.includes('PARENT INVESTIGATION CONTEXT')) {
+  if (parentContextInjected && parentContextInjected.includes('PARENT INVESTIGATION CONTEXT')) {
     console.log('\n✔ SUCCESS: Parent context successfully inherited in follow-up agent context!');
   } else {
     console.log('\n❌ FAILURE: Parent context inheritance failed.');
