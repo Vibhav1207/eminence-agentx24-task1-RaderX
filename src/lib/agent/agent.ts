@@ -76,7 +76,8 @@ export async function runInvestigationAgent(
     
     if (content) {
       emit("Final report generated.");
-      return JSON.parse(content);
+      const cleanedContent = content.replace(/```json/gi, "").replace(/```/g, "").trim();
+      return JSON.parse(cleanedContent);
     }
   } catch (e: unknown) {
     console.warn("Failed to parse Gemini response", e);
@@ -94,7 +95,7 @@ function generateMockReport(technology: string) {
     threats: [],
     opportunities: [],
     emergingTrends: ["Increased reliance on simulated environments"],
-    recommendations: ["Ensure OPENAI_API_KEY is configured correctly"],
+    recommendations: ["Ensure GEMINI_API_KEY is configured correctly in Vercel environment variables"],
     evidence: [],
     sources: [],
     confidence: 10,
