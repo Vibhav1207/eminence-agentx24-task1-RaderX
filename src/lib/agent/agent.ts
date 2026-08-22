@@ -84,7 +84,7 @@ export async function runInvestigationAgent(
   const prompt = `Conduct a strategic intelligence investigation.\nOrganization: ${organization}\nTechnology: ${technology}\nCompetitors: ${competitors.join(", ")}\nTime Range: ${timeRange}\nQuestion: ${strategicQuestion}`;
 
   let iteration = 0;
-  const maxIterations = 2; // Reduced to 2 to prevent Vercel 60s timeouts
+  const maxIterations = 1; // HARD LIMIT to 1 iteration to guarantee <60s execution
   let response = await chat.sendMessage({ message: prompt });
 
   while (iteration < maxIterations && response.functionCalls && response.functionCalls.length > 0) {
@@ -117,7 +117,6 @@ export async function runInvestigationAgent(
           message: `Agent selected ${toolName}`
         });
 
-        // Show the user exactly what is being searched
         if (args.query) {
           emit(`Searching ${toolName.replace('search_', '')} for: "${args.query}"...`);
         } else {
@@ -155,8 +154,6 @@ export async function runInvestigationAgent(
             status: "info",
             message: `Agent received ${itemsCount} items of evidence`
           });
-
-          console.log(`[Pipeline Debug] -> Tool result received from ${toolName}. Items count: ${itemsCount}`);
           
           functionResponses.push({
             functionResponse: { name: toolName, response: { items: result } }
@@ -181,7 +178,6 @@ export async function runInvestigationAgent(
           });
         }
       } catch (e) {
-        console.error(`[Pipeline Debug] -> Error in tool ${toolName}:`, e);
         emitAgentEvent({
           investigationId,
           eventType: "TOOL_FAILED",
@@ -196,24 +192,18 @@ export async function runInvestigationAgent(
     }
     
     try {
-      // Add a small 1-second delay before sending the message to avoid bursting the rate limit
-      await new Promise(resolve => setTimeout(resolve, 1000));
       response = await chat.sendMessage({ message: functionResponses as any });
     } catch (e: any) {
       if (e?.status === 429 || e?.message?.includes('429')) {
-        console.log(`[Pipeline Debug] -> Rate limit hit. Retrying after 3 seconds...`);
         emit("Rate limit reached. Waiting a few seconds before retrying...");
         await new Promise(resolve => setTimeout(resolve, 3000));
         response = await chat.sendMessage({ message: functionResponses as any });
       } else {
-        console.error(`[Pipeline Debug] -> API Error during tool loop iteration ${iteration}:`, e);
-        throw e; // Throw to fail the pipeline and let route.ts catch it
+        throw e;
       }
     }
   }
 
-  console.log("[Pipeline Debug] -> No more tool calls. Analysis started.");
-  console.log("[Pipeline Debug] -> Requesting final structured report JSON.");
   emit("Correlating evidence and generating final report...");
 
   const history = await chat.getHistory();
@@ -230,14 +220,7 @@ You MUST output ONLY a valid JSON object matching this structure EXACTLY (do not
       "evidence": [{"source": "...", "title": "...", "url": "...", "date": "...", "summary": "...", "relevance": 0-1, "entity": "...", "evidenceType": "research"|"patent"|"news"|"competitor"|"web"}], 
       "recommendedActions": ["..."]
     }
-  ],
-  "threats": [],
-  "opportunities": [],
-  "emergingTrends": [],
-  "recommendations": [],
-  "evidence": [],
-  "sources": [],
-  "confidence": 0-100
+  ]
 }`;
 
   let finalResponse;
