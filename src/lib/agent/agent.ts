@@ -63,7 +63,7 @@ async function runResearchAgent(
   }
 
   const chat = ai.chats.create({
-    model: 'gemini-3.6-flash',
+    model: 'gemini-1.5-flash',
     config: {
       systemInstruction: `You are the Research Intelligence Agent.
 Your objective is to find and structure evidence.
@@ -146,6 +146,22 @@ Do NOT repeat the exact same searches. Target the evidence gaps.`;
           functionResponses.push({
             functionResponse: { name: toolName, response: { items: result } }
           });
+
+          // OPTIMIZATION: Manually append evidence to avoid a 10s LLM synthesis call
+          if (Array.isArray(result)) {
+            const mapped = result.map((r: any) => ({
+              title: r.title || r.name || "Unknown",
+              source: toolName,
+              url: r.url || "",
+              date: r.date || r.published_date || "",
+              entity: args.query || context.organization,
+              technology: context.technology,
+              type: toolName.includes("patent") ? "patent" : toolName.includes("research") ? "research" : "web",
+              relevance: 0.8,
+              summary: r.snippet || r.summary || r.description || "Found via " + toolName
+            }));
+            context.evidence.push(...mapped);
+          }
         } else {
           functionResponses.push({
             functionResponse: { name: toolName, response: { error: "Tool not found" } }
@@ -175,35 +191,10 @@ Do NOT repeat the exact same searches. Target the evidence gaps.`;
     eventType: "EVIDENCE_RECEIVED",
     agentRole: "RESEARCH AGENT",
     status: "success",
-    message: `Evidence package completed.`
+    message: `Evidence package completed. Total accumulated evidence: ${context.evidence.length} items.`
   });
 
-  const history = await chat.getHistory();
-  const finalResponse = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
-    contents: [...history, { role: 'user', parts: [{ text: "Synthesize findings into the JSON Evidence Package." }] }],
-    config: { responseMimeType: "application/json" }
-  });
-
-  let content = finalResponse.text || "{}";
-  content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
-  try {
-    const parsed = JSON.parse(content);
-    if (parsed.evidence && Array.isArray(parsed.evidence)) {
-      context.evidence.push(...parsed.evidence);
-      emitAgentEvent({
-        investigationId: context.investigationId,
-        eventType: "MEMORY",
-        agentRole: "MEMORY",
-        status: "info",
-        message: `Context updated with ${parsed.evidence.length} new evidence items`
-      });
-    }
-    return parsed;
-  } catch (e) {
-    console.error("Failed to parse research JSON", content);
-    return { evidence: [], status: "complete" };
-  }
+  return { status: "complete", evidence: context.evidence };
 }
 
 // ---------- STRATEGIC ANALYSIS AGENT ----------
@@ -265,7 +256,7 @@ If SUFFICIENT, output this exact JSON (keep text very concise):
 }`;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3.6-flash',
+    model: 'gemini-1.5-flash',
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     config: { responseMimeType: "application/json" }
   });
