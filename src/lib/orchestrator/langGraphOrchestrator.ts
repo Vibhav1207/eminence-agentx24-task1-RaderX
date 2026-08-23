@@ -35,6 +35,7 @@ import {
   ConclusionVersion,
 } from "../types";
 import { traceService, createTraceEvent, sanitizeTraceData } from "@/lib/tracing/traceService";
+import { AgentStatusTrace } from "@/lib/types";
 
 // Define the state annotation using LangGraph's Annotation
 export const InvestigationState = Annotation.Root({
@@ -282,7 +283,7 @@ async function logTraceEventDetailed(
     eventType,
     agentId: params.agentId,
     agentName: params.agentName,
-    status: params.status,
+    status: params.status || 'PENDING',
     durationMs: params.durationMs,
     inputMetadata: params.inputMetadata ? sanitizeTraceData(params.inputMetadata) : undefined,
     outputMetadata: params.outputMetadata ? sanitizeTraceData(params.outputMetadata) : undefined,
@@ -507,10 +508,11 @@ async function plannerNode(state: InvestigationStateType): Promise<Partial<Inves
   
   // Log planner started
   await logTraceEvent(invId, missionId, 'PLAN_CREATED', `Planner analyzing goals for iteration ${iteration}.`, 'ORCHESTRATOR');
+  const traceEvents = traceService.getEvents(traceId);
   await logTraceEventDetailed(
     traceId, runId, invId, missionId,
     'PLANNER_STARTED',
-    { agentId: 'planner', agentName: 'Planner', status: 'RUNNING', parentEventId: trace.events[0]?.eventId }
+    { agentId: 'planner', agentName: 'Planner', status: 'RUNNING', parentEventId: traceEvents[0]?.eventId }
   );
 
   const plannerStartTime = Date.now();
@@ -728,7 +730,7 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
   const missionId = `mission-${invId}`;
   
   // Get trace for this run (assuming trace was created in planner)
-  const traces = traceService.getTracesByInvestigation(invId);
+  const traces = await traceService.getTracesByInvestigation(invId);
   const trace = traces[0];
   const traceId = trace?.traceId;
   const runId = trace?.runId;
@@ -773,10 +775,13 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
         parentEventId: traceEvents[0]?.eventId,
         agentExecution: {
           agentType,
+          role: agentType,
           agentRole: agentType,
           startTime: new Date().toISOString(),
-          status: 'RUNNING',
+          status: 'RUNNING' as AgentStatusTrace,
           retryCount: 0,
+          toolsUsed: [],
+          errors: [],
           inputContextMetadata: { task: task.title, input: task.input },
         }
       }
@@ -836,16 +841,17 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
       if (traceId && runId) {
         await logTraceEventDetailed(
           traceId, runId, invId, missionId,
-          'AGENT_RETRYING',
+          'TOOL_CALL_FAILED',
           { 
             agentId: task.id, 
             agentName: agentType, 
-            status: 'RETRYING', 
+            status: 'RUNNING', 
             error: { 
               type: 'TOOL_HTTP_ERROR', 
               message: errorMsg, 
               component: agentType, 
-              retryCount: retries 
+              retryCount: retries,
+              finalStatus: 'RETRYING' as const
             }
           }
         );
@@ -956,16 +962,19 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
         { 
           agentId: task.id, 
           agentName: agentType, 
-          status: 'COMPLETED',
+          status: 'SUCCESS',
           durationMs: agentDurationMs,
           outputMetadata: { evidenceCount: evidenceItems.length, evidenceIds: evidenceItems.map(e => e.id) },
           agentExecution: {
             agentType,
+            role: agentType,
             agentRole: agentType,
             startTime: task.startedAt,
             endTime: task.completedAt,
-            status: 'COMPLETED',
+            status: 'SUCCESS' as AgentStatusTrace,
             retryCount: retries,
+            toolsUsed: [],
+            errors: [],
             outputMetadata: { evidenceCount: evidenceItems.length },
           }
         }
@@ -994,18 +1003,21 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
           status: 'FAILED',
           durationMs: agentDurationMs,
           error: { 
-            type: 'AGENT_ERROR', 
+            type: 'MODEL_ERROR', 
             message: errorMsg, 
             component: agentType, 
-            retryCount: retries 
+            retryCount: retries,
+            finalStatus: 'FAILED' as const
           },
           agentExecution: {
             agentType,
+            role: agentType,
             agentRole: agentType,
             startTime: task.startedAt,
             endTime: task.completedAt,
-            status: 'FAILED',
+            status: 'FAILED' as AgentStatusTrace,
             retryCount: retries,
+            toolsUsed: [],
             errors: [errorMsg],
           }
         }

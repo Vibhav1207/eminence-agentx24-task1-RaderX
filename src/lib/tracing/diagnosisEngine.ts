@@ -125,10 +125,11 @@ export class TraceDiagnosisEngine {
       traceId,
       investigationId: trace.investigationId,
       runId: trace.runId,
-      timestamp: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       rootCause,
       affectedComponent: affectedComponent || 'UNKNOWN',
-      impact: impact || { latencyIncreaseMs: 0, extraRetries: 0, extraToolCalls: 0 },
+      impact: impact || { latencyIncreaseMs: 0, retries: 0, extraRetries: 0, failedToolCalls: 0, extraToolCalls: 0, errors: [] },
+      evidenceFromTrace: [],
       recoveryAction: recoveryAction || 'N/A',
       finalResult: finalResult || 'UNKNOWN',
       recommendations,
@@ -165,14 +166,15 @@ export class TraceDiagnosisEngine {
         component: event.agentName || event.toolCall?.toolName || 'UNKNOWN',
         type: 'UNKNOWN',
         description: 'Error detected but type unclear',
-        traceEvidence: [`Event ${event.eventId}: ${event.error?.message || 'Unknown error'}`],
+        traceEvidence: [`Event ${event.eventId}: Unknown error`],
       };
     }
 
     const errorType = event.error.type;
     const component = event.agentName || event.toolCall?.toolName || 'UNKNOWN';
     
-    const typeMap: Record<string, TraceDiagnosisModel['rootCause']['type']> = {
+    type RootCauseType = 'TOOL_TIMEOUT' | 'TOOL_HTTP_ERROR' | 'AUTH_ERROR' | 'RATE_LIMIT' | 'MODEL_ERROR' | 'VALIDATION_ERROR' | 'DATABASE_ERROR' | 'GRAPH_ERROR' | 'UNKNOWN';
+    const typeMap: Record<string, RootCauseType> = {
       'TOOL_TIMEOUT': 'TOOL_TIMEOUT',
       'TOOL_HTTP_ERROR': 'TOOL_HTTP_ERROR',
       'AUTH_ERROR': 'AUTH_ERROR',
@@ -239,11 +241,18 @@ export class TraceDiagnosisEngine {
   ): string[] {
     const recommendations: string[] = [];
 
-    if (!rootCause || rootCause.type === 'NONE') {
+    if (!rootCause) {
       return ['System performing within normal parameters'];
     }
 
-    switch (rootCause.type) {
+    // Handle both string and object forms of rootCause
+    const rootCauseType = typeof rootCause === 'object' && rootCause !== null ? rootCause.type : rootCause;
+    
+    if (rootCauseType === 'NONE') {
+          return ['System performing within normal parameters'];
+        }
+
+        switch (rootCauseType) {
       case 'TOOL_TIMEOUT':
         recommendations.push('Increase tool timeout threshold');
         recommendations.push('Enable parallel execution for independent tool calls');
@@ -329,8 +338,9 @@ export class TraceDiagnosisEngine {
     const componentCounts: Record<string, number> = {};
 
     diagnoses.forEach(d => {
-      if (d.rootCause?.type) {
-        typeCounts[d.rootCause.type] = (typeCounts[d.rootCause.type] || 0) + 1;
+      const rootCauseType = typeof d.rootCause === 'object' && d.rootCause !== null ? d.rootCause.type : d.rootCause;
+      if (rootCauseType) {
+        typeCounts[rootCauseType] = (typeCounts[rootCauseType] || 0) + 1;
       }
       if (d.affectedComponent) {
         componentCounts[d.affectedComponent] = (componentCounts[d.affectedComponent] || 0) + 1;

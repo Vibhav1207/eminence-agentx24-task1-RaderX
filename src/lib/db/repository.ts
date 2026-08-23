@@ -1923,7 +1923,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const doc = await db.collection('traces').findOne({ runId });
-      if (doc) return doc;
+      if (doc) return doc as unknown as TraceModel;
     } catch {}
     return undefined;
   },
@@ -1932,7 +1932,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const docs = await db.collection('traces').find({ investigationId }).sort({ startedAt: -1 }).toArray();
-      if (docs.length > 0) return docs;
+      if (docs.length > 0) return docs as unknown as TraceModel[];
     } catch {}
     return [];
   },
@@ -1941,7 +1941,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const docs = await db.collection('traces').find({}).sort({ startedAt: -1 }).limit(100).toArray();
-      if (docs.length > 0) return docs;
+      if (docs.length > 0) return docs as unknown as TraceModel[];
     } catch {}
     return [];
   },
@@ -1950,7 +1950,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const doc = await db.collection('trace_diagnoses').findOne({ diagnosisId });
-      if (doc) return doc;
+      if (doc) return doc as unknown as TraceDiagnosisModel;
     } catch {}
     return undefined;
   },
@@ -1959,7 +1959,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const doc = await db.collection('trace_diagnoses').findOne({ traceId });
-      if (doc) return doc;
+      if (doc) return doc as unknown as TraceDiagnosisModel;
     } catch {}
     return undefined;
   },
@@ -1968,7 +1968,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const docs = await db.collection('trace_diagnoses').find({ investigationId }).sort({ createdAt: -1 }).toArray();
-      if (docs.length > 0) return docs;
+      if (docs.length > 0) return docs as unknown as TraceDiagnosisModel[];
     } catch {}
     return [];
   },
@@ -1977,7 +1977,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const doc = await db.collection('trace_comparisons').findOne({ comparisonId });
-      if (doc) return doc;
+      if (doc) return doc as unknown as TraceComparisonModel;
     } catch {}
     return undefined;
   },
@@ -1986,7 +1986,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const docs = await db.collection('trace_comparisons').find({ runId }).sort({ createdAt: -1 }).toArray();
-      if (docs.length > 0) return docs;
+      if (docs.length > 0) return docs as unknown as TraceComparisonModel[];
     } catch {}
     return [];
   },
@@ -1995,7 +1995,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const docs = await db.collection('trace_comparisons').find({ investigationId }).sort({ createdAt: -1 }).toArray();
-      if (docs.length > 0) return docs;
+      if (docs.length > 0) return docs as unknown as TraceComparisonModel[];
     } catch {}
     return [];
   },
@@ -2004,7 +2004,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const docs = await db.collection('trace_comparisons').find({}).sort({ createdAt: -1 }).limit(100).toArray();
-      if (docs.length > 0) return docs;
+      if (docs.length > 0) return docs as unknown as TraceComparisonModel[];
     } catch {}
     return [];
   },
@@ -2013,7 +2013,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const docs = await db.collection('trace_events').find({ traceId }).sort({ timestamp: 1 }).toArray();
-      if (docs.length > 0) return docs;
+      if (docs.length > 0) return docs as unknown as TraceEventModel[];
     } catch {}
     return [];
   },
@@ -2022,7 +2022,7 @@ export const dbRepository = {
     try {
       const db = await getDb();
       const docs = await db.collection('traces').find({}).sort({ startedAt: -1 }).limit(limit).toArray();
-      if (docs.length > 0) return docs;
+      if (docs.length > 0) return docs as unknown as TraceModel[];
     } catch {}
     return [];
   },
