@@ -19,7 +19,7 @@ async function checkHttp(url: string, headers?: HeadersInit) {
   }
 }
 
-async function checkMongo() {
+async function checkDatabase() {
   const startedAt = Date.now();
   try {
     const db = await getDb();
@@ -31,17 +31,17 @@ async function checkMongo() {
 }
 
 export async function GET() {
-  const [crossref, patent, news, web, mongo] = await Promise.all([
+  const [crossref, patent, news, web, supabase] = await Promise.all([
     checkHttp('https://api.crossref.org/works?rows=1'),
     checkHttp('https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:PAT&format=json&pageSize=1'),
     checkHttp('https://en.wikinews.org/w/api.php?action=query&list=search&srsearch=test&format=json'),
     checkHttp('https://api.github.com/zen', { 'User-Agent': 'RadarX-HealthCheck' }),
-    checkMongo(),
+    checkDatabase(),
   ]);
   const gemini = appConfig.geminiApiKey
     ? await checkHttp(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(appConfig.geminiApiKey)}`)
     : { status: 'OFFLINE' as DependencyStatus, latencyMs: 0, error: 'GEMINI_API_KEY is not configured' };
-  const providers = { crossref, patent, news, web, gemini, mongo };
+  const providers = { crossref, patent, news, web, gemini, supabase };
   const env = validateEnvironment();
   const status = env.valid && Object.values(providers).every((check) => check.status === 'ONLINE') ? 'HEALTHY' : 'DEGRADED';
   const memoryUsage = process.memoryUsage();

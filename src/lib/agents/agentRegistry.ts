@@ -179,7 +179,11 @@ export class AgentRegistry {
       this.initialized = true;
     } catch (error) {
       console.error('Agent registry initialization failed:', error);
-      this.initialized = true; // Don't retry on error
+      // Do not permanently poison the singleton after a transient database
+      // outage. A later request should be able to retry after connectivity is
+      // restored instead of reusing a rejected initialization promise.
+      this.initialized = false;
+      this.initializationPromise = null;
       throw error;
     }
   }

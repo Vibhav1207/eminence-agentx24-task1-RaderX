@@ -6,7 +6,8 @@ export async function GET() {
     await agentRegistry.initialize();
     const counts = await agentRegistry.getAgentCounts();
     return apiSuccess(counts);
-  } catch (error: any) {
-    return apiError(error.message || 'Failed to fetch agent counts', 'FETCH_ERROR', 500);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch agent counts';
+    return apiError(message, 'DATABASE_UNAVAILABLE', 503);
   }
 }

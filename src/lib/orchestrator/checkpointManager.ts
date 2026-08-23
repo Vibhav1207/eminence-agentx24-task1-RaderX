@@ -184,6 +184,7 @@ export async function detectStaleInvestigations(staleThresholdMs: number = 12000
       .toArray();
 
     for (const inv of staleInvs) {
+      if (!inv.id) continue;
       console.log(`[LANGGRAPH STALE] Detected stale running investigation: ${inv.id}. Marking INTERRUPTED.`);
       await markInterrupted(inv.id);
     }

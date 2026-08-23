@@ -19,7 +19,7 @@ async function checkHttp(url: string, headers?: HeadersInit): Promise<Check> {
   }
 }
 
-async function checkMongo(): Promise<Check> {
+async function checkDatabase(): Promise<Check> {
   const startedAt = Date.now();
   try {
     const db = await getDb();
@@ -36,12 +36,12 @@ function providerStatus(check: Check, configured = true): VerifiedProviderModel[
 }
 
 export async function GET() {
-  const [crossref, patent, news, web, mongo] = await Promise.all([
+  const [crossref, patent, news, web, supabase] = await Promise.all([
     checkHttp('https://api.crossref.org/works?rows=1'),
     checkHttp('https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:PAT&format=json&pageSize=1'),
     checkHttp('https://en.wikinews.org/w/api.php?action=query&list=search&srsearch=test&format=json'),
     checkHttp('https://api.github.com/zen', { 'User-Agent': 'RadarX-HealthCheck' }),
-    checkMongo(),
+    checkDatabase(),
   ]);
   const geminiConfigured = Boolean(appConfig.geminiApiKey);
   const gemini = geminiConfigured
@@ -64,7 +64,7 @@ export async function GET() {
     definition('prov-financial-news', 'Wikinews Media API', 'INTELLIGENCE_SOURCE', 'News records', 'https://en.wikinews.org/w/api.php', news),
     definition('prov-github-web', 'GitHub REST API', 'INTELLIGENCE_SOURCE', 'Web and repository records', 'https://api.github.com', web),
     definition('prov-gemini', 'Google Gemini AI Engine', 'AI_MODEL', 'LLM reasoning and synthesis', appConfig.geminiModel, gemini, geminiConfigured),
-    definition('prov-mongodb', 'MongoDB Atlas', 'DATABASE', 'Persistent application data', 'MongoDB configured database', mongo, true),
+    definition('prov-supabase', 'Supabase Postgres', 'DATABASE', 'Persistent application data', 'Supabase Postgres database', supabase, true),
   ];
   return apiSuccess(providers);
 }
