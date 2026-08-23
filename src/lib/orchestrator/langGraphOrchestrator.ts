@@ -15,6 +15,7 @@ import {
   TraceModel,
 } from "@/lib/types";
 import { dbRepository } from "@/lib/db/repository";
+import { createCheckpoint, getValidCheckpoint } from "./checkpointManager";
 import { defaultAgentRegistry } from "./agentRegistry";
 import { defaultContextBuilderService } from "./contextBuilderService";
 import { defaultSignalEngine } from "../intelligence/signalEngine";
@@ -312,8 +313,6 @@ async function saveGraphCheckpoint(investigationId: string, state: Partial<Inves
       graphStateSync.sync(missionId, state.plan);
     }
 
-    const { createCheckpoint, getValidCheckpoint } = require('./checkpointManager');
-    
     // Retrieve the previous checkpoint to perform a state merge (avoiding partial state gaps)
     let mergedState = { investigationId, ...state };
     try {
