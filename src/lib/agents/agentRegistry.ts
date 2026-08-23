@@ -18,11 +18,12 @@ import { dbRepository } from '@/lib/db/repository';
  * Core agent definitions - these are the canonical agent types
  * Each agent has a stable ID, name, role, and capabilities
  */
-const AGENT_DEFINITIONS: Omit<AgentModel, 'id' | 'createdAt' | 'updatedAt' | 'lastActive' | 'evidenceProcessed' | 'confidence' | 'currentInvestigationId' | 'currentTask' | 'status'>[] = [
+export const AGENT_DEFINITIONS: Omit<AgentModel, 'id' | 'createdAt' | 'updatedAt' | 'lastActive' | 'evidenceProcessed' | 'confidence' | 'currentInvestigationId' | 'currentTask' | 'status'>[] = [
   {
     type: 'ORCHESTRATOR',
     name: 'RadarX Orchestrator',
     role: 'Central Dispatcher & Strategy Planner',
+    description: 'Breaks an investigation into evidence-gathering tasks, assigns specialist agents, coordinates dependencies, and controls the final research workflow.',
     color: '#D4AF37',
     capabilities: ['PLANNING', 'COORDINATION', 'TASK_DELEGATION', 'CONFLICT_RESOLUTION', 'SELF_EVALUATION'],
     tools: ['langgraph-orchestrator', 'decision-engine', 'conflict-resolver'],
@@ -32,6 +33,7 @@ const AGENT_DEFINITIONS: Omit<AgentModel, 'id' | 'createdAt' | 'updatedAt' | 'la
     type: 'RESEARCH',
     name: 'Research Agent',
     role: 'Academic & arXiv Literature Search',
+    description: 'Searches academic publications and preprints, extracts research findings, and returns source-linked evidence for the investigation question.',
     color: '#06B6D4',
     capabilities: ['ACADEMIC_SEARCH', 'PREPRINT_MONITORING', 'CITATION_ANALYSIS', 'TECHNOLOGY_TRACKING'],
     tools: ['crossref-api', 'arxiv-api', 'semantic-scholar'],
@@ -41,6 +43,7 @@ const AGENT_DEFINITIONS: Omit<AgentModel, 'id' | 'createdAt' | 'updatedAt' | 'la
     type: 'PATENT',
     name: 'Patent Agent',
     role: 'USPTO & Global Patent IP Analysis',
+    description: 'Searches patent records and claims, identifies relevant intellectual-property activity, and links findings to official patent sources.',
     color: '#D97706',
     capabilities: ['PATENT_SEARCH', 'IP_LANDSCAPING', 'CLAIM_ANALYSIS', 'ASSIGNEE_TRACKING', 'PRIOR_ART'],
     tools: ['uspto-api', 'epo-api', 'google-patents', 'patent-claim-parser'],
@@ -50,6 +53,7 @@ const AGENT_DEFINITIONS: Omit<AgentModel, 'id' | 'createdAt' | 'updatedAt' | 'la
     type: 'NEWS',
     name: 'News Agent',
     role: 'Financial Media & Press Analysis',
+    description: 'Monitors current news and press coverage, extracts dated events and sentiment, and separates reported facts from interpretation.',
     color: '#3B82F6',
     capabilities: ['FINANCIAL_NEWS', 'PRESS_MONITORING', 'SENTIMENT_ANALYSIS', 'EVENT_EXTRACTION'],
     tools: ['newsapi', 'bloomberg-feed', 'reuters-feed', 'sentiment-analyzer'],
@@ -59,6 +63,7 @@ const AGENT_DEFINITIONS: Omit<AgentModel, 'id' | 'createdAt' | 'updatedAt' | 'la
     type: 'COMPETITOR',
     name: 'Competitor Agent',
     role: 'SEC Filings & Product Roadmap Tracker',
+    description: 'Tracks competitor filings, product announcements, leadership changes, and business signals using public company and market sources.',
     color: '#059669',
     capabilities: ['SEC_FILINGS', 'PRODUCT_LAUNCHES', 'SUPPLY_CHAIN', 'EXECUTIVE_CHANGES', 'CAPEX_TRACKING'],
     tools: ['sec-edgar', 'earnings-transcripts', 'supply-chain-db', 'roadmap-tracker'],
@@ -68,6 +73,7 @@ const AGENT_DEFINITIONS: Omit<AgentModel, 'id' | 'createdAt' | 'updatedAt' | 'la
     type: 'WEB',
     name: 'Web Intelligence Agent',
     role: 'Open Source Intelligence & Technical Monitoring',
+    description: 'Monitors public technical activity such as repositories, documentation, package releases, and developer signals to find emerging movement.',
     color: '#8B5CF6',
     capabilities: ['GITHUB_MONITORING', 'TECHNICAL_BLOGS', 'DOCUMENTATION', 'COMMUNITY_SIGNALS', 'REPO_ACTIVITY'],
     tools: ['github-api', 'npm-registry', 'pypi-api', 'docker-hub', 'huggingface-api'],
@@ -92,6 +98,7 @@ function createAgentModel(def: typeof AGENT_DEFINITIONS[0], status: AgentStatus 
     name: def.name,
     type: def.type,
     role: def.role,
+    description: def.description,
     status,
     currentTask: 'Awaiting investigation assignment',
     currentInvestigationId: undefined,
@@ -158,7 +165,15 @@ export class AgentRegistry {
           } catch (e) {
             console.warn(`Failed to persist agent ${def.type}:`, e);
           }
-        } else if (existing.status !== 'OFFLINE') {
+        } else {
+          if (existing.description !== def.description) {
+            await db.collection('agents').updateOne(
+              { id: existing.id },
+              { $set: { description: def.description, role: def.role, capabilities: def.capabilities, tools: def.tools, updatedAt: new Date().toISOString() } }
+            );
+          }
+        }
+        if (existing && existing.status !== 'OFFLINE') {
           // Reset status to IDLE for online agents on startup
           if (existing.status !== 'IDLE') {
             await dbRepository.updateAgentStatus(existing.id, 'IDLE');

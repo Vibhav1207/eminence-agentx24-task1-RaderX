@@ -144,7 +144,7 @@ class ResearchAgent implements Agent {
     // Use timeout and fallback for provider calls
     const providerResults = await withTimeout(
       () => withFallback(
-        () => defaultCrossrefProvider.search(query, { limit: 3 }),
+        () => defaultCrossrefProvider.search(query, { limit: 5 }),
         () => Promise.resolve([] as any),
         (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
       ),
@@ -224,7 +224,7 @@ class PatentAgent implements Agent {
     // Use timeout and fallback for provider calls
     const providerResults = await withTimeout(
       () => withFallback(
-        () => defaultPatentProvider.search(org, { limit: 2, entity: org }),
+        () => defaultPatentProvider.search(org, { limit: 5, entity: org }),
         () => Promise.resolve([] as any),
         (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
       ),
@@ -321,7 +321,7 @@ class NewsAgent implements Agent {
     // Use timeout and fallback for provider calls
     const providerResults = await withTimeout(
       () => withFallback(
-        () => defaultNewsProvider.search(org, { limit: 3, entity: org }),
+        () => defaultNewsProvider.search(org, { limit: 5, entity: org }),
         () => Promise.resolve([] as any),
         (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
       ),
@@ -401,7 +401,7 @@ class CompetitorAgent implements Agent {
     const providerStart = Date.now();
     const compResults = await withTimeout(
       () => withFallback(
-        () => defaultNewsProvider.search(`${org} competitor vs market share`, { limit: 2, entity: org }),
+        () => defaultNewsProvider.search(`${org} competitor vs market share`, { limit: 5, entity: org }),
         () => Promise.resolve([] as any),
         (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
       ),
@@ -498,7 +498,7 @@ class WebAgent implements Agent {
     // Use timeout and fallback for provider calls
     const providerResults = await withTimeout(
       () => withFallback(
-        () => defaultWebProvider.search(topic, { limit: 2 }),
+        () => defaultWebProvider.search(topic, { limit: 5 }),
         () => Promise.resolve([] as any),
         (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
       ),

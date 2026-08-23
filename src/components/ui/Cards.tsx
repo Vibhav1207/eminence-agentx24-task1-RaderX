@@ -106,14 +106,21 @@ export function AgentCard({ agent }: { agent: any }) {
           <StatusBadge status={agent.status} />
         </div>
 
-        <p className="text-responsive-sm text-[#374151] bg-[#FAF9F6] p-2.5 rounded-xl border border-[#E5E7EB] font-mono leading-relaxed line-clamp-2 mb-3">
-          "{agent.currentTask}"
+        <p className="text-responsive-sm text-[#374151] bg-[#FAF9F6] p-2.5 rounded-xl border border-[#E5E7EB] leading-relaxed line-clamp-3 mb-3">
+          {agent.description || agent.currentTask || 'No description available.'}
         </p>
+        <div className="mb-3 space-y-1.5">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#8C6D13]">Current execution</p>
+          <p className="text-responsive-xs text-[#4B5563] line-clamp-2">{agent.currentTask || 'No task assigned'}</p>
+          {agent.capabilities?.length > 0 && (
+            <p className="text-[10px] text-[#6B7280] line-clamp-2">Capabilities: {agent.capabilities.join(' · ')}</p>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-[#E5E7EB] text-responsive-xs font-mono text-[#6B7280]">
         <span>{agent.evidenceProcessed || 0} items</span>
-        <span className="text-[#047857] font-bold">{agent.confidence || 90}% CONF</span>
+        <span className="text-[#047857] font-bold">{Math.round((agent.confidence ?? 0) <= 1 ? (agent.confidence ?? 0) * 100 : agent.confidence)}% CONF</span>
       </div>
     </motion.div>
   );

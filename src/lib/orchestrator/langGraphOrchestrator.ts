@@ -39,6 +39,12 @@ import {
 import { traceService, createTraceEvent, sanitizeTraceData } from "@/lib/tracing/traceService";
 import { AgentStatusTrace } from "@/lib/types";
 
+// Real-data quality gate: a report should normally be corroborated by several
+// independent records and source categories. These are minimums, not fabricated
+// fallbacks; if providers cannot meet them, the final report preserves uncertainty.
+const MIN_EVIDENCE_FOR_SYNTHESIS = 5;
+const MIN_SOURCE_TYPES_FOR_SYNTHESIS = 3;
+
 // Define the state annotation using LangGraph's Annotation
 export const InvestigationState = Annotation.Root({
   investigationId: Annotation<string>(),
@@ -1456,6 +1462,27 @@ async function criticNode(state: InvestigationStateType): Promise<Partial<Invest
       `Self-evaluation approved assessment. Status: ${selfEvalResult.overallStatus}. Proceeding to synthesis.`,
       'ORCHESTRATOR'
     );
+  }
+
+  const finalEvidence = await dbRepository.getEvidenceByInvestigationId(invId);
+  const sourceTypes = new Set(finalEvidence.map((item) => item.sourceType).filter(Boolean));
+  const coverageReady = finalEvidence.length >= MIN_EVIDENCE_FOR_SYNTHESIS && sourceTypes.size >= MIN_SOURCE_TYPES_FOR_SYNTHESIS;
+  if (!coverageReady && currentEvalIter < maxEvalRounds) {
+    await logTraceEvent(
+      invId,
+      missionId,
+      'REPLANNING',
+      `Evidence coverage is ${finalEvidence.length}/${MIN_EVIDENCE_FOR_SYNTHESIS} items across ${sourceTypes.size}/${MIN_SOURCE_TYPES_FOR_SYNTHESIS} source categories. Running additional source searches before synthesis.`,
+      'ORCHESTRATOR'
+    );
+    return {
+      evaluationIteration: currentEvalIter,
+      hypothesisModels: evaluatedHypotheses,
+      selfEvaluation: selfEvalResult,
+      latestConclusion: correction.revised,
+      confidence: Math.min(selfEvalResult.confidence, 69),
+      executionStatus: 'PLANNING' as any,
+    };
   }
 
   const updatedState: Partial<InvestigationStateType> = {

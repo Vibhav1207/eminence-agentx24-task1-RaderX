@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { traceService } from '@/lib/tracing/traceService';
 import { dbRepository } from '@/lib/db/repository';
+import { TraceEventModel } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,6 +32,27 @@ export async function GET(request: NextRequest) {
       let events = traceService.getEvents(traceId);
       if (events.length === 0) {
         events = await dbRepository.getTraceEvents(traceId);
+      }
+      // Older completed runs may have a durable trace header but no low-level
+      // trace event rows. Mission events are still real persisted execution
+      // records, so expose them as a timeline fallback instead of rendering a
+      // blank trace.
+      if (events.length === 0) {
+        const trace = traceService.getTrace(traceId) || await dbRepository.getTraceById(traceId);
+        if (trace) {
+          const missionEvents = await dbRepository.getMissionEvents(trace.investigationId);
+          events = missionEvents.map((missionEvent) => ({
+            eventId: missionEvent.id,
+            traceId,
+            runId: trace.runId,
+            investigationId: trace.investigationId,
+            agentName: missionEvent.agentType || 'SYSTEM',
+            eventType: (String(missionEvent.type).includes('FAILED') ? 'AGENT_FAILED' : 'AGENT_COMPLETED') as TraceEventModel['eventType'],
+            timestamp: missionEvent.createdAt,
+            status: String(missionEvent.type).includes('FAILED') ? 'FAILED' : 'SUCCESS',
+            output: { message: missionEvent.message, metadata: missionEvent.metadata || {} },
+          } satisfies TraceEventModel));
+        }
       }
       const paginated = events.slice(offset, offset + limit);
       return NextResponse.json({ 

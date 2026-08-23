@@ -1,32 +1,20 @@
-import { apiSuccess } from '@/lib/api/response';
+import { apiSuccess, apiError } from '@/lib/api/response';
+import { agentRegistry } from '@/lib/agents/agentRegistry';
 
 export async function GET() {
-  const activities = [
-    {
-      id: 'act-1',
-      time: '10:31 AM',
-      agentName: 'Patent Agent',
-      action: 'Found 3 newly published USPTO filings for low-precision tensor quantization.',
-    },
-    {
-      id: 'act-2',
-      time: '10:32 AM',
-      agentName: 'RadarX Orchestrator',
-      action: 'Correlating patent spike with recent arXiv preprints and SEC 8-K disclosures.',
-    },
-    {
-      id: 'act-3',
-      time: '10:33 AM',
-      agentName: 'Signal Agent',
-      action: 'Detected AI Infrastructure Acceleration signal (+42% momentum) across 4 streams.',
-    },
-    {
-      id: 'act-4',
-      time: '10:35 AM',
-      agentName: 'Synthesis Agent',
-      action: 'Generated 3 actionable recommendations for target intelligence workspace.',
-    },
-  ];
-
-  return apiSuccess(activities);
+  try {
+    const agents = await agentRegistry.getAllAgents();
+    const activities = agents
+      .filter((agent) => agent.enabled !== false)
+      .sort((a, b) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime())
+      .map((agent) => ({
+        id: `agent-activity-${agent.id}`,
+        time: agent.lastActive,
+        agentName: agent.name,
+        action: `${agent.status}: ${agent.currentTask || 'No task assigned'}${agent.evidenceProcessed ? ` (${agent.evidenceProcessed} evidence items)` : ''}`,
+      }));
+    return apiSuccess(activities);
+  } catch (error: unknown) {
+    return apiError(error instanceof Error ? error.message : 'Failed to fetch agent activity', 'DATABASE_UNAVAILABLE', 503);
+  }
 }
