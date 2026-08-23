@@ -4,6 +4,7 @@ export interface EnvValidationResult {
   environment: string;
   hasGeminiKey: boolean;
   hasDatabaseUrl: boolean;
+  mockDbEnabled: boolean;
   timestamp: string;
 }
 
@@ -15,7 +16,14 @@ export function validateEnvironment(): EnvValidationResult {
     missingVars.push('GEMINI_API_KEY');
   }
 
-  const hasDatabaseUrl = !!process.env.DATABASE_URL;
+  const hasDatabaseUrl = !!process.env.MONGODB_URI;
+  const mockDbEnabled = process.env.USE_MOCK_DB === 'true';
+  if (!hasDatabaseUrl) {
+    missingVars.push('MONGODB_URI');
+  }
+  if (process.env.APP_MODE !== 'demo' && mockDbEnabled) {
+    missingVars.push('USE_MOCK_DB must be disabled in production');
+  }
 
   return {
     valid: missingVars.length === 0,
@@ -23,6 +31,7 @@ export function validateEnvironment(): EnvValidationResult {
     environment: process.env.NODE_ENV || 'development',
     hasGeminiKey,
     hasDatabaseUrl,
+    mockDbEnabled,
     timestamp: new Date().toISOString(),
   };
 }

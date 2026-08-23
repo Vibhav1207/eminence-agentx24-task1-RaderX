@@ -1,4 +1,5 @@
 import { MongoClient, Db } from "mongodb";
+import { appConfig } from '@/lib/config';
 
 // Server-only imports
 let fs: typeof import('fs') | null = null;
@@ -11,6 +12,21 @@ if (typeof window === 'undefined') {
 
 let client: MongoClient;
 let db: Db;
+let lastConnectionFailureAt = 0;
+
+async function connectWithTimeout(mongoClient: MongoClient, timeoutMs = 3500) {
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      mongoClient.connect(),
+      new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(() => reject(new Error('MongoDB connection timed out')), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
+}
 
 declare global {
   // eslint-disable-next-line no-var
@@ -100,7 +116,7 @@ class MockCollection {
           }
           return items;
         };
-        return { toArray: sortedToArray };
+        return { toArray: sortedToArray, limit: (count: number) => ({ toArray: async () => (await sortedToArray()).slice(0, count) }) };
       }
     };
 
@@ -173,15 +189,23 @@ class MockCollection {
 }
 
 export async function getDb(): Promise<Db> {
-  const useMock = process.env.NODE_ENV === 'test' || 
-                  process.env.USE_MOCK_DB === 'true' || 
-                  process.argv.includes('--worker') ||
-                  process.argv.includes('--resume-worker');
+  const explicitlyAllowedMock = process.env.NODE_ENV === 'test' || appConfig.isDemo;
+  const mockRequested = process.env.USE_MOCK_DB === 'true';
+
+  if (mockRequested && !explicitlyAllowedMock) {
+    throw new Error('Mock database is disabled outside demo/test mode. Configure a real MONGODB_URI.');
+  }
+
+  const useMock = explicitlyAllowedMock && mockRequested;
 
   if (useMock) {
     return {
       collection: (name: string) => new MockCollection(name) as any
     } as any;
+  }
+
+  if (Date.now() - lastConnectionFailureAt < 5000) {
+    throw new Error('MongoDB is unavailable; retry after the connection backoff period.');
   }
 
   if (db) return db;
@@ -193,15 +217,20 @@ export async function getDb(): Promise<Db> {
     throw new Error("MONGODB_URI environment variable is not set");
   }
 
-  if (process.env.NODE_ENV === "development") {
-    if (!global._mongoClient) {
-      global._mongoClient = new MongoClient(currentUri, { serverSelectionTimeoutMS: 5000 });
-      await global._mongoClient.connect();
+  try {
+    if (process.env.NODE_ENV === "development") {
+      if (!global._mongoClient) {
+        global._mongoClient = new MongoClient(currentUri, { serverSelectionTimeoutMS: 3000, connectTimeoutMS: 3000, socketTimeoutMS: 3000 });
+        await connectWithTimeout(global._mongoClient);
+      }
+      client = global._mongoClient;
+    } else {
+      client = new MongoClient(currentUri, { serverSelectionTimeoutMS: 3000, connectTimeoutMS: 3000, socketTimeoutMS: 3000 });
+      await connectWithTimeout(client);
     }
-    client = global._mongoClient;
-  } else {
-    client = new MongoClient(currentUri, { serverSelectionTimeoutMS: 5000 });
-    await client.connect();
+  } catch (error) {
+    lastConnectionFailureAt = Date.now();
+    throw error;
   }
 
   db = client.db(currentDbName);

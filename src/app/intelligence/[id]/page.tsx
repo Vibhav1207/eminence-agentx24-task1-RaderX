@@ -184,7 +184,7 @@ export default function UnifiedIntelligencePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <ConfidenceIndicator value={intelligence?.confidence || investigation.confidence || 92} size="lg" />
+            <ConfidenceIndicator value={intelligence?.confidence ?? investigation.confidence ?? 0} size="lg" />
             <PdfExportButton
               brief={{
                 id: `brief-${investigation.id}`,
@@ -197,28 +197,28 @@ export default function UnifiedIntelligencePage() {
                 threats: [],
                 opportunities: [],
                 recommendedActions: (intelligence?.recommendedActions || []).map((ra: any, idx: number) => ({
-                  id: `rec-${idx}`,
+                  id: ra.id || `rec-${investigation.id}-${idx}`,
                   investigationId: investigation.id,
                   title: ra.action,
                   action: ra.action,
                   reason: ra.reason,
-                  impact: 'HIGH',
-                  confidence: 90,
+                  impact: ra.expectedImpact || 'MEDIUM',
+                  confidence: ra.confidence ?? 0,
                   priority: ra.priority || 'HIGH',
-                  timeHorizon: 'IMMEDIATE',
-                  evidenceIds: [],
-                  signalIds: [],
+                  timeHorizon: ra.timeHorizon,
+                  evidenceIds: ra.supportingEvidenceIds || [],
+                  signalIds: ra.supportingSignalIds || [],
                   entityIds: [],
                   status: 'ACKNOWLEDGED',
-                  createdAt: new Date().toISOString(),
+                  createdAt: intelligence?.generatedAt || investigation.updatedAt,
                 })),
                 watchItems: [],
-                confidence: 90,
+                confidence: intelligence?.confidence ?? investigation.confidence ?? 0,
                 sourceCoverage: coverage as ExecutiveBriefModel['sourceCoverage'],
                 evidenceIds: [],
                 signalIds: [],
                 entityIds: [],
-                generatedAt: new Date().toISOString(),
+                generatedAt: intelligence?.generatedAt || investigation.updatedAt,
               }}
               evidence={evidenceList}
             />
@@ -278,11 +278,11 @@ export default function UnifiedIntelligencePage() {
                 EXECUTIVE VERDICT • {intelligence?.investigationType || 'DYNAMIC'} INVESTIGATION
               </div>
               <span className={`px-2.5 py-0.5 rounded text-[11px] font-extrabold ${
-                (intelligence?.decisionConfidence || 90) >= 80
+                (intelligence?.decisionConfidence ?? intelligence?.confidence ?? 0) >= 80
                   ? 'bg-[#059669]/15 text-[#047857] border border-[#059669]/30'
                   : 'bg-[#D97706]/15 text-[#D97706] border border-[#D97706]/30'
               }`}>
-                {intelligence?.decisionConfidence || intelligence?.confidence || 90}% CONFIDENCE ({intelligence?.confidenceLevel || 'HIGH CONFIDENCE'})
+                {intelligence?.decisionConfidence ?? intelligence?.confidence ?? 0}% CONFIDENCE ({intelligence?.confidenceLevel || 'INSUFFICIENT EVIDENCE'})
               </span>
             </div>
 
@@ -292,8 +292,8 @@ export default function UnifiedIntelligencePage() {
 
             {/* Strategic Score Indicators */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-responsive pt-responsive-sm">
-              <ThreatIndicator score={investigation.threatScore || 68} />
-              <OpportunityIndicator score={investigation.opportunityScore || 74} />
+              <ThreatIndicator score={investigation.threatScore ?? 0} />
+              <OpportunityIndicator score={investigation.opportunityScore ?? 0} />
               <div className="glass-level-2 border-l-4 border-l-[#D4AF37] border-[#D4AF37]/30 p-responsive flex items-center justify-between shadow-2xs">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-[#D4AF37]/15 border border-[#D4AF37]/30 flex items-center justify-center shrink-0">
@@ -307,7 +307,7 @@ export default function UnifiedIntelligencePage() {
                   </div>
                 </div>
                 <div className="text-responsive-xl font-extrabold font-mono text-[#8C6D13]">
-                  {intelligence?.decisionConfidence || intelligence?.confidence || 90}%
+                  {intelligence?.decisionConfidence ?? intelligence?.confidence ?? 0}%
                 </div>
               </div>
             </div>

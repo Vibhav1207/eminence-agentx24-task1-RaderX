@@ -140,8 +140,9 @@ export class AgentRegistry {
 
   private async _initialize(): Promise<void> {
     try {
+      const db = await (await import('@/lib/mongodb')).getDb();
       // Load existing agents from database
-      const existingAgents = await dbRepository.getAgents();
+      const existingAgents = await db.collection<AgentModel>('agents').find({}).toArray();
       const existingByType = new Map(existingAgents.map(a => [a.type, a]));
 
       // Ensure all defined agents exist
@@ -153,7 +154,6 @@ export class AgentRegistry {
           // Create new agent in database
           const agent = createAgentModel(def, 'IDLE');
           try {
-            const db = await (await import('@/lib/mongodb')).getDb();
             await db.collection('agents').insertOne(agent);
           } catch (e) {
             console.warn(`Failed to persist agent ${def.type}:`, e);

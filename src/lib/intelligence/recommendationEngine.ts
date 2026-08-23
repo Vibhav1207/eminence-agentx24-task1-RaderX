@@ -56,25 +56,6 @@ export class RecommendationEngine {
       recommendations.push(rec);
     }
 
-    // 3. Fallback recommendation if no threats/opportunities generated
-    if (recommendations.length === 0) {
-      const rec = await dbRepository.saveExecutiveRecommendation({
-        investigationId: investigation.id,
-        title: `Strategic Technology Audit: ${investigation.title}`,
-        action: `Initiate continuous monitoring on ${investigation.technology || 'primary entities'} to track competitor roadmaps.`,
-        reason: `Primary evidence indicates ongoing industry acceleration requiring active intelligence monitoring.`,
-        priority: 'MEDIUM',
-        impact: 'MEDIUM',
-        confidence: 85,
-        timeHorizon: 'MEDIUM_TERM',
-        evidenceIds: evidence.slice(0, 3).map((e) => e.id),
-        signalIds: signals.map((s) => s.id),
-        entityIds: investigation.primaryEntities,
-        status: 'RECOMMENDED',
-      });
-      recommendations.push(rec);
-    }
-
     return recommendations;
   }
 }

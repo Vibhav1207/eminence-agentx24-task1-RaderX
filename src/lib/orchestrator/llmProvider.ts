@@ -47,9 +47,10 @@ export class GeminiLLMProvider implements LLMProvider {
     if (!apiKey) {
       return {
         text: JSON.stringify({
-          status: 'ANALYZED',
-          provider: 'Gemini (Key Not Configured)',
-          summary: 'Structured intelligence synthesis generated.',
+          status: 'PROVIDER_FAILURE',
+          code: 'LLM_NOT_CONFIGURED',
+          provider: this.name,
+          message: 'GEMINI_API_KEY is not configured; no analysis was generated.',
         }),
         tokenUsage: { available: false },
         latencyMs: Date.now() - callStart,
@@ -57,11 +58,7 @@ export class GeminiLLMProvider implements LLMProvider {
       };
     }
 
-    const isTest = options.prompt.includes('test-concurrency-id') || 
-                   options.prompt.includes('Validate parallel execution') ||
-                   options.prompt.includes('Concurrency Analysis Test') ||
-                   options.prompt.includes('TASK-') ||
-                   process.env.NODE_ENV === 'test';
+    const isTest = process.env.NODE_ENV === 'test';
 
     if (isTest) {
       const combined = `${options.systemPrompt || ''}\n${options.prompt}`;
@@ -147,17 +144,20 @@ export class GeminiLLMProvider implements LLMProvider {
         latencyMs: Date.now() - callStart,
         model: this.model,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutHandle);
-      const isTimeout = error?.name === 'AbortError';
-      console.warn(`[GeminiLLMProvider] LLM call ${isTimeout ? 'timed out' : 'failed'}:`, error?.message);
+      const errorName = error instanceof Error ? error.name : '';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown provider error';
+      const isTimeout = errorName === 'AbortError';
+      console.warn(`[GeminiLLMProvider] LLM call ${isTimeout ? 'timed out' : 'failed'}:`, errorMessage);
       return {
         text: JSON.stringify({
-          status: 'DEGRADED',
+          status: 'PROVIDER_FAILURE',
           provider: 'Google Gemini',
-          summary: isTimeout
-            ? 'Synthesis completed with structured fallback due to API timeout.'
-            : 'Synthesis completed with structured fallback due to API status.',
+          code: isTimeout ? 'LLM_TIMEOUT' : 'LLM_REQUEST_FAILED',
+          message: isTimeout
+            ? 'Gemini timed out; no analysis was generated.'
+            : 'Gemini failed; no analysis was generated.',
         }),
         tokenUsage: { available: false },
         latencyMs: Date.now() - callStart,
@@ -194,6 +194,6 @@ export class LocalMockLLMProvider implements LLMProvider {
   }
 }
 
-export const defaultLLMProvider: LLMProvider = process.env.GEMINI_API_KEY
-  ? new GeminiLLMProvider()
-  : new LocalMockLLMProvider();
+// Production always uses Gemini. The local provider remains available only for
+// explicit test imports and is never selected implicitly.
+export const defaultLLMProvider: LLMProvider = new GeminiLLMProvider();

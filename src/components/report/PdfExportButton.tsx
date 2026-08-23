@@ -26,22 +26,7 @@ export function PdfExportButton({ brief, evidence }: PdfExportButtonProps) {
       minute: '2-digit',
     });
 
-    const recommendedActions = (brief.recommendedActions || []).map((ra: any, idx: number) => ({
-      id: `rec-${idx}`,
-      investigationId: brief.investigationId,
-      title: ra.action,
-      action: ra.action,
-      reason: ra.reason,
-      impact: 'HIGH',
-      confidence: 90,
-      priority: ra.priority || 'HIGH',
-      timeHorizon: 'IMMEDIATE',
-      evidenceIds: [],
-      signalIds: [],
-      entityIds: [],
-      status: 'ACKNOWLEDGED',
-      createdAt: new Date().toISOString(),
-    }));
+    const recommendedActions = brief.recommendedActions || [];
 
     return (
       <div
@@ -116,7 +101,7 @@ export function PdfExportButton({ brief, evidence }: PdfExportButtonProps) {
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '9px', color: '#6B7280', textTransform: 'uppercase', marginBottom: '2px' }}>Confidence</div>
-                <div style={{ fontWeight: 700, color: '#047857' }}>{brief.confidence || 90}%</div>
+                <div style={{ fontWeight: 700, color: '#047857' }}>{brief.confidence == null ? 'UNAVAILABLE' : `${brief.confidence}%`}</div>
               </div>
             </div>
           </div>
@@ -146,7 +131,7 @@ export function PdfExportButton({ brief, evidence }: PdfExportButtonProps) {
                       FINDING #{idx + 1} • {kf.impact || 'HIGH'} IMPACT
                     </span>
                     <span style={{ fontSize: '10px', fontWeight: 800, color: '#047857', fontFamily: 'monospace' }}>
-                      {kf.confidence || 85}% CONFIDENCE
+                      {kf.confidence == null ? 'UNAVAILABLE' : `${kf.confidence}%`} CONFIDENCE
                     </span>
                   </div>
                   <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#111827', marginBottom: '3mm', lineHeight: 1.3 }}>
@@ -505,7 +490,7 @@ export function PdfExportButton({ brief, evidence }: PdfExportButtonProps) {
             </div>
             <div class="meta-item">
               <div class="meta-label">Confidence</div>
-              <div class="meta-value" style="color: #047857;">${brief.confidence || 90}%</div>
+            <div class="meta-value" style="color: #047857;">${brief.confidence == null ? 'UNAVAILABLE' : `${brief.confidence}%`}</div>
             </div>
           </div>
         </div>
@@ -532,7 +517,7 @@ export function PdfExportButton({ brief, evidence }: PdfExportButtonProps) {
           <div class="card card-bordered gold avoid-break">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4mm; flex-wrap: wrap; gap: 4px;">
               <span class="badge badge-gold">FINDING #${idx + 1} • ${kf.impact || 'HIGH'} IMPACT</span>
-              <span class="badge" style="background: #ECFDF5; color: #047857; border: 1px solid #BBF7D0;">${kf.confidence || 85}% CONFIDENCE</span>
+              <span class="badge" style="background: #ECFDF5; color: #047857; border: 1px solid #BBF7D0;">${kf.confidence == null ? 'UNAVAILABLE' : `${kf.confidence}%`} CONFIDENCE</span>
             </div>
             <h3>${kf.title || kf.description?.slice(0, 100) || 'Key Finding'}</h3>
             <p>${kf.description || kf.title}</p>
@@ -613,22 +598,7 @@ export function PdfExportButton({ brief, evidence }: PdfExportButtonProps) {
     }
 
     // Recommended Actions
-    const recommendedActions = (brief.recommendedActions || []).map((ra: any, idx: number) => ({
-      id: `rec-${idx}`,
-      investigationId: brief.investigationId,
-      title: ra.action,
-      action: ra.action,
-      reason: ra.reason,
-      impact: 'HIGH',
-      confidence: 90,
-      priority: ra.priority || 'HIGH',
-      timeHorizon: 'IMMEDIATE',
-      evidenceIds: [],
-      signalIds: [],
-      entityIds: [],
-      status: 'ACKNOWLEDGED',
-      createdAt: new Date().toISOString(),
-    }));
+    const recommendedActions = brief.recommendedActions || [];
 
     if (recommendedActions.length > 0) {
       html += `

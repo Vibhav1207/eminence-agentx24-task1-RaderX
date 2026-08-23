@@ -56,7 +56,7 @@ import {
 // In-Memory Data Store
 class MemoryStore {
   investigations: InvestigationModel[] = [];
-  agents: AgentModel[] = [...seedAgents];
+  agents: AgentModel[] = appConfig.isDemo || process.env.NODE_ENV === 'test' ? [...seedAgents] : [];
   evidence: EvidenceModel[] = [];
   entities: EntityModel[] = [];
   relationships: RelationshipModel[] = [];
@@ -65,7 +65,7 @@ class MemoryStore {
   timelineEvents: TimelineEventModel[] = [];
   watchlists: WatchlistModel[] = [];
   alerts: AlertModel[] = [];
-  sources: SourceModel[] = [...seedSources];
+  sources: SourceModel[] = appConfig.isDemo || process.env.NODE_ENV === 'test' ? [...seedSources] : [];
   monitoringRuns: MonitoringRunModel[] = [];
   evidenceFingerprints: EvidenceFingerprintModel[] = [];
   uncertainties: UncertaintyModel[] = [];
