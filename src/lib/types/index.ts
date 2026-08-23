@@ -882,14 +882,42 @@ export interface ExecutiveOpportunity {
 }
 
 export type RecommendationTimeHorizon = 'IMMEDIATE' | 'SHORT_TERM' | 'MEDIUM_TERM' | 'LONG_TERM';
+export type InvestigationType = 'COMPARISON' | 'MARKET' | 'RESEARCH' | 'RISK' | 'GENERAL';
+
+export interface ScorecardDimension {
+  dimension: string;
+  entityA: { name: string; assessment: string; evidenceIds: string[] };
+  entityB: { name: string; assessment: string; evidenceIds: string[] };
+  advantage: string;
+  reasoning: string;
+}
+
+export interface EvidenceContradiction {
+  topic: string;
+  evidenceA: { id: string; title: string; summary: string; claim: string };
+  evidenceB: { id: string; title: string; summary: string; claim: string };
+  resolution: string;
+  status: 'RESOLVED' | 'INCONCLUSIVE';
+}
+
+export interface UncertaintyItem {
+  topic: string;
+  description: string;
+  confidence: number;
+  recommendedAction: string;
+}
 
 export interface ExecutiveRecommendation {
+  id?: string;
   action: string;
   reason: string;
+  implication?: string;
   priority: PriorityLevel;
   supportingSignalIds: string[];
   supportingEvidenceIds: string[];
   timeHorizon: RecommendationTimeHorizon;
+  confidence?: number;
+  expectedImpact?: string;
 }
 
 export interface WatchItem {
@@ -904,6 +932,8 @@ export interface WatchItem {
 export interface ExecutiveIntelligence {
   id: string;
   investigationId: string;
+  investigationType?: InvestigationType;
+  verdictText?: string;
   executiveSummary: string;
   keyFindings: ExecutiveFinding[];
   threats: ExecutiveThreat[];
@@ -915,6 +945,21 @@ export interface ExecutiveIntelligence {
   recommendedActions: ExecutiveRecommendation[];
   watchItems: WatchItem[];
   confidence: number;
+  decisionConfidence?: number;
+  confidenceLevel?: 'HIGH CONFIDENCE' | 'MODERATE CONFIDENCE' | 'LOW CONFIDENCE' | 'INSUFFICIENT EVIDENCE';
+  comparisonScorecard?: ScorecardDimension[];
+  contradictions?: EvidenceContradiction[];
+  uncertainties?: UncertaintyItem[];
+  groundednessPassed?: boolean;
+  groundednessNotes?: string;
+  adminMetrics?: {
+    retrievedCount: number;
+    relevantCount: number;
+    rejectedCount: number;
+    verifiedCount: number;
+    duplicateCount: number;
+    rejectionReasons: string[];
+  };
   verifiedEvidenceCount?: number;
   unverifiedEvidenceCount?: number;
   sourceBreakdown?: Record<string, number>;

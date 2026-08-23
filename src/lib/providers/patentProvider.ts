@@ -64,6 +64,19 @@ export class PatentProvider implements SourceProvider {
 
       for (const item of resultList) {
         const title = item.title ? item.title.replace(/\.$/, '') : '';
+        const lowerTitle = title.toLowerCase();
+
+        // Medical Patent Term Guard (e.g. "patent foramen ovale" or "patent ductus arteriosus" are medical conditions, NOT IP patents)
+        if (
+          lowerTitle.includes('patent foramen ovale') ||
+          lowerTitle.includes('patent ductus') ||
+          lowerTitle.includes('echocardiography') ||
+          lowerTitle.includes('arteriosus') ||
+          lowerTitle.includes('cardiology')
+        ) {
+          continue;
+        }
+
         const patentNumber = item.id || item.doi || item.pmid;
         const publishedDate = item.firstPublicationDate || item.pubYear ? `${item.pubYear || '2025'}-01-01` : now.split('T')[0];
         const url = item.doi

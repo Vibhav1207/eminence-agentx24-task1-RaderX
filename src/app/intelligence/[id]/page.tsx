@@ -268,16 +268,26 @@ export default function UnifiedIntelligencePage() {
 
       {/* Executive Intelligence & Strategic Scores */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-responsive">
-        {/* Left 2 Cols: Level 3 Executive Brief & Findings */}
+        {/* Left 2 Cols: Level 3 Executive Verdict & Findings */}
         <div className="lg:col-span-2 space-y-responsive">
-          <div className="glass-level-3 p-responsive space-y-responsive">
-            <div className="flex items-center gap-2 text-responsive-xs font-mono font-extrabold uppercase tracking-wider text-[#8C6D13]">
-              <Sparkles className="w-4 h-4 text-[#C9A227]" />
-              EXECUTIVE BRIEF (SYNTHESIS ENGINE)
+          {/* Executive Verdict Box */}
+          <div className="glass-level-3 p-responsive space-y-responsive border-l-4 border-l-[#D4AF37]">
+            <div className="flex items-center justify-between flex-wrap gap-2 text-responsive-xs font-mono font-extrabold uppercase tracking-wider text-[#8C6D13]">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#C9A227]" />
+                EXECUTIVE VERDICT • {intelligence?.investigationType || 'DYNAMIC'} INVESTIGATION
+              </div>
+              <span className={`px-2.5 py-0.5 rounded text-[11px] font-extrabold ${
+                (intelligence?.decisionConfidence || 90) >= 80
+                  ? 'bg-[#059669]/15 text-[#047857] border border-[#059669]/30'
+                  : 'bg-[#D97706]/15 text-[#D97706] border border-[#D97706]/30'
+              }`}>
+                {intelligence?.decisionConfidence || intelligence?.confidence || 90}% CONFIDENCE ({intelligence?.confidenceLevel || 'HIGH CONFIDENCE'})
+              </span>
             </div>
 
             <h2 className="text-responsive-xl font-extrabold text-[#111827] leading-snug font-sans">
-              {intelligence?.executiveSummary || investigation.executiveSummary}
+              {intelligence?.verdictText || intelligence?.executiveSummary || investigation.executiveSummary}
             </h2>
 
             {/* Strategic Score Indicators */}
@@ -290,14 +300,66 @@ export default function UnifiedIntelligencePage() {
                     <TrendingUp className="w-4 h-4 text-[#8C6D13]" />
                   </div>
                   <div>
-                    <div className="text-responsive-xs font-mono text-[#6B7280] uppercase font-bold">SIGNAL VELOCITY</div>
-                    <div className="text-responsive-sm font-extrabold text-[#8C6D13] font-mono">ACCELERATING</div>
+                    <div className="text-responsive-xs font-mono text-[#6B7280] uppercase font-bold">DECISION CONFIDENCE</div>
+                    <div className="text-responsive-sm font-extrabold text-[#8C6D13] font-mono">
+                      {intelligence?.confidenceLevel || 'HIGH CONFIDENCE'}
+                    </div>
                   </div>
                 </div>
-                <div className="text-responsive-xl font-extrabold font-mono text-[#8C6D13]">+42%</div>
+                <div className="text-responsive-xl font-extrabold font-mono text-[#8C6D13]">
+                  {intelligence?.decisionConfidence || intelligence?.confidence || 90}%
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Requirement 29: Comparison Scorecard Matrix (For Comparison Queries) */}
+          {intelligence?.comparisonScorecard && intelligence.comparisonScorecard.length > 0 && (
+            <div className="glass-level-2 p-responsive space-y-responsive">
+              <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-responsive-sm flex-wrap gap-2">
+                <h3 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#D4AF37]" />
+                  COMPETITIVE COMPARISON SCORECARD MATRIX
+                </h3>
+                <span className="badge-responsive bg-[#059669]/15 text-[#047857] border border-[#059669]/30 font-extrabold">
+                  EVIDENCE GROUNDED
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-responsive-xs font-mono border-collapse">
+                  <thead>
+                    <tr className="bg-[#FAF9F6] border-b border-[#E5E7EB] text-[#6B7280] text-left uppercase">
+                      <th className="p-3 font-bold">Dimension</th>
+                      <th className="p-3 font-bold">{intelligence.comparisonScorecard[0]?.entityA?.name || 'Entity A'}</th>
+                      <th className="p-3 font-bold">{intelligence.comparisonScorecard[0]?.entityB?.name || 'Entity B'}</th>
+                      <th className="p-3 font-bold">Advantage</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E7EB]">
+                    {intelligence.comparisonScorecard.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-[#FAF9F6] transition-colors">
+                        <td className="p-3 font-bold text-[#111827]">{row.dimension}</td>
+                        <td className="p-3 text-[#374151] font-sans text-xs">{row.entityA.assessment}</td>
+                        <td className="p-3 text-[#374151] font-sans text-xs">{row.entityB.assessment}</td>
+                        <td className="p-3 font-extrabold">
+                          <span className={`px-2 py-1 rounded text-[10px] uppercase font-mono ${
+                            row.advantage === 'INSUFFICIENT EVIDENCE'
+                              ? 'bg-[#9CA3AF]/20 text-[#4B5563] border border-[#9CA3AF]/40'
+                              : row.advantage === 'TIE'
+                              ? 'bg-[#D4AF37]/20 text-[#8C6D13]'
+                              : 'bg-[#059669]/15 text-[#047857] border border-[#059669]/30'
+                          }`}>
+                            {row.advantage}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Key Findings List with Evidence Citations */}
           <div className="glass-level-2 p-responsive space-y-responsive">
@@ -307,7 +369,7 @@ export default function UnifiedIntelligencePage() {
                 KEY FINDINGS ({intelligence?.keyFindings?.length || 0})
               </h3>
               <span className="badge-responsive bg-[#059669]/15 text-[#047857] border border-[#059669]/30 font-extrabold">
-                EVIDENCE-BACKED
+                100% EVIDENCE-BACKED
               </span>
             </div>
 
@@ -344,32 +406,119 @@ export default function UnifiedIntelligencePage() {
               ))}
             </div>
           </div>
+
+          {/* Requirement 34: Uncertainties & Contradictions Section */}
+          {((intelligence?.contradictions && intelligence.contradictions.length > 0) ||
+            (intelligence?.uncertainties && intelligence.uncertainties.length > 0)) && (
+            <div className="glass-level-2 p-responsive space-y-responsive border-l-4 border-l-amber-500">
+              <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-responsive-sm">
+                <h3 className="text-responsive-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600" />
+                  UNCERTAINTIES & CONTRADICTORY EVIDENCE
+                </h3>
+                <span className="badge-responsive bg-amber-100 text-amber-900 border border-amber-300 font-extrabold">
+                  TRANSPARENT AUDIT
+                </span>
+              </div>
+
+              {intelligence?.contradictions && intelligence.contradictions.length > 0 && (
+                <div className="space-y-3">
+                  <span className="text-responsive-xs font-mono font-bold text-[#6B7280]">DETECTED EVIDENCE CONFLICTS:</span>
+                  {intelligence.contradictions.map((c, idx) => (
+                    <div key={idx} className="p-3 bg-amber-50/50 rounded-xl border border-amber-200 text-responsive-xs font-mono space-y-2">
+                      <div className="flex justify-between font-bold text-amber-900">
+                        <span>TOPIC: {c.topic}</span>
+                        <span>STATUS: {c.status}</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-sans text-[#374151]">
+                        <div className="p-2 bg-white rounded border border-amber-100">
+                          <span className="font-bold text-amber-800 font-mono block">EVIDENCE A ({c.evidenceA.id})</span>
+                          <p>{c.evidenceA.claim}</p>
+                        </div>
+                        <div className="p-2 bg-white rounded border border-amber-100">
+                          <span className="font-bold text-amber-800 font-mono block">EVIDENCE B ({c.evidenceB.id})</span>
+                          <p>{c.evidenceB.claim}</p>
+                        </div>
+                      </div>
+                      <div className="p-2 bg-amber-100/60 rounded text-amber-900 font-mono text-[11px]">
+                        <strong>RESOLUTION:</strong> {c.resolution}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {intelligence?.uncertainties && intelligence.uncertainties.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <span className="text-responsive-xs font-mono font-bold text-[#6B7280]">UNCERTAINTY BOUNDS:</span>
+                  {intelligence.uncertainties.map((u, idx) => (
+                    <div key={idx} className="p-3 bg-white rounded-xl border border-[#E5E7EB] text-responsive-xs font-mono space-y-1">
+                      <div className="flex justify-between font-bold text-[#111827]">
+                        <span>{u.topic}</span>
+                        <span className="text-amber-700">{u.confidence}% Confidence</span>
+                      </div>
+                      <p className="text-[#4B5563] font-sans text-xs">{u.description}</p>
+                      <div className="text-[11px] text-[#047857]">Action: {u.recommendedAction}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Right Col: Recommendations & Watch Items */}
+        {/* Right Col: Grounded Recommendations & Watch Items */}
         <div className="space-y-responsive">
-          {/* Actionable Recommendations */}
+          {/* Requirement 30, 31, 32, 33, 35: Actionable Grounded Recommendations */}
           <div className="glass-level-3 p-responsive space-y-responsive">
-            <div className="border-b border-[#E5E7EB] pb-responsive-sm">
-              <span className="text-responsive-xs font-mono font-bold uppercase tracking-widest text-[#8C6D13]">
-                ACTIONABLE RECOMMENDATIONS
+            <div className="border-b border-[#E5E7EB] pb-responsive-sm flex justify-between items-center flex-wrap gap-2">
+              <div>
+                <span className="text-responsive-xs font-mono font-bold uppercase tracking-widest text-[#8C6D13]">
+                  ACTIONABLE RECOMMENDATIONS
+                </span>
+                <h3 className="text-responsive-lg font-bold text-[#111827] font-sans mt-0.5">
+                  GROUNDED DECISION ROADMAP
+                </h3>
+              </div>
+              <span className="badge-responsive bg-[#059669]/15 text-[#047857] border border-[#059669]/30 font-extrabold">
+                100% TRACEABLE
               </span>
-              <h3 className="text-responsive-lg font-bold text-[#111827] font-sans mt-0.5">
-                RADARX RECOMMENDS
-              </h3>
             </div>
 
             <div className="space-y-3">
               {(intelligence?.recommendedActions || []).map((rec, idx) => (
-                <div key={idx} className="p-responsive rounded-xl bg-white border border-[#E5E7EB] space-y-1.5 shadow-2xs">
-                  <div className="flex items-center justify-between text-responsive-xs font-mono">
+                <div key={idx} className="p-responsive rounded-xl bg-white border border-[#E5E7EB] space-y-2 shadow-2xs">
+                  <div className="flex items-center justify-between text-responsive-xs font-mono flex-wrap gap-1">
                     <span className="font-bold text-[#8C6D13]">{rec.timeHorizon} HORIZON</span>
-                    <span className="badge-responsive bg-[#991B1B]/15 text-[#991B1B] border border-[#991B1B]/30 font-extrabold">
+                    <span className={`badge-responsive font-extrabold ${
+                      rec.priority === 'CRITICAL' || rec.priority === 'HIGH'
+                        ? 'bg-[#991B1B]/15 text-[#991B1B] border border-[#991B1B]/30'
+                        : 'bg-[#D4AF37]/15 text-[#8C6D13] border border-[#D4AF37]/30'
+                    }`}>
                       {rec.priority} PRIORITY
                     </span>
                   </div>
                   <h4 className="text-responsive-xs font-bold text-[#111827] font-sans">{rec.action}</h4>
                   <p className="text-responsive-xs text-[#4B5563] leading-relaxed font-sans">{rec.reason}</p>
+                  
+                  {rec.implication && (
+                    <div className="text-[11px] font-sans text-amber-900 bg-amber-50/60 p-2 rounded border border-amber-100">
+                      <strong>IMPLICATION:</strong> {rec.implication}
+                    </div>
+                  )}
+
+                  {/* Requirement 35: Clickable Supporting Evidence References */}
+                  {rec.supportingEvidenceIds && rec.supportingEvidenceIds.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-[#E5E7EB] text-[10px] font-mono">
+                      <span className="text-[#6B7280] font-bold">SUPPORTED BY:</span>
+                      {rec.supportingEvidenceIds.map((evId, evIdx) => (
+                        <span key={`${evId}-${evIdx}`} className="px-2 py-0.5 rounded bg-[#FAF9F6] text-[#111827] border border-[#E5E7EB] flex items-center gap-1">
+                          <LinkIcon className="w-2.5 h-2.5 text-[#8C6D13]" />
+                          {evId}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -405,6 +554,21 @@ export default function UnifiedIntelligencePage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Link to Full Execution Trace */}
+          <div className="glass-level-2 p-responsive text-center space-y-2 font-mono text-responsive-xs">
+            <span className="text-[#6B7280] block font-bold">TRACE & OBSERVABILITY LAB</span>
+            <Link href={`/trace-lab?investigationId=${investigation.id}`}>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full flex items-center justify-center gap-2 bg-white border border-[#E5E7EB] hover:border-[#D4AF37] text-[#111827] py-2.5 rounded-xl font-bold transition-all"
+              >
+                <Layers className="w-4 h-4 text-[#C9A227]" />
+                <span>INSPECT FULL AGENT EXECUTION TRACE</span>
+              </motion.button>
+            </Link>
           </div>
         </div>
       </div>

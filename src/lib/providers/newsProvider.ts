@@ -130,7 +130,7 @@ export class NewsProvider implements SourceProvider {
               authors: ['Wikipedia Industry Bureau'],
               provider: 'Wikipedia Knowledge Index',
               sourceName: 'Wikipedia',
-              sourceType: 'NEWS',
+              sourceType: 'WEB',
               sourceQuality: 'SECONDARY',
               relevanceScore: 85,
               confidence: 88,

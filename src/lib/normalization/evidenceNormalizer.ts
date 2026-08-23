@@ -1,18 +1,25 @@
 import { SourceResult } from '@/lib/providers/sourceProvider';
 import { EvidenceModel } from '@/lib/types';
 import { defaultEntityResolver } from './entityResolver';
+import { defaultRelevanceScorer } from './relevanceScorer';
+import { InvestigationContext } from '@/lib/intelligence/investigationContext';
 
 export class EvidenceNormalizer {
   /**
-   * Normalizes a raw SourceResult into a canonical EvidenceModel with strict verification checks.
+   * Normalizes a raw SourceResult into a canonical EvidenceModel with strict relevance gating.
    */
-  normalizeSourceResult(result: SourceResult, investigationId: string, agentId?: string): {
+  normalizeSourceResult(
+    result: SourceResult,
+    investigationId: string,
+    agentId?: string,
+    context?: InvestigationContext
+  ): {
     evidence: EvidenceModel;
     entityIds: string[];
   } {
     const now = new Date().toISOString();
 
-    // Resolve all entity candidates to canonical IDs
+    // Resolve entity candidates
     const resolvedEntities = (result.entityCandidates || []).map((cand) =>
       defaultEntityResolver.resolveEntity(cand)
     );
@@ -28,22 +35,41 @@ export class EvidenceNormalizer {
       /GitHub Repository Velocity: High-Throughput/i.test(result.title) ||
       /Technical Documentation & Architecture Guidelines:/i.test(result.title);
 
-    // Verification Logic: Must have non-empty title, valid URL, valid externalId/DOI or provider, and no synthetic pattern
+    // Requirement 2 & 3: Evaluate Relevance Gate
+    const defaultCtx: InvestigationContext = context || {
+      objective: result.queryUsed || result.title,
+      entities: result.entityCandidates || ['Target Entity'],
+      domain: 'Technology & Strategy',
+      subtopics: ['competition', 'platform', 'strategy'],
+      comparisonTargets: [],
+      requiredEvidenceTypes: ['RESEARCH', 'PATENT', 'NEWS', 'WEB'],
+      excludedTopics: [],
+      timeRange: 'Last 30 days',
+    };
+
+    const relevanceEval = defaultRelevanceScorer.evaluateRelevance(result, defaultCtx);
+
     const hasValidUrl = Boolean(result.url && /^https?:\/\/.+/i.test(result.url));
     const hasValidTitle = Boolean(result.title && result.title.trim().length > 3);
-    const isVerified = hasValidUrl && hasValidTitle && !isSyntheticPattern && (result.verificationStatus !== 'REJECTED');
+
+    const isVerified =
+      hasValidUrl &&
+      hasValidTitle &&
+      !isSyntheticPattern &&
+      relevanceEval.passed &&
+      result.verificationStatus !== 'REJECTED';
 
     const verificationStatus: 'VERIFIED' | 'UNVERIFIED' | 'REJECTED' = isVerified
       ? 'VERIFIED'
-      : isSyntheticPattern
+      : isSyntheticPattern || !relevanceEval.passed
       ? 'REJECTED'
       : 'UNVERIFIED';
 
     const verificationReason = isVerified
-      ? 'Passed external API provenance, canonical URL, and title verification'
+      ? `Passed provenance, canonical URL, and relevance gate (Score: ${relevanceEval.score})`
       : isSyntheticPattern
       ? 'Rejected: Synthetic / fabricated template pattern detected'
-      : 'Rejected: Missing valid URL or canonical external source ID';
+      : relevanceEval.rejectionReason || 'Rejected: Below relevance threshold 0.70';
 
     const evidence: EvidenceModel = {
       id: `ev-norm-${result.id}`,
@@ -62,7 +88,7 @@ export class EvidenceNormalizer {
       verificationReason,
       entityIds: entityIds.length > 0 ? entityIds : ['ent-primary'],
       agentId: agentId || 'agent-source',
-      relevanceScore: result.relevanceScore / 100,
+      relevanceScore: relevanceEval.score,
       confidence: isVerified ? result.confidence : 0,
       metrics: result.metrics || [],
       rawMetadata: result.rawMetadata || {},
@@ -75,6 +101,7 @@ export class EvidenceNormalizer {
         verificationReason,
         externalId: result.externalId,
         doi: result.doi,
+        relevanceScore: relevanceEval.score,
         ...(result.rawMetadata || {}),
       },
       createdAt: now,
@@ -84,31 +111,35 @@ export class EvidenceNormalizer {
   }
 
   /**
-   * Filters and deduplicates evidence items to return ONLY verified items.
+   * Requirement 11 & 16: Filters and deduplicates evidence items to return ONLY verified items.
    */
   verifyAndDeduplicate(evidenceItems: EvidenceModel[]): EvidenceModel[] {
     const seenDois = new Set<string>();
     const seenUrls = new Set<string>();
     const seenTitles = new Set<string>();
+    const seenExternalIds = new Set<string>();
     const verifiedList: EvidenceModel[] = [];
 
     for (const item of evidenceItems) {
-      // Hard Gate: Only VERIFIED items pass
-      if (item.verificationStatus !== 'VERIFIED') {
+      // Hard Gate: Only VERIFIED items with relevanceScore >= 0.70 pass
+      if (item.verificationStatus !== 'VERIFIED' || (item.relevanceScore || 0) < 0.70) {
         continue;
       }
 
-      // Canonical URL & DOI Deduplication
+      // Canonical URL, DOI, and External ID Deduplication
       const canonicalUrl = item.url ? item.url.split('?')[0].toLowerCase() : '';
       const doi = item.doi?.[0] ? item.doi[0].toLowerCase() : '';
+      const extId = item.externalId ? item.externalId.toLowerCase() : '';
       const normTitle = item.title ? item.title.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
 
       if (doi && seenDois.has(doi)) continue;
       if (canonicalUrl && seenUrls.has(canonicalUrl)) continue;
+      if (extId && seenExternalIds.has(extId)) continue;
       if (normTitle && seenTitles.has(normTitle)) continue;
 
       if (doi) seenDois.add(doi);
       if (canonicalUrl) seenUrls.add(canonicalUrl);
+      if (extId) seenExternalIds.add(extId);
       if (normTitle) seenTitles.add(normTitle);
 
       verifiedList.push(item);
