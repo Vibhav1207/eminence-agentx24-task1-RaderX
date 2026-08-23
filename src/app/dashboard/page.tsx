@@ -70,15 +70,6 @@ export default function CommandCenterPage() {
     action: `${alt.title}: ${alt.summary}`,
   }));
 
-  if (activityFeedItems.length === 0 && investigations.length > 0) {
-    activityFeedItems.push({
-      id: 'act-init',
-      time: 'Just now',
-      agentName: 'RadarX Master Orchestrator',
-      action: `Orchestrating investigation "${investigations[0].title}".`,
-    });
-  }
-
   const containerVariants = {
     hidden: { opacity: 0, y: 8 },
     visible: {
@@ -153,7 +144,6 @@ export default function CommandCenterPage() {
           value={signals.length}
           subtitle="Multi-stream correlation"
           icon={Zap}
-          trend="+42%"
           color="amber"
         />
         <MetricCard
@@ -165,8 +155,8 @@ export default function CommandCenterPage() {
         />
         <MetricCard
           title="AGENTS ACTIVE"
-          value={activeAgentsCount || agents.length}
-          subtitle="1 orchestrator, 6 specialized"
+          value={activeAgentsCount}
+          subtitle={activeAgentsCount > 0 ? `${activeAgentsCount} agents running` : 'Agents idle — ready for mission'}
           icon={Bot}
           color="emerald"
         />

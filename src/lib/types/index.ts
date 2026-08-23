@@ -203,6 +203,12 @@ export interface EvidenceModel {
   journal?: string[];
   metrics?: Array<{ label: string; value: string }>;
   metadata?: Record<string, unknown>;
+  // Verification & Real Data Pipeline Fields
+  verificationStatus?: 'VERIFIED' | 'UNVERIFIED' | 'REJECTED';
+  verificationReason?: string;
+  externalId?: string;
+  sourceName?: string;
+  rawMetadata?: Record<string, unknown>;
   // Stage 5F: Provenance tracking
   provenance?: EvidenceProvenance;
   // Stage 5F: Content hash for deduplication
@@ -909,6 +915,11 @@ export interface ExecutiveIntelligence {
   recommendedActions: ExecutiveRecommendation[];
   watchItems: WatchItem[];
   confidence: number;
+  verifiedEvidenceCount?: number;
+  unverifiedEvidenceCount?: number;
+  sourceBreakdown?: Record<string, number>;
+  citationCoverage?: number;
+  insufficientEvidenceNotice?: string;
   evidenceReferences: Array<{ id: string; title: string; url?: string; sourceType: SourceType; provider: string }>;
   sourceCoverage: {
     RESEARCH: 'AVAILABLE' | 'UNAVAILABLE' | 'PARTIAL';

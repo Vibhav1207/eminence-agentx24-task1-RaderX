@@ -178,7 +178,7 @@ export async function detectStaleInvestigations(staleThresholdMs: number = 12000
     // Find investigations marked running but with stale heartbeats
     const staleInvs = await db.collection("investigations")
       .find({
-        status: 'INVESTIGATING',
+        status: { $in: ['RUNNING', 'INVESTIGATING', 'ANALYZING', 'CORRELATING', 'SYNTHESIZING'] },
         lastHeartbeatAt: { $lt: thresholdTime }
       })
       .toArray();

@@ -55,16 +55,16 @@ import {
 
 // In-Memory Data Store
 class MemoryStore {
-  investigations: InvestigationModel[] = appConfig.isDemo ? [seedInvestigation] : [];
-  agents: AgentModel[] = appConfig.isDemo ? [...seedAgents] : [];
-  evidence: EvidenceModel[] = appConfig.isDemo ? [...seedEvidence] : [];
-  entities: EntityModel[] = appConfig.isDemo ? [...seedEntities] : [];
-  relationships: RelationshipModel[] = appConfig.isDemo ? [...seedRelationships] : [];
-  signals: SignalModel[] = appConfig.isDemo ? [...seedSignals] : [];
-  recommendations: RecommendationModel[] = appConfig.isDemo ? [...seedRecommendations] : [];
-  timelineEvents: TimelineEventModel[] = appConfig.isDemo ? [...seedTimelineEvents] : [];
-  watchlists: WatchlistModel[] = appConfig.isDemo ? [...seedWatchlists] : [];
-  alerts: AlertModel[] = appConfig.isDemo ? [...seedAlerts] : [];
+  investigations: InvestigationModel[] = [];
+  agents: AgentModel[] = [...seedAgents];
+  evidence: EvidenceModel[] = [];
+  entities: EntityModel[] = [];
+  relationships: RelationshipModel[] = [];
+  signals: SignalModel[] = [];
+  recommendations: RecommendationModel[] = [];
+  timelineEvents: TimelineEventModel[] = [];
+  watchlists: WatchlistModel[] = [];
+  alerts: AlertModel[] = [];
   sources: SourceModel[] = [...seedSources];
   monitoringRuns: MonitoringRunModel[] = [];
   evidenceFingerprints: EvidenceFingerprintModel[] = [];
@@ -152,8 +152,21 @@ export const dbRepository = {
         .find({})
         .sort({ createdAt: -1 })
         .toArray();
-      if (docs.length > 0) return docs;
-    } catch {}
+      if (docs.length > 0) {
+        // Update memory cache
+        for (const doc of docs) {
+          const idx = memory.investigations.findIndex((i) => i.id === doc.id);
+          if (idx >= 0) {
+            memory.investigations[idx] = doc;
+          } else {
+            memory.investigations.unshift(doc);
+          }
+        }
+        return docs;
+      }
+    } catch (error) {
+      console.error(`[Repository] Failed to fetch investigations from MongoDB:`, error);
+    }
     return memory.investigations;
   },
 
@@ -162,15 +175,30 @@ export const dbRepository = {
   },
 
   async getInvestigationById(id: string): Promise<InvestigationModel | undefined> {
-    const memFound = memory.investigations.find((i) => i.id === id);
-    if (memFound) return memFound;
-
+    // Try MongoDB first (serverless-safe)
     try {
       await ensureIndexes();
       const db = await getDb();
       const doc = await db.collection<InvestigationModel>('investigations').findOne({ id });
-      if (doc) return doc;
-    } catch {}
+      if (doc) {
+        // Update in-memory cache
+        const idx = memory.investigations.findIndex((i) => i.id === id);
+        if (idx >= 0) {
+          memory.investigations[idx] = doc;
+        } else {
+          memory.investigations.unshift(doc);
+        }
+        return doc;
+      }
+    } catch (error) {
+      console.error(`[Repository] Failed to fetch investigation ${id} from MongoDB:`, error);
+      // Fall through to memory fallback
+    }
+
+    // Fallback to memory (same-instance)
+    const memFound = memory.investigations.find((i) => i.id === id);
+    if (memFound) return memFound;
+
     return undefined;
   },
 
@@ -198,28 +226,58 @@ export const dbRepository = {
       updatedAt: now,
     };
 
-    memory.investigations.unshift(newInv);
-
+    // Persist to MongoDB FIRST (serverless-safe)
     try {
       const db = await getDb();
       await db.collection<InvestigationModel>('investigations').insertOne(newInv);
-    } catch {}
+      console.log(`[Repository] Created investigation ${newInv.id} in MongoDB`);
+    } catch (error) {
+      console.error(`[Repository] Failed to create investigation in MongoDB:`, error);
+      throw new Error(`Failed to persist investigation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    // Also update in-memory store for same-instance access
+    memory.investigations.unshift(newInv);
 
     return newInv;
   },
 
   async updateInvestigation(id: string, updates: Partial<InvestigationModel>): Promise<InvestigationModel | undefined> {
     updates.updatedAt = new Date().toISOString();
+
+    // Persist to MongoDB FIRST
     try {
       const db = await getDb();
-      await db.collection('investigations').updateOne({ id }, { $set: updates });
-    } catch {}
+      const result = await db.collection('investigations').updateOne({ id }, { $set: updates });
+      if (result.matchedCount === 0) {
+        console.error(`[Repository] Investigation ${id} not found in MongoDB for update`);
+        return undefined;
+      }
+      console.log(`[Repository] Updated investigation ${id} in MongoDB`);
+    } catch (error) {
+      console.error(`[Repository] Failed to update investigation ${id} in MongoDB:`, error);
+      throw new Error(`Failed to update investigation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 
+    // Update in-memory store
     const idx = memory.investigations.findIndex((i) => i.id === id);
     if (idx >= 0) {
       memory.investigations[idx] = { ...memory.investigations[idx], ...updates };
       return memory.investigations[idx];
     }
+
+    // If not in memory, try to fetch from MongoDB
+    try {
+      const db = await getDb();
+      const doc = await db.collection<InvestigationModel>('investigations').findOne({ id });
+      if (doc) {
+        memory.investigations.unshift(doc);
+        return doc;
+      }
+    } catch (error) {
+      console.error(`[Repository] Failed to fetch updated investigation ${id}:`, error);
+    }
+
     return undefined;
   },
 

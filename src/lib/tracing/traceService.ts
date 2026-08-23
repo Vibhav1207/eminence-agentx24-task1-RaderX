@@ -226,10 +226,43 @@ class TraceStore {
     const events = this.traceEvents.get(traceId);
     if (!trace) return;
 
-    await dbRepository.saveTrace(trace);
-    
-    if (events && events.length > 0) {
-      await dbRepository.saveTraceEvents(traceId, events);
+    // Non-blocking persistence - fire and forget
+    this.persistTraceAsync(traceId, trace, events);
+  }
+
+  /**
+   * Non-blocking async persistence - runs in background without blocking the investigation
+   */
+  private async persistTraceAsync(traceId: string, trace: TraceModel, events: TraceEventModel[] | undefined): Promise<void> {
+    try {
+      await dbRepository.saveTrace(trace);
+      
+      if (events && events.length > 0) {
+        await dbRepository.saveTraceEvents(traceId, events);
+      }
+    } catch (error) {
+      console.error(`[TraceService] Failed to persist trace ${traceId}:`, error);
+      // Don't throw - persistence failure should not block investigation
+    }
+  }
+
+  /**
+   * Synchronous persistence for critical moments (e.g., investigation completion)
+   */
+  async persistTraceSync(traceId: string): Promise<void> {
+    const trace = this.traces.get(traceId);
+    const events = this.traceEvents.get(traceId);
+    if (!trace) return;
+
+    try {
+      await dbRepository.saveTrace(trace);
+      
+      if (events && events.length > 0) {
+        await dbRepository.saveTraceEvents(traceId, events);
+      }
+    } catch (error) {
+      console.error(`[TraceService] Failed to persist trace ${traceId}:`, error);
+      throw error;
     }
   }
 

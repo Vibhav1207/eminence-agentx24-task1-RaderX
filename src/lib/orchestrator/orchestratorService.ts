@@ -17,6 +17,7 @@ import { defaultRelationshipDiscoveryEngine } from '../graph/relationshipDiscove
 import { defaultExecutiveBriefVersioner } from '../intelligence/executiveBriefVersioner';
 import { defaultContextBuilderService } from './contextBuilderService';
 import { langGraphOrchestrator, graphEventEmitter, graphStateSync } from './langGraphOrchestrator';
+import { traceService } from '../tracing/traceService';
 
 class OrchestratorService {
   private missions: Map<string, MissionModel> = new Map();
@@ -67,6 +68,12 @@ class OrchestratorService {
       return existing;
     }
 
+    // Create a runId for this investigation execution
+    const runId = `run-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    
+    // Create trace for this run (Task 7: Advanced Tracing & Observability)
+    const trace = traceService.createTrace(runId, investigationId);
+
     const mission = defaultMissionPlanner.createMission(inv);
     const initialTasks = defaultMissionPlanner.planInitialTasks(mission, inv);
 
@@ -113,7 +120,7 @@ class OrchestratorService {
     });
 
     // Start background decision loop asynchronously (runs the LangGraph flow)
-    this.runDecisionLoop(mission.id, inv.id);
+    this.runDecisionLoop(mission.id, inv.id, runId);
 
     return mission;
   }
@@ -188,7 +195,8 @@ class OrchestratorService {
     this.tasks.set(missionId, recoveredState.plan);
 
     // Run execution loop
-    this.runDecisionLoop(missionId, inv.id);
+    const resumeRunId = `run-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    this.runDecisionLoop(missionId, inv.id, resumeRunId);
     return m;
   }
 
@@ -246,15 +254,18 @@ class OrchestratorService {
     });
   }
 
-  private async runDecisionLoop(missionId: string, investigationId: string) {
+  private async runDecisionLoop(missionId: string, investigationId: string, runIdParam?: string) {
     if (this.runningLoop.get(missionId)) return;
     this.runningLoop.set(missionId, true);
+    const runId = runIdParam || `run-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
     const inv = await dbRepository.getInvestigationById(investigationId);
     if (!inv) {
       this.runningLoop.set(missionId, false);
       return;
     }
+
+    const trace = traceService.getTraceByRunId(runId);
 
     try {
       // 1. Set up initial LangGraph state
@@ -282,10 +293,10 @@ class OrchestratorService {
           iterationCount: 0,
           maxToolCalls: 15,
           toolCallCount: 0,
-          maxRetries: 2,
+          maxRetries: 1,
           totalRetries: 0,
           executionTimeMs: 0,
-          maxConcurrentAgents: 3,
+          maxConcurrentAgents: 5,
         },
         confidence: 75,
         uncertainty: 'Low',
@@ -295,6 +306,7 @@ class OrchestratorService {
         openQuestions: [],
         executionStatus: 'PLANNING' as const,
         startedAt: new Date().toISOString(),
+        runId, // Pass runId to LangGraph for tracing
       };
 
       // Check if a saved checkpoint exists in MongoDB to resume from it
@@ -317,9 +329,28 @@ class OrchestratorService {
         m.progress = 100;
         m.completedAt = new Date().toISOString();
       }
+
+      // Complete the trace (Task 7)
+      const finalTrace = traceService.getTraceByRunId(runId);
+      if (finalTrace) {
+        traceService.completeTrace(finalTrace.traceId, finalState.executionStatus === 'COMPLETED' ? 'COMPLETED' : 'FAILED');
+        // Persist trace synchronously at completion to ensure it's saved
+        traceService.persistTraceSync(finalTrace.traceId).catch((err) => {
+          console.error('[OrchestratorService] Failed to persist final trace:', err);
+        });
+      }
     } catch (err: any) {
       console.error("[ORCHESTRATOR ERROR] LangGraph execution failed:", err);
       this.emitEvent(missionId, investigationId, 'TASK_FAILED', `LangGraph loop exception: ${err.message || err}`);
+      
+      // Mark trace as failed
+      const failedTrace = traceService.getTraceByRunId(runId);
+      if (failedTrace) {
+        traceService.completeTrace(failedTrace.traceId, 'FAILED');
+        traceService.persistTraceSync(failedTrace.traceId).catch((err) => {
+          console.error('[OrchestratorService] Failed to persist failed trace:', err);
+        });
+      }
     } finally {
       this.runningLoop.set(missionId, false);
     }

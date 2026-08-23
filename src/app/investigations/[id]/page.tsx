@@ -23,9 +23,10 @@ import { StatusBadge, ConfidenceIndicator } from '@/components/ui/Indicators';
 import { ActivityFeed, ActivityItem } from '@/components/ui/Feeds';
 import { EvidenceCard } from '@/components/ui/Cards';
 import { investigationsApi } from '@/lib/api';
-import { InvestigationModel, MissionModel, TaskModel, MissionEventModel } from '@/lib/types';
+import { InvestigationModel, MissionModel, TaskModel, MissionEventModel, TraceModel, TraceEventModel } from '@/lib/types';
 
 import { InvestigationTracePanel } from '@/components/investigation/InvestigationTracePanel';
+import { LiveTracePanel } from '@/components/investigation/LiveTracePanel';
 import { ToolSelectionPanel } from '@/components/investigation/ToolSelectionPanel';
 import { InvestigationMemoryPanel } from '@/components/investigation/InvestigationMemoryPanel';
 import { AgentNetworkPanel } from '@/components/investigation/AgentNetworkPanel';
@@ -55,6 +56,11 @@ export default function LiveInvestigationWorkspace() {
   const [hypotheses, setHypotheses] = useState<any[]>([]);
   const [conclusions, setConclusions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Trace state for live trace updates
+  const [trace, setTrace] = useState<TraceModel | null>(null);
+  const [traceEvents, setTraceEvents] = useState<TraceEventModel[]>([]);
+  const [traceLoading, setTraceLoading] = useState(false);
 
   const fetchMissionState = useCallback(async () => {
     if (!id) return;
@@ -107,26 +113,14 @@ export default function LiveInvestigationWorkspace() {
           investigationsApi.startMission(id).catch(() => {});
           fetchMissionState();
         } else {
-          // Auto-create mission for any URL ID so workspace never displays plain error
-          investigationsApi.create({
-            title: `Strategic AI Intelligence Audit (${id.slice(-6)})`,
-            strategicQuestion: `Analyze competitive landscape, patent filings, research preprints, and open-source velocity around AI technology.`,
-            organization: 'NVIDIA',
-            technology: 'Generative AI & Inference Hardware',
-            priority: 'CRITICAL',
-            timeHorizon: 'LAST_6_MONTHS',
-            primaryEntities: ['NVIDIA', 'Cursor AI', 'GitHub Copilot', 'Anysphere Inc.'],
-          }).then((newInv) => {
-            if (newInv) {
-              setInvestigation(newInv);
-              investigationsApi.startMission(newInv.id).catch(() => {});
-              fetchMissionState();
-            } else {
-              setLoading(false);
-            }
-          }).catch(() => setLoading(false));
+          // Investigation not found - show error instead of auto-creating
+          console.error(`[Workspace] Investigation ${id} not found`);
+          setLoading(false);
         }
-      }).catch(() => setLoading(false));
+      }).catch((err) => {
+        console.error(`[Workspace] Failed to load investigation ${id}:`, err);
+        setLoading(false);
+      });
     }
   }, [id, fetchMissionState]);
 
@@ -134,6 +128,44 @@ export default function LiveInvestigationWorkspace() {
     const interval = setInterval(fetchMissionState, 1200);
     return () => clearInterval(interval);
   }, [fetchMissionState]);
+
+  // Fetch trace data for live trace updates
+  const fetchTraceData = useCallback(async () => {
+    if (!id || !mission) return;
+    
+    try {
+      setTraceLoading(true);
+      
+      // Try to get trace by investigation ID
+      const traceRes = await fetch(`/api/traces?investigationId=${id}&limit=1`);
+      const traceData = await traceRes.json();
+      
+      if (traceData.success && traceData.data && traceData.data.length > 0) {
+        const currentTrace = traceData.data[0];
+        setTrace(currentTrace);
+        
+        // Fetch trace events
+        const eventsRes = await fetch(`/api/traces/events?traceId=${currentTrace.traceId}&limit=200`);
+        const eventsData = await eventsRes.json();
+        
+        if (eventsData.success && eventsData.data) {
+          setTraceEvents(eventsData.data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch trace data:', err);
+    } finally {
+      setTraceLoading(false);
+    }
+  }, [id, mission]);
+
+  useEffect(() => {
+    if (mission) {
+      fetchTraceData();
+      const interval = setInterval(fetchTraceData, 2000); // Poll every 2 seconds for live updates
+      return () => clearInterval(interval);
+    }
+  }, [fetchTraceData, mission]);
 
   if (loading || !investigation) {
     return (
@@ -212,9 +244,49 @@ export default function LiveInvestigationWorkspace() {
   const handleToggleAdversarial = async (flag: string) => {
     if (!investigation) return;
     const currentMetadata = investigation.metadata || {};
+    
+    // Map flags to failure injection configs
+    const failureInjectionMap: Record<string, any> = {
+      'forceResearchFail': {
+        enabled: true,
+        type: 'TOOL_TIMEOUT',
+        targetAgent: 'RESEARCH',
+        targetTool: 'research',
+        errorMessage: 'Crossref API timeout (controlled failure)',
+        delayMs: 5000,
+        label: 'CONTROLLED TEST FAILURE'
+      },
+      'forcePatentTimeout': {
+        enabled: true,
+        type: 'TOOL_TIMEOUT',
+        targetAgent: 'PATENT',
+        targetTool: 'patent',
+        errorMessage: 'USPTO API timeout (controlled failure)',
+        delayMs: 5000,
+        label: 'CONTROLLED TEST FAILURE'
+      },
+      'injectConflictingEvidence': {
+        enabled: true,
+        type: 'INVALID_TOOL_RESPONSE',
+        targetAgent: 'COMPETITOR',
+        targetTool: 'competitor',
+        errorMessage: 'Conflicting evidence injected (controlled failure)',
+        label: 'CONTROLLED TEST FAILURE'
+      },
+      'forceLowConfidence': {
+        enabled: true,
+        type: 'AGENT_EXECUTION_FAILURE',
+        targetAgent: 'CRITIC',
+        errorMessage: 'Simulated critic rejection (controlled failure)',
+        label: 'CONTROLLED TEST FAILURE'
+      }
+    };
+
+    const isEnabled = !currentMetadata[flag];
     const updatedMetadata = {
       ...currentMetadata,
-      [flag]: !currentMetadata[flag],
+      [flag]: isEnabled,
+      failureInjection: isEnabled ? failureInjectionMap[flag] : undefined
     };
     
     setInvestigation({
@@ -555,8 +627,10 @@ export default function LiveInvestigationWorkspace() {
 
       {/* Stage 5I Autonomous Decision Explanation Stream */}
       <DecisionExplanationStream decisions={decisions} />
+      
+      {/* Live Trace Panel - Task 7 Advanced Tracing */}
+      <LiveTracePanel trace={trace} traceEvents={traceEvents} traceLoading={traceLoading} />
 
-      <InvestigationTracePanel events={events} decisions={decisions} />
       <ToolSelectionPanel evidence={evidenceList} />
       <InvestigationMemoryPanel investigationId={id} />
       <AgentNetworkPanel tasks={tasks} investigation={investigation} />

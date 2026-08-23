@@ -17,6 +17,41 @@ import { defaultEvidenceNormalizer } from '@/lib/normalization/evidenceNormalize
 import { defaultEntityResolver } from '@/lib/normalization/entityResolver';
 
 /**
+ * Timeout wrapper for agent operations
+ */
+async function withTimeout<T>(
+  operation: () => Promise<T>,
+  timeoutMs: number,
+  timeoutErrorMessage: string
+): Promise<T> {
+  return Promise.race([
+    operation(),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(timeoutErrorMessage)), timeoutMs)
+    ),
+  ]);
+}
+
+/**
+ * Fallback wrapper - tries primary, then falls back on failure/timeout
+ */
+async function withFallback<T>(
+  primary: () => Promise<T>,
+  fallback: () => Promise<T>,
+  shouldFallback: (error: Error) => boolean = () => true
+): Promise<T> {
+  try {
+    return await primary();
+  } catch (error) {
+    if (shouldFallback(error as Error)) {
+      console.warn('[AgentRegistry] Primary operation failed, executing fallback:', (error as Error).message);
+      return await fallback();
+    }
+    throw error;
+  }
+}
+
+/**
  * Controlled Failure Injection - Only active in Evaluation Lab controlled scenarios
  * Extracts failure injection config from investigation metadata
  */
@@ -106,7 +141,16 @@ class ResearchAgent implements Agent {
     const query = context.investigation.objective || context.investigation.title;
 
     const providerStart = Date.now();
-    const providerResults = await defaultCrossrefProvider.search(query, { limit: 3 });
+    // Use timeout and fallback for provider calls
+    const providerResults = await withTimeout(
+      () => withFallback(
+        () => defaultCrossrefProvider.search(query, { limit: 3 }),
+        () => Promise.resolve([] as any),
+        (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
+      ),
+      10000, // 10s timeout
+      'Research provider timeout'
+    );
     const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
@@ -114,8 +158,10 @@ class ResearchAgent implements Agent {
 
     for (const res of providerResults) {
       const normalized = defaultEvidenceNormalizer.normalizeSourceResult(res, invId, 'agent-res');
-      evidenceItems.push(normalized.evidence);
-      normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      if (normalized.evidence.verificationStatus === 'VERIFIED') {
+        evidenceItems.push(normalized.evidence);
+        normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      }
     }
 
     const providerExecution: ProviderExecutionModel = {
@@ -175,7 +221,16 @@ class PatentAgent implements Agent {
     const org = context.investigation.primaryEntities[0] || context.investigation.title;
 
     const providerStart = Date.now();
-    const providerResults = await defaultPatentProvider.search(org, { limit: 2, entity: org });
+    // Use timeout and fallback for provider calls
+    const providerResults = await withTimeout(
+      () => withFallback(
+        () => defaultPatentProvider.search(org, { limit: 2, entity: org }),
+        () => Promise.resolve([] as any),
+        (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
+      ),
+      10000, // 10s timeout
+      'Patent provider timeout'
+    );
     const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
@@ -183,8 +238,10 @@ class PatentAgent implements Agent {
 
     for (const res of providerResults) {
       const normalized = defaultEvidenceNormalizer.normalizeSourceResult(res, invId, 'agent-pat');
-      evidenceItems.push(normalized.evidence);
-      normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      if (normalized.evidence.verificationStatus === 'VERIFIED') {
+        evidenceItems.push(normalized.evidence);
+        normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      }
     }
 
     const primaryEntity = defaultEntityResolver.resolveEntity(org);
@@ -261,7 +318,16 @@ class NewsAgent implements Agent {
     const org = context.investigation.primaryEntities[0] || context.investigation.title;
 
     const providerStart = Date.now();
-    const providerResults = await defaultNewsProvider.search(org, { limit: 3, entity: org });
+    // Use timeout and fallback for provider calls
+    const providerResults = await withTimeout(
+      () => withFallback(
+        () => defaultNewsProvider.search(org, { limit: 3, entity: org }),
+        () => Promise.resolve([] as any),
+        (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
+      ),
+      10000, // 10s timeout
+      'News provider timeout'
+    );
     const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
@@ -269,8 +335,10 @@ class NewsAgent implements Agent {
 
     for (const res of providerResults) {
       const normalized = defaultEvidenceNormalizer.normalizeSourceResult(res, invId, 'agent-news');
-      evidenceItems.push(normalized.evidence);
-      normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      if (normalized.evidence.verificationStatus === 'VERIFIED') {
+        evidenceItems.push(normalized.evidence);
+        normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      }
     }
 
     const providerExecution: ProviderExecutionModel = {
@@ -331,7 +399,15 @@ class CompetitorAgent implements Agent {
 
     // Search for competitor industry moves dynamically
     const providerStart = Date.now();
-    const compResults = await defaultNewsProvider.search(`${org} competitor vs market share`, { limit: 2, entity: org });
+    const compResults = await withTimeout(
+      () => withFallback(
+        () => defaultNewsProvider.search(`${org} competitor vs market share`, { limit: 2, entity: org }),
+        () => Promise.resolve([] as any),
+        (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
+      ),
+      10000, // 10s timeout
+      'Competitor provider timeout'
+    );
     const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
@@ -339,8 +415,10 @@ class CompetitorAgent implements Agent {
 
     for (const res of compResults) {
       const normalized = defaultEvidenceNormalizer.normalizeSourceResult(res, invId, 'agent-comp');
-      evidenceItems.push(normalized.evidence);
-      normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      if (normalized.evidence.verificationStatus === 'VERIFIED') {
+        evidenceItems.push(normalized.evidence);
+        normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      }
     }
 
     const primaryEnt = defaultEntityResolver.resolveEntity(org);
@@ -417,7 +495,16 @@ class WebAgent implements Agent {
     const topic = context.investigation.objective || context.investigation.title;
 
     const providerStart = Date.now();
-    const providerResults = await defaultWebProvider.search(topic, { limit: 2 });
+    // Use timeout and fallback for provider calls
+    const providerResults = await withTimeout(
+      () => withFallback(
+        () => defaultWebProvider.search(topic, { limit: 2 }),
+        () => Promise.resolve([] as any),
+        (error) => error.message.includes('timeout') || error.message.includes('DEGRADED')
+      ),
+      10000, // 10s timeout
+      'Web provider timeout'
+    );
     const providerLatency = Date.now() - providerStart;
 
     const evidenceItems: EvidenceModel[] = [];
@@ -425,8 +512,10 @@ class WebAgent implements Agent {
 
     for (const res of providerResults) {
       const normalized = defaultEvidenceNormalizer.normalizeSourceResult(res, invId, 'agent-web');
-      evidenceItems.push(normalized.evidence);
-      normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      if (normalized.evidence.verificationStatus === 'VERIFIED') {
+        evidenceItems.push(normalized.evidence);
+        normalized.entityIds.forEach((id) => entityIdsSet.add(id));
+      }
     }
 
     const providerExecution: ProviderExecutionModel = {

@@ -61,6 +61,12 @@ export async function POST(request: NextRequest) {
       }
       
       // Use the diagnosis engine for comprehensive analysis
+      // First check in-memory trace service
+      const trace = traceService.getTrace(traceId);
+      if (!trace) {
+        return NextResponse.json({ success: false, error: 'Trace not found' }, { status: 404 });
+      }
+      
       const diagnosis = await traceDiagnosisEngine.analyzeTrace(traceId);
       
       if (!diagnosis) {
@@ -83,6 +89,23 @@ export async function POST(request: NextRequest) {
       const diagnoses = await traceDiagnosisEngine.detectPatterns(body.investigationId);
       const optimizations = await traceDiagnosisEngine.generateOptimizations(diagnoses);
       return NextResponse.json({ success: true, data: optimizations });
+    }
+
+    if (action === 'detect-bottlenecks') {
+      if (!traceId) {
+        return NextResponse.json({ success: false, error: 'traceId required for bottleneck detection' }, { status: 400 });
+      }
+      const bottlenecks = await traceDiagnosisEngine.detectBottlenecks(traceId);
+      return NextResponse.json({ success: true, data: bottlenecks });
+    }
+
+    if (action === 'compare') {
+      const { baselineTraceId, optimizedTraceId } = body;
+      if (!baselineTraceId || !optimizedTraceId) {
+        return NextResponse.json({ success: false, error: 'baselineTraceId and optimizedTraceId required' }, { status: 400 });
+      }
+      const comparison = await traceDiagnosisEngine.compareTraces(baselineTraceId, optimizedTraceId);
+      return NextResponse.json({ success: true, data: comparison });
     }
 
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });

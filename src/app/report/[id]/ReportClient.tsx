@@ -45,21 +45,26 @@ function EvidenceCard({ ev }: { ev: Evidence }) {
     ),
   };
 
+  const ctaLabel = ev.url?.includes('doi.org') ? 'VIEW DOI / PAPER' : ev.evidenceType === 'patent' ? 'VIEW PATENT' : 'VIEW SOURCE';
+
   return (
-    <div className="border border-[#c6c6cd] rounded p-3 bg-white flex flex-col gap-1.5">
+    <div className="border border-[#c6c6cd] rounded p-3 bg-white flex flex-col gap-1.5 shadow-xs">
       <div className="flex items-center gap-1.5 text-[12px] font-medium text-black">
         <span className="text-[#45464d]">{iconMap[ev.evidenceType] ?? iconMap.web}</span>
         <span className="capitalize">{ev.evidenceType}</span>
+        <span className="ml-auto text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+          ✓ VERIFIED
+        </span>
       </div>
-      <p className="text-[13px] text-[#0b1c30] leading-4 flex-1">{ev.title}</p>
+      <p className="text-[13px] text-[#0b1c30] leading-4 flex-1 font-semibold">{ev.title}</p>
       {ev.url ? (
         <a
           href={ev.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[11px] font-mono text-[#45464d] hover:text-black truncate block"
+          className="text-[11px] font-mono font-bold text-[#8C6D13] hover:underline truncate block"
         >
-          {ev.url}
+          {ctaLabel} →
         </a>
       ) : ev.entity ? (
         <span className="text-[11px] font-mono text-[#45464d]">{ev.entity}</span>

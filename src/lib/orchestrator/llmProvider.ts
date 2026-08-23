@@ -7,29 +7,54 @@ export interface LLMCompletionOptions {
   maxTokens?: number;
 }
 
+export interface LLMCompletionResult {
+  text: string;
+  tokenUsage?: {
+    available: boolean;
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  latencyMs: number;
+  model?: string;
+}
+
 export interface LLMProvider {
   name: string;
   complete(options: LLMCompletionOptions): Promise<string>;
+  completeWithMeta(options: LLMCompletionOptions): Promise<LLMCompletionResult>;
 }
 
 export class GeminiLLMProvider implements LLMProvider {
   name = 'Google Gemini REST Provider';
   private model: string;
+  /** LLM call timeout in ms — prevents hung requests from blocking the graph */
+  private readonly timeoutMs = 25000;
 
   constructor(model: string = appConfig.geminiModel) {
     this.model = model;
   }
 
   async complete(options: LLMCompletionOptions): Promise<string> {
+    const result = await this.completeWithMeta(options);
+    return result.text;
+  }
+
+  async completeWithMeta(options: LLMCompletionOptions): Promise<LLMCompletionResult> {
+    const callStart = Date.now();
     const apiKey = appConfig.geminiApiKey;
 
     if (!apiKey) {
-      // Clean structured response if no API key is provided
-      return JSON.stringify({
-        status: 'ANALYZED',
-        provider: 'Gemini (Key Not Configured)',
-        summary: 'Structured intelligence synthesis generated.',
-      });
+      return {
+        text: JSON.stringify({
+          status: 'ANALYZED',
+          provider: 'Gemini (Key Not Configured)',
+          summary: 'Structured intelligence synthesis generated.',
+        }),
+        tokenUsage: { available: false },
+        latencyMs: Date.now() - callStart,
+        model: this.model,
+      };
     }
 
     const isTest = options.prompt.includes('test-concurrency-id') || 
@@ -40,8 +65,9 @@ export class GeminiLLMProvider implements LLMProvider {
 
     if (isTest) {
       const combined = `${options.systemPrompt || ''}\n${options.prompt}`;
+      let text: string;
       if (combined.toLowerCase().includes('plan')) {
-        return JSON.stringify({
+        text = JSON.stringify({
           plan: [
             {
               id: "TASK-COMPETITOR",
@@ -53,45 +79,45 @@ export class GeminiLLMProvider implements LLMProvider {
             }
           ]
         });
-      }
-      if (combined.toLowerCase().includes('critic') || combined.toLowerCase().includes('evaluation')) {
-        return JSON.stringify({
+      } else if (combined.toLowerCase().includes('critic') || combined.toLowerCase().includes('evaluation')) {
+        text = JSON.stringify({
           approved: true,
           confidence: 95,
           feedback: "Validation checklist met perfectly."
         });
+      } else {
+        text = JSON.stringify({
+          status: 'SUCCESS',
+          summary: 'Mocked successful test completion.',
+          synthesis: 'Final synthesized executive intelligence assessment.',
+        });
       }
-      return JSON.stringify({
-        status: 'SUCCESS',
-        summary: 'Mocked successful test completion.',
-        synthesis: 'Final synthesized executive intelligence assessment.',
-      });
+      return { text, tokenUsage: { available: false }, latencyMs: Date.now() - callStart, model: this.model };
     }
 
     const systemPrompt = options.systemPrompt || 'You are RADARX Master Intelligence Orchestrator. Output precise, structured JSON.';
     const combinedPrompt = `${systemPrompt}\n\n${options.prompt}`;
-
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${apiKey}`;
+
+    // AbortController for hard timeout — prevents indefinitely hung requests
+    const controller = new AbortController();
+    const timeoutHandle = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: combinedPrompt }],
-            },
-          ],
+          contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
           generationConfig: {
             temperature: options.temperature ?? 0.2,
             maxOutputTokens: options.maxTokens ?? 2048,
           },
         }),
       });
+
+      clearTimeout(timeoutHandle);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -104,14 +130,39 @@ export class GeminiLLMProvider implements LLMProvider {
         data?.candidates?.[0]?.content?.parts?.[0]?.text ||
         JSON.stringify({ status: 'SUCCESS', message: 'No content text returned.' });
 
-      return generatedText;
-    } catch (error) {
-      console.warn('[GeminiLLMProvider] LLM Completion failed:', error);
-      return JSON.stringify({
-        status: 'DEGRADED',
-        provider: 'Google Gemini',
-        summary: 'Synthesis completed with structured fallback due to API status.',
-      });
+      // Parse token usage from Gemini's usageMetadata field
+      const usage = data?.usageMetadata;
+      const tokenUsage = usage
+        ? {
+            available: true,
+            inputTokens: usage.promptTokenCount ?? 0,
+            outputTokens: usage.candidatesTokenCount ?? 0,
+            totalTokens: usage.totalTokenCount ?? 0,
+          }
+        : { available: false };
+
+      return {
+        text: generatedText,
+        tokenUsage,
+        latencyMs: Date.now() - callStart,
+        model: this.model,
+      };
+    } catch (error: any) {
+      clearTimeout(timeoutHandle);
+      const isTimeout = error?.name === 'AbortError';
+      console.warn(`[GeminiLLMProvider] LLM call ${isTimeout ? 'timed out' : 'failed'}:`, error?.message);
+      return {
+        text: JSON.stringify({
+          status: 'DEGRADED',
+          provider: 'Google Gemini',
+          summary: isTimeout
+            ? 'Synthesis completed with structured fallback due to API timeout.'
+            : 'Synthesis completed with structured fallback due to API status.',
+        }),
+        tokenUsage: { available: false },
+        latencyMs: Date.now() - callStart,
+        model: this.model,
+      };
     }
   }
 }
@@ -120,18 +171,26 @@ export class LocalMockLLMProvider implements LLMProvider {
   name = 'LocalMockProvider';
 
   async complete(options: LLMCompletionOptions): Promise<string> {
+    const result = await this.completeWithMeta(options);
+    return result.text;
+  }
+
+  async completeWithMeta(options: LLMCompletionOptions): Promise<LLMCompletionResult> {
+    const callStart = Date.now();
+    let text: string;
     if (options.prompt.includes('deconstruct')) {
-      return JSON.stringify({
+      text = JSON.stringify({
         primaryFocus: 'Generative AI ecosystem and competitive positioning',
         subTopics: ['Hardware acceleration', 'Patent activity', 'Hyperscaler ASIC shift'],
         suggestedAgents: ['RESEARCH', 'PATENT', 'NEWS', 'COMPETITOR', 'WEB'],
       });
+    } else {
+      text = JSON.stringify({
+        status: 'analyzed',
+        summary: 'Structured analysis completed successfully.',
+      });
     }
-
-    return JSON.stringify({
-      status: 'analyzed',
-      summary: 'Structured analysis completed successfully.',
-    });
+    return { text, tokenUsage: { available: false }, latencyMs: Date.now() - callStart, model: 'local-mock' };
   }
 }
 

@@ -22,6 +22,7 @@ import { defaultRelationshipDiscoveryEngine } from "../graph/relationshipDiscove
 import { defaultSynthesisEngine } from "../intelligence/synthesisEngine";
 import { defaultExecutiveBriefVersioner } from "../intelligence/executiveBriefVersioner";
 import { defaultWebProvider } from "../providers/webProvider";
+import { defaultEvidenceNormalizer } from "../normalization/evidenceNormalizer";
 import { defaultLLMProvider } from "./llmProvider";
 import { defaultClaimExtractionEngine } from "../intelligence/claimExtractionEngine";
 import { defaultContradictionDetectionEngine } from "../intelligence/contradictionDetectionEngine";
@@ -223,32 +224,9 @@ async function logTraceEvent(
 ) {
   // Forward to orchestratorService listener (which will persist to MongoDB)
   graphEventEmitter.emit(missionId, investigationId, type, message, agentType, taskId);
-
-  const evt: MissionEventModel = {
-    id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    missionId,
-    investigationId,
-    type,
-    agentType,
-    taskId,
-    message,
-    createdAt: new Date().toISOString(),
-  };
+  // NOTE: do NOT also call dbRepository.createMissionEvent() here — that creates a double-write.
+  // The emitter path in OrchestratorService.emitEvent() handles persistence.
   console.log(`[LANGGRAPH EVENT]: [${type}] ${message}`);
-
-  // Persist directly to DB via repository
-  try {
-    await dbRepository.createMissionEvent({
-      missionId,
-      investigationId,
-      type,
-      agentType,
-      taskId,
-      message,
-    });
-  } catch (err) {
-    console.error('[LANGGRAPH] Failed to persist event to MongoDB:', err);
-  }
 }
 
 /**
@@ -392,6 +370,16 @@ async function saveGraphCheckpoint(investigationId: string, state: Partial<Inves
   } catch (err) {
     console.error("[LANGGRAPH CHECKPOINT] Failed to save checkpoint:", err);
   }
+}
+
+/**
+ * Non-blocking checkpoint for agent nodes — fires and forgets so it doesn't
+ * add MongoDB round-trip latency to the critical execution path.
+ */
+function saveGraphCheckpointAsync(investigationId: string, state: Partial<InvestigationStateType>): void {
+  saveGraphCheckpoint(investigationId, state).catch((err) => {
+    console.warn('[LANGGRAPH CHECKPOINT] Background checkpoint failed (non-critical):', err?.message);
+  });
 }
 
 const PLANNER_SYSTEM_PROMPT = `
@@ -611,7 +599,7 @@ Output the updated JSON plan according to the schema.
               evidenceIds: [],
               createdAt: new Date().toISOString(),
               retryCount: 0,
-              maxRetries: 2,
+              maxRetries: 1,   // bounded retries: 1 retry + fallback, not 2
               whyThisTask: t.whyThisTask,
               infoGain: t.infoGain,
               verificationRequired: t.verificationRequired || false,
@@ -665,7 +653,7 @@ Output the updated JSON plan according to the schema.
           evidenceIds: [],
           createdAt: new Date().toISOString(),
           retryCount: 0,
-          maxRetries: 2,
+          maxRetries: 1,
         }
       ];
       updatedPlan.push(...baselineTasks);
@@ -720,7 +708,27 @@ Output the updated JSON plan according to the schema.
     resourceBudget: { ...state.resourceBudget, iterationCount: iteration },
   };
 
-  await saveGraphCheckpoint(invId, updatedState);
+  // Emit planner duration for trace timing (Fix I)
+  const plannerDurationMs = Date.now() - plannerStartTime;
+  const plannerTrace = await traceService.getTracesByInvestigation(invId);
+  const pt = plannerTrace[0];
+  if (pt) {
+    await logTraceEventDetailed(
+      pt.traceId, pt.runId, invId, missionId,
+      'PLANNER_COMPLETED',
+      {
+        agentId: 'planner',
+        agentName: 'Planner',
+        status: 'SUCCESS',
+        durationMs: plannerDurationMs,
+        outputMetadata: { tasksGenerated: updatedPlan.length, iteration },
+      }
+    );
+    traceService.updateTraceMetrics(pt.traceId);
+  }
+
+  // Non-blocking checkpoint for planner (allows graph to proceed immediately)
+  saveGraphCheckpointAsync(invId, updatedState);
   return updatedState;
 }
 
@@ -888,27 +896,16 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
             task.id
           );
 
-          evidenceItems = fallbackResults.map((res: any) => ({
-            id: `fallback-pat-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-            investigationId: invId,
-            taskId: task.id,
-            title: res.title,
-            summary: res.summary,
-            url: res.url,
-            discoveredAt: new Date().toISOString(),
-            source: 'Web Intelligence (Fallback)',
-            sourceType: 'PATENT',
-            sourceQuality: 'SECONDARY',
-            confidence: 75, // Reduced confidence for fallback source
-            relevanceScore: 80,
-            entityIds: [inv!.primaryEntities[0]],
-            createdAt: new Date().toISOString(),
-          }));
+          evidenceItems = fallbackResults
+            .map((res: any) => defaultEvidenceNormalizer.normalizeSourceResult(res, invId, 'agent-fallback').evidence)
+            .filter((e: EvidenceModel) => e.verificationStatus === 'VERIFIED');
 
-          success = true;
+          if (evidenceItems.length > 0) {
+            success = true;
+          }
           
           // Detailed trace: fallback recovery
-          if (traceId && runId) {
+          if (traceId && runId && success) {
             await logTraceEventDetailed(
               traceId, runId, invId, missionId,
               'RECOVERY',
@@ -940,9 +937,11 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
     task.completedAt = new Date().toISOString();
     task.evidenceIds = evidenceItems.map((e) => e.id);
 
-    // Save evidence items to DB
+    // Save evidence items to DB (Hard Gate: VERIFIED items only)
     for (const item of evidenceItems) {
-      await dbRepository.saveEvidenceItem(item);
+      if (item.verificationStatus === 'VERIFIED') {
+        await dbRepository.saveEvidenceItem(item);
+      }
     }
 
     await logTraceEvent(
@@ -1035,7 +1034,13 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
     toolFailures: !success ? [...state.toolFailures, { agent: agentType, error: errorMsg }] : state.toolFailures,
   };
 
-  await saveGraphCheckpoint(invId, updatedState);
+  // Non-blocking checkpoint for agent nodes — keeps graph moving without waiting for DB write
+  saveGraphCheckpointAsync(invId, updatedState);
+  // Async flush trace events to MongoDB (non-blocking)
+  if (traceId) {
+    traceService.updateTraceMetrics(traceId);
+    traceService.persistTrace(traceId).catch(() => {});
+  }
   return updatedState;
 }
 
@@ -1573,7 +1578,7 @@ function plannerRouter(state: InvestigationStateType) {
   if (queuedAgents.includes('WEB')) targets.push('webAgent');
 
   // Concurrency limit check (Requirement 7)
-  const maxConcurrency = state.resourceBudget.maxConcurrentAgents || 3;
+  const maxConcurrency = state.resourceBudget.maxConcurrentAgents || 5;
   const slicedTargets = targets.slice(0, maxConcurrency);
 
   const destination = slicedTargets.length > 0 ? slicedTargets : ['validator'];

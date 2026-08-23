@@ -25,6 +25,11 @@ export interface SourceResult {
   confidence: number;
   queryUsed: string;
   entityCandidates: string[];
+  externalId?: string;
+  doi?: string;
+  sourceName?: string;
+  verificationStatus?: 'VERIFIED' | 'UNVERIFIED' | 'REJECTED';
+  verificationReason?: string;
   metrics?: Array<{ label: string; value: string }>;
   rawMetadata?: Record<string, unknown>;
 }

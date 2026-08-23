@@ -122,11 +122,17 @@ export function AgentCard({ agent }: { agent: any }) {
 export function EvidenceCard({ evidence }: { evidence: any }) {
   const sourceType = (evidence.sourceType || 'research').toString().toUpperCase();
   const dateDisplay = evidence.publishedAt || evidence.date || (evidence.discoveredAt ? new Date(evidence.discoveredAt).toLocaleDateString() : 'Recent');
+  const isVerified = evidence.verificationStatus === 'VERIFIED' || evidence.verificationStatus === undefined;
+  const externalIdDisplay = evidence.doi?.[0] || evidence.externalId || evidence.doi;
+  const sourceName = evidence.sourceName || evidence.provider || evidence.source || 'External Verified Source';
 
   const getSourceCta = () => {
+    if (evidence.doi?.[0] || (evidence.url && evidence.url.includes('doi.org'))) {
+      return 'VIEW DOI / PAPER';
+    }
     switch (sourceType) {
       case 'RESEARCH':
-        return 'VIEW DOI / PAPER';
+        return 'VIEW PAPER';
       case 'PATENT':
         return 'VIEW PATENT';
       case 'NEWS':
@@ -142,8 +148,19 @@ export function EvidenceCard({ evidence }: { evidence: any }) {
       whileHover={{ y: -2, scale: 1.005 }}
       className="glass-level-1 hover:glass-level-2 p-responsive transition-all space-y-2.5 border border-[#E5E7EB] bg-white rounded-xl shadow-xs"
     >
-      <div className="flex items-center justify-between gap-2">
-        <SourceBadge type={sourceType.toLowerCase() as any} />
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <SourceBadge type={sourceType.toLowerCase() as any} />
+          <span
+            className={`text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded-md ${
+              isVerified
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-amber-50 text-amber-700 border border-amber-200'
+            }`}
+          >
+            {isVerified ? '✓ VERIFIED SOURCE' : '● UNVERIFIED'}
+          </span>
+        </div>
         <span className="text-responsive-xs font-mono text-[#6B7280] font-bold">{dateDisplay}</span>
       </div>
 
@@ -152,6 +169,12 @@ export function EvidenceCard({ evidence }: { evidence: any }) {
       </h4>
 
       <p className="text-responsive-sm text-[#4B5563] line-clamp-2 leading-relaxed font-sans">{evidence.summary}</p>
+
+      {externalIdDisplay && (
+        <div className="text-responsive-xs font-mono text-[#4B5563] bg-gray-50 px-2 py-1 rounded border border-gray-200 inline-block font-semibold">
+          {evidence.doi?.[0] ? `DOI: ${evidence.doi[0]}` : `EXTERNAL ID: ${externalIdDisplay}`}
+        </div>
+      )}
 
       {evidence.authors && evidence.authors.length > 0 && (
         <div className="text-responsive-xs font-mono text-[#8C6D13] font-semibold truncate">
@@ -170,7 +193,9 @@ export function EvidenceCard({ evidence }: { evidence: any }) {
       )}
 
       <div className="flex items-center justify-between pt-2 border-t border-[#E5E7EB] text-responsive-xs font-mono">
-        <span className="text-[#6B7280] truncate max-w-[150px] font-medium">{evidence.provider || evidence.source || 'Verified Source'}</span>
+        <span className="text-[#6B7280] truncate max-w-[170px] font-medium" title={sourceName}>
+          SOURCE: {sourceName}
+        </span>
         {evidence.url ? (
           <a
             href={evidence.url}

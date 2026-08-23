@@ -159,20 +159,7 @@ export default function AgentNetworkPage() {
           <span className="text-responsive-xs font-mono text-[#6B7280]">OPERATIONAL STREAM</span>
         </div>
 
-        <ActivityFeed
-          activities={
-            activities.length > 0
-              ? activities
-              : [
-                  {
-                    id: 'act-1',
-                    time: 'Just now',
-                    agentName: 'RADARX ORCHESTRATOR',
-                    action: 'Orchestrated task dependency execution.',
-                  },
-                ]
-          }
-        />
+        <ActivityFeed activities={activities} />
       </div>
     </motion.div>
   );

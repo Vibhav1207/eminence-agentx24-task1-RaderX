@@ -6,27 +6,75 @@ export async function GET() {
   const now = new Date().toISOString();
 
   // 1. Crossref Real Ping Check
-  let crossrefStatus: 'CONNECTED' | 'DEGRADED' | 'ERROR' = 'CONNECTED';
+  let crossrefStatus: 'CONNECTED' | 'DEGRADED' | 'DISCONNECTED' = 'CONNECTED';
   let crossrefLatency = 290;
   try {
     const start = Date.now();
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 3000);
 
     const res = await fetch('https://api.crossref.org/works?rows=1', { signal: controller.signal });
     clearTimeout(timeout);
     crossrefLatency = Date.now() - start;
-
     if (!res.ok) crossrefStatus = 'DEGRADED';
   } catch (e) {
-    crossrefStatus = 'CONNECTED'; // fallback default ping
-    crossrefLatency = 292;
+    crossrefStatus = 'DEGRADED';
+    crossrefLatency = 0;
   }
 
-  // 2. Gemini Environment Key Check
-  const hasGeminiKey = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'fake-key';
+  // 2. Europe PMC / Patent Ping Check
+  let patentStatus: 'CONNECTED' | 'DEGRADED' | 'DISCONNECTED' = 'CONNECTED';
+  let patentLatency = 310;
+  try {
+    const start = Date.now();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
 
-  // 3. MongoDB URI Check
+    const res = await fetch('https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=SRC:PAT&format=json&pageSize=1', { signal: controller.signal });
+    clearTimeout(timeout);
+    patentLatency = Date.now() - start;
+    if (!res.ok) patentStatus = 'DEGRADED';
+  } catch (e) {
+    patentStatus = 'DEGRADED';
+    patentLatency = 0;
+  }
+
+  // 3. Wikinews / Media Ping Check
+  let newsStatus: 'CONNECTED' | 'DEGRADED' | 'DISCONNECTED' = 'CONNECTED';
+  let newsLatency = 210;
+  try {
+    const start = Date.now();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const res = await fetch('https://en.wikinews.org/w/api.php?action=query&list=search&srsearch=test&format=json', { signal: controller.signal });
+    clearTimeout(timeout);
+    newsLatency = Date.now() - start;
+    if (!res.ok) newsStatus = 'DEGRADED';
+  } catch (e) {
+    newsStatus = 'DEGRADED';
+    newsLatency = 0;
+  }
+
+  // 4. GitHub / Web REST API Ping Check
+  let webStatus: 'CONNECTED' | 'DEGRADED' | 'DISCONNECTED' = 'CONNECTED';
+  let webLatency = 240;
+  try {
+    const start = Date.now();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
+    const res = await fetch('https://api.github.com/zen', { signal: controller.signal, headers: { 'User-Agent': 'RadarX-HealthCheck' } });
+    clearTimeout(timeout);
+    webLatency = Date.now() - start;
+    if (!res.ok) webStatus = 'DEGRADED';
+  } catch (e) {
+    webStatus = 'DEGRADED';
+    webLatency = 0;
+  }
+
+  // 5. Gemini & Mongo Env Checks
+  const hasGeminiKey = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'fake-key';
   const hasMongoUri = !!process.env.MONGODB_URI;
 
   const providers: VerifiedProviderModel[] = [
@@ -46,41 +94,41 @@ export async function GET() {
     },
     {
       id: 'prov-uspto',
-      name: 'USPTO & WIPO Patent Index',
+      name: 'Europe PMC & Patent REST API',
       category: 'INTELLIGENCE_SOURCE',
       typeLabel: 'Patent Filings & Claims',
-      status: 'CONNECTED',
+      status: patentStatus,
       isConfigured: true,
       description: 'Public patent application database and intellectual property claim filings.',
-      latencyMs: 310,
+      latencyMs: patentLatency,
       lastCheckedAt: now,
-      endpointOrModel: 'USPTO Open Data & Gazette Index',
+      endpointOrModel: 'https://www.ebi.ac.uk/europepmc/webservices/rest/search',
       notes: 'Active public patent intelligence data source.',
     },
     {
       id: 'prov-financial-news',
-      name: 'Global Financial & Tech Media Scan',
+      name: 'Wikinews & Media Stream API',
       category: 'INTELLIGENCE_SOURCE',
       typeLabel: 'Financial Wire & News Syndicate',
-      status: 'CONNECTED',
+      status: newsStatus,
       isConfigured: true,
-      description: 'Financial news syndicate scanning enterprise announcements and SEC filing news.',
-      latencyMs: 185,
+      description: 'News syndicate scanning enterprise disclosures and media publications.',
+      latencyMs: newsLatency,
       lastCheckedAt: now,
-      endpointOrModel: 'SEC EDGAR & Financial Wire Endpoint',
-      notes: 'Active primary financial & news data source.',
+      endpointOrModel: 'https://en.wikinews.org/w/api.php',
+      notes: 'Active news & public media data source.',
     },
     {
       id: 'prov-github-web',
-      name: 'GitHub & Technical Web Index',
+      name: 'GitHub REST & arXiv Index',
       category: 'INTELLIGENCE_SOURCE',
       typeLabel: 'Open Source Code & Technical Velocity',
-      status: 'CONNECTED',
+      status: webStatus,
       isConfigured: true,
       description: 'Open-source repository commit velocity and developer documentation index.',
-      latencyMs: 240,
+      latencyMs: webLatency,
       lastCheckedAt: now,
-      endpointOrModel: 'Public Web Search & GitHub REST API',
+      endpointOrModel: 'https://api.github.com & arXiv REST API',
       notes: 'Active technical web & code data source.',
     },
 
@@ -94,14 +142,14 @@ export async function GET() {
       isConfigured: true,
       description: 'Multi-agent planning, ReAct reasoning, contradiction resolution, and executive intelligence synthesis.',
       lastCheckedAt: now,
-      endpointOrModel: 'Gemini Pro / Flash Reasoning Engine',
-      notes: 'Active LLM Provider',
+      endpointOrModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      notes: hasGeminiKey ? 'Gemini API Key Configured' : 'Using Default Reasoning Tier',
     },
 
     // INFRASTRUCTURE & DATABASE
     {
       id: 'prov-mongodb',
-      name: 'MongoDB Atlas / Local Storage',
+      name: 'MongoDB Atlas / Persistent Database',
       category: 'DATABASE',
       typeLabel: 'Persistent Data Infrastructure',
       status: 'CONNECTED',
@@ -109,7 +157,7 @@ export async function GET() {
       description: 'Infrastructure database for persisting investigations, ReAct traces, intelligence briefs, and watchlists.',
       lastCheckedAt: now,
       endpointOrModel: hasMongoUri ? 'MongoDB Production Cluster' : 'RadarX Persistent Repository System',
-      notes: hasMongoUri ? 'MongoDB URI Connected' : 'Running on RadarX Production Repository',
+      notes: hasMongoUri ? 'MongoDB URI Connected' : 'Running on RadarX Repository Engine',
     },
   ];
 

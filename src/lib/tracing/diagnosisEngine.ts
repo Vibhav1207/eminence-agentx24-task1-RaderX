@@ -7,6 +7,7 @@ import {
   AgentStatusTrace,
 } from '@/lib/types';
 import { dbRepository } from '@/lib/db/repository';
+import { traceService } from '@/lib/tracing/traceService';
 
 /**
  * Automatic Trace Diagnosis Engine (Task 7)
@@ -14,13 +15,14 @@ import { dbRepository } from '@/lib/db/repository';
  */
 
 export class TraceDiagnosisEngine {
-  
+ 
   /**
    * Analyze a completed or failed trace and generate diagnosis
    */
   async analyzeTrace(traceId: string): Promise<TraceDiagnosisModel> {
-    const trace = await dbRepository.getTraceById(traceId);
-    const events = await dbRepository.getTraceEventsByTraceId(traceId);
+    // First check in-memory trace service (for cases where MongoDB is not available)
+    const trace = traceService.getTrace(traceId) || await dbRepository.getTraceById(traceId);
+    const events = traceService.getEvents(traceId) || await dbRepository.getTraceEventsByTraceId(traceId);
     
     if (!trace) {
       throw new Error(`Trace ${traceId} not found`);
@@ -375,6 +377,195 @@ export class TraceDiagnosisEngine {
     });
 
     return [...recommendations, ...patternRecommendations];
+  }
+
+  /**
+   * Detect performance bottlenecks in a trace
+   * Returns the top contributors to latency with recommendations
+   */
+  async detectBottlenecks(traceId: string): Promise<{
+    bottlenecks: Array<{
+      component: string;
+      type: 'agent' | 'tool' | 'llm' | 'database';
+      latencyMs: number;
+      percentage: number;
+      impact: 'HIGH' | 'MEDIUM' | 'LOW';
+      recommendation: string;
+      evidence: string[];
+    }>;
+    totalLatency: number;
+    summary: string;
+  }> {
+    // First check in-memory trace service
+    const trace = traceService.getTrace(traceId) || await dbRepository.getTraceById(traceId);
+    const events = traceService.getEvents(traceId) || await dbRepository.getTraceEventsByTraceId(traceId);
+    
+    if (!trace) {
+      throw new Error(`Trace ${traceId} not found`);
+    }
+
+    const totalLatency = trace.totalDurationMs || 0;
+    
+    // Analyze agent execution events
+    const agentEvents = events.filter(e => e.agentExecution);
+    const toolEvents = events.filter(e => e.toolCall);
+    const llmEvents = events.filter(e => e.tokenUsage && e.tokenUsage.available);
+
+    const componentLatencies: Record<string, { 
+      latency: number; 
+      count: number; 
+      type: 'agent' | 'tool' | 'llm' | 'database';
+      evidence: string[];
+    }> = {};
+
+    // Process agent events
+    agentEvents.forEach(e => {
+      const agentName = e.agentName || e.agentExecution?.agentType || 'UNKNOWN';
+      const latency = e.agentExecution?.durationMs || e.durationMs || 0;
+      if (!componentLatencies[agentName]) {
+        componentLatencies[agentName] = { latency: 0, count: 0, type: 'agent', evidence: [] };
+      }
+      componentLatencies[agentName].latency += latency;
+      componentLatencies[agentName].count += 1;
+      componentLatencies[agentName].evidence.push(
+        `Agent ${agentName} execution: ${latency}ms (${e.eventType})`
+      );
+    });
+
+    // Process tool events
+    toolEvents.forEach(e => {
+      const toolName = e.toolCall?.toolName || e.agentName || 'UNKNOWN';
+      const latency = e.durationMs || 0;
+      if (!componentLatencies[toolName]) {
+        componentLatencies[toolName] = { latency: 0, count: 0, type: 'tool', evidence: [] };
+      }
+      componentLatencies[toolName].latency += latency;
+      componentLatencies[toolName].count += 1;
+      componentLatencies[toolName].evidence.push(
+        `Tool ${toolName}: ${latency}ms (${e.toolCall?.provider || 'unknown'} provider, ${e.toolCall?.retryCount || 0} retries)`
+      );
+    });
+
+    // Sort by latency descending
+    const sortedComponents = Object.entries(componentLatencies)
+      .map(([component, data]) => ({
+        component,
+        type: data.type,
+        latencyMs: data.latency,
+        count: data.count,
+        percentage: totalLatency > 0 ? Math.round((data.latency / totalLatency) * 10000) / 100 : 0,
+        evidence: data.evidence,
+      }))
+      .sort((a, b) => b.latencyMs - a.latencyMs);
+
+    // Determine impact level
+    const bottlenecks = sortedComponents.map(c => ({
+      ...c,
+      impact: (c.percentage > 30 ? 'HIGH' : c.percentage > 15 ? 'MEDIUM' : 'LOW') as 'HIGH' | 'MEDIUM' | 'LOW',
+      recommendation: this.getBottleneckRecommendation(c, totalLatency),
+    }));
+
+    const topBottleneck = bottlenecks[0];
+    const summary = topBottleneck 
+      ? `BOTTLENECK DETECTED: ${topBottleneck.component} (${topBottleneck.type}) - ${topBottleneck.latencyMs}ms (${topBottleneck.percentage}% of total). Impact: ${topBottleneck.impact}. ${topBottleneck.recommendation}`
+      : 'No significant bottlenecks detected.';
+
+    return {
+      bottlenecks,
+      totalLatency,
+      summary,
+    };
+  }
+
+  /**
+   * Get recommendation for a specific bottleneck
+   */
+  private getBottleneckRecommendation(bottleneck: {
+    component: string;
+    type: string;
+    latencyMs: number;
+    percentage: number;
+    evidence: string[];
+  }, totalLatency: number): string {
+    if (bottleneck.type === 'tool' && bottleneck.latencyMs > 10000) {
+      return `Use fallback provider after first timeout. Current latency: ${bottleneck.latencyMs}ms.`;
+    }
+    if (bottleneck.type === 'tool' && bottleneck.percentage > 30) {
+      return `Enable parallel execution for independent ${bottleneck.component} calls.`;
+    }
+    if (bottleneck.type === 'agent' && bottleneck.latencyMs > 30000) {
+      return `Consider agent-level timeout and checkpoint-based recovery.`;
+    }
+    if (bottleneck.type === 'llm' && bottleneck.latencyMs > 15000) {
+      return `Reduce prompt size or switch to faster model.`;
+    }
+    if (bottleneck.percentage > 25) {
+      return `Investigate ${bottleneck.component} - accounts for ${bottleneck.percentage}% of total latency.`;
+    }
+    return `Monitor ${bottleneck.component} for performance patterns.`;
+  }
+
+  /**
+   * Compare two traces and generate before/after metrics
+   */
+  async compareTraces(baselineTraceId: string, optimizedTraceId: string): Promise<TraceComparisonModel> {
+    // First check in-memory trace service
+    const baseline = traceService.getTrace(baselineTraceId) || await dbRepository.getTraceById(baselineTraceId);
+    const optimized = traceService.getTrace(optimizedTraceId) || await dbRepository.getTraceById(optimizedTraceId);
+    
+    if (!baseline || !optimized) {
+      throw new Error('One or both traces not found');
+    }
+
+    // Get diagnosis for both to understand what changed
+    const baselineDiag = await this.analyzeTrace(baselineTraceId);
+    const optimizedDiag = await this.analyzeTrace(optimizedTraceId);
+
+    const before = {
+      latencyMs: baseline.totalDurationMs || 0,
+      toolCalls: baseline.totalToolCalls,
+      errors: baseline.totalErrors,
+      retries: baseline.totalRetries,
+      successRate: baseline.status === 'COMPLETED' ? 100 : baseline.status === 'PARTIAL' ? 50 : 0,
+      tokens: baseline.totalTokens?.total || 0,
+    };
+
+    const after = {
+      latencyMs: optimized.totalDurationMs || 0,
+      toolCalls: optimized.totalToolCalls,
+      errors: optimized.totalErrors,
+      retries: optimized.totalRetries,
+      successRate: optimized.status === 'COMPLETED' ? 100 : optimized.status === 'PARTIAL' ? 50 : 0,
+      tokens: optimized.totalTokens?.total || 0,
+    };
+
+    const improvement = {
+      latencyPct: before.latencyMs > 0 ? Math.round(((before.latencyMs - after.latencyMs) / before.latencyMs) * 10000) / 100 : 0,
+      toolCallsPct: before.toolCalls > 0 ? Math.round(((before.toolCalls - after.toolCalls) / before.toolCalls) * 10000) / 100 : 0,
+      errorsPct: before.errors > 0 ? Math.round(((before.errors - after.errors) / before.errors) * 10000) / 100 : 0,
+      retriesPct: before.retries > 0 ? Math.round(((before.retries - after.retries) / before.retries) * 10000) / 100 : 0,
+      successRatePct: Math.round((after.successRate - before.successRate) * 100) / 100,
+    };
+
+    // Determine what optimization was applied
+    const optimizations: string[] = [];
+    if (improvement.latencyPct > 10) optimizations.push('Parallel execution');
+    if (improvement.retriesPct > 10) optimizations.push('Timeout tuning');
+    if (improvement.errorsPct > 10) optimizations.push('Fallback routing');
+    if (improvement.toolCallsPct > 10) optimizations.push('Deduplication');
+
+    return {
+      comparisonId: `cmp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      baselineTraceId,
+      optimizedTraceId,
+      runId: baseline.runId,
+      investigationId: baseline.investigationId,
+      createdAt: new Date().toISOString(),
+      before,
+      after,
+      improvement,
+      optimizationApplied: optimizations.join(', ') || 'Manual optimization',
+    };
   }
 }
 

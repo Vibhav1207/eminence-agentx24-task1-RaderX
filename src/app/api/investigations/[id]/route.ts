@@ -8,12 +8,16 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    console.log(`[API] GET /api/investigations/${id}`);
     const inv = await dbRepository.getInvestigationById(id);
     if (!inv) {
-      return apiError(`Investigation with ID ${id} not found`, 'NOT_FOUND', 404);
+      console.log(`[API] Investigation ${id} not found in database`);
+      return apiError(`Investigation with ID ${id} not found`, 'INVESTIGATION_NOT_FOUND', 404);
     }
+    console.log(`[API] Found investigation ${id}: ${inv.title}`);
     return apiSuccess(inv);
   } catch (error: any) {
+    console.error(`[API] Error fetching investigation:`, error);
     return apiError(error.message || 'Failed to fetch investigation', 'FETCH_ERROR', 500);
   }
 }

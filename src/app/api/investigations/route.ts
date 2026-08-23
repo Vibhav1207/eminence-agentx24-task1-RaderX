@@ -39,8 +39,10 @@ export async function POST(request: Request) {
     // Initialize agent registry for this investigation
     await agentRegistry.initialize();
 
+    console.log(`[API] Created investigation ${newInv.id} via POST /api/investigations`);
     return apiSuccess(newInv, 201);
   } catch (error: any) {
+    console.error(`[API] Error creating investigation:`, error);
     return apiError(error.message || 'Failed to create investigation', 'CREATE_ERROR', 500);
   }
 }
