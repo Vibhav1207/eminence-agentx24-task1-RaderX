@@ -21,8 +21,8 @@ const MOCK_DB_FILE = typeof window === 'undefined' ? path!.resolve(process.cwd()
 
 function readMockDb(): Record<string, any[]> {
   try {
-    if (typeof window === 'undefined' && fs!.existsSync(MOCK_DB_FILE)) {
-      const content = fs!.readFileSync(MOCK_DB_FILE, 'utf-8');
+    if (typeof window === 'undefined' && fs!.existsSync(/*turbopackIgnore: true*/ MOCK_DB_FILE)) {
+      const content = fs!.readFileSync(/*turbopackIgnore: true*/ MOCK_DB_FILE, 'utf-8');
       return JSON.parse(content);
     } else {
       if (process.env.DEBUG_MOCK_DB === 'true') {
