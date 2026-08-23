@@ -134,10 +134,9 @@ function SignalSection({ signal, index }: { signal: StrategicSignal; index: numb
 
 const SIDE_NAV_SECTIONS = [
   { id: "overview", label: "Overview", icon: "📄" },
-  { id: "signals", label: "Strategic Signals", icon: "📡" },
+  { id: "opportunities", label: "Opportunities", icon: "↗" },
   { id: "evidence", label: "Evidence", icon: "📚" },
-  { id: "impact", label: "Impact Analysis", icon: "📊" },
-  { id: "recommendations", label: "Recommendations", icon: "✓" },
+  { id: "sources", label: "Sources", icon: "🔗" },
 ];
 
 export default function ReportClient({ investigation }: ReportClientProps) {
@@ -174,13 +173,7 @@ export default function ReportClient({ investigation }: ReportClientProps) {
     );
   }
 
-  const allSignals = [
-    ...(report.signals ?? []),
-    ...(report.threats ?? []),
-    ...(report.opportunities ?? []),
-  ].filter(
-    (s, i, arr) => arr.findIndex((x) => x.title === s.title) === i
-  );
+  const opportunities = report.opportunities ?? [];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8f9ff]">
@@ -260,7 +253,7 @@ export default function ReportClient({ investigation }: ReportClientProps) {
                 key={section.id}
                 href={`#${section.id}`}
                 className={`px-6 py-3 flex items-center gap-3 text-[#45464d] hover:bg-[#dce9ff] transition-colors ${
-                  section.id === "signals" ? "bg-[#131b2e] text-[#7c839b] font-bold" : ""
+                  section.id === "opportunities" ? "bg-[#131b2e] text-[#7c839b] font-bold" : ""
                 }`}
               >
                 <span className="text-base">{section.icon.replace("📄", "").replace("📡", "").replace("📚", "").replace("📊", "").replace("✓", "")}</span>
@@ -330,30 +323,30 @@ export default function ReportClient({ investigation }: ReportClientProps) {
           </div>
 
           {/* Signals + Sidebar grid */}
-          <div id="signals" className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          <div id="opportunities" className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
             {/* Strategic Signals */}
-            <div className="lg:col-span-8 flex flex-col gap-4">
+            <div className="lg:col-span-12 flex flex-col gap-4">
               <h2 className="text-[22px] font-semibold text-black flex items-center gap-2">
                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.348 14.651a3.75 3.75 0 0 1 0-5.303m5.304 0a3.75 3.75 0 0 1 0 5.303m-7.425 2.122a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Z" />
                 </svg>
-                Strategic Signals
+                Opportunities
               </h2>
-              {allSignals.length > 0 ? (
-                allSignals.map((signal, i) => (
+              {opportunities.length > 0 ? (
+                opportunities.map((signal, i) => (
                   <SignalSection key={i} signal={signal} index={i} />
                 ))
               ) : (
                 <div className="bg-white border border-[#c6c6cd] rounded p-6 text-center">
-                  <p className="text-[14px] text-[#45464d]">No signals in this report.</p>
+                  <p className="text-[14px] text-[#45464d]">No evidence-backed opportunities were identified.</p>
                 </div>
               )}
             </div>
 
             {/* Context & Actions Column */}
-            <div className="lg:col-span-4 flex flex-col gap-4">
+            <div className="hidden">
               {/* Why It Matters */}
-              {allSignals[0]?.whyItMatters && (
+              {opportunities[0]?.whyItMatters && (
                 <div className="bg-white border border-[#c6c6cd] rounded p-4">
                   <h2 className="text-[18px] font-semibold text-black mb-3 flex items-center gap-2">
                     <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,7 +354,7 @@ export default function ReportClient({ investigation }: ReportClientProps) {
                     </svg>
                     Why It Matters
                   </h2>
-                  <p className="text-[14px] text-[#45464d] leading-5">{allSignals[0].whyItMatters}</p>
+                  <p className="text-[14px] text-[#45464d] leading-5">{opportunities[0].whyItMatters}</p>
                 </div>
               )}
 
