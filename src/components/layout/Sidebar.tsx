@@ -22,6 +22,7 @@ import {
   Briefcase,
   Search,
   FlaskConical,
+  Brain,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { CommandPalette } from '../ui/CommandPalette';
@@ -68,6 +69,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Agent Network', href: '/agents', icon: Bot, badge: '7' },
         { label: 'Adversarial Live Test', href: '/adversarial-test', icon: Shield, badge: 'LIVE DEMO' },
         { label: 'Evaluation Lab', href: '/evaluation', icon: FlaskConical, badge: 'EVAL' },
+        { label: 'Trace Lab', href: '/trace-lab', icon: Brain, badge: 'TRACE' },
       ],
     },
     {

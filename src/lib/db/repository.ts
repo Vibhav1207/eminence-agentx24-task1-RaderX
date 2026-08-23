@@ -34,6 +34,10 @@ import {
   AgentType,
   EvaluationRunModel,
   MissionEventModel,
+  TraceModel,
+  TraceEventModel,
+  TraceDiagnosisModel,
+  TraceComparisonModel,
 } from '@/lib/types';
 import {
   seedInvestigation,
@@ -88,6 +92,11 @@ class MemoryStore {
   missionEvents: MissionEventModel[] = [];
   // Evaluation Lab
   evaluationRuns: EvaluationRunModel[] = [];
+  // Trace & Observability (Task 7)
+  traces: TraceModel[] = [];
+  traceEvents: TraceEventModel[] = [];
+  traceDiagnoses: TraceDiagnosisModel[] = [];
+  traceComparisons: TraceComparisonModel[] = [];
 }
 
 const memory = new MemoryStore();
@@ -110,6 +119,22 @@ async function ensureIndexes() {
     await db.collection('entity_profiles').createIndex({ name: 1, type: 1 });
     await db.collection('investigation_memory').createIndex({ investigationId: 1 }, { unique: true });
     await db.collection('agent_step_memory').createIndex({ investigationId: 1, timestamp: -1 });
+    // Trace indexes (Task 7)
+    await db.collection('traces').createIndex({ traceId: 1 }, { unique: true });
+    await db.collection('traces').createIndex({ runId: 1 });
+    await db.collection('traces').createIndex({ investigationId: 1, startedAt: -1 });
+    await db.collection('traces').createIndex({ status: 1 });
+    await db.collection('trace_events').createIndex({ traceId: 1, timestamp: -1 });
+    await db.collection('trace_events').createIndex({ eventId: 1 }, { unique: true });
+    await db.collection('trace_events').createIndex({ investigationId: 1, eventType: 1 });
+    await db.collection('trace_events').createIndex({ runId: 1 });
+    await db.collection('trace_diagnoses').createIndex({ diagnosisId: 1 }, { unique: true });
+    await db.collection('trace_diagnoses').createIndex({ traceId: 1 });
+    await db.collection('trace_diagnoses').createIndex({ investigationId: 1 });
+    await db.collection('trace_comparisons').createIndex({ comparisonId: 1 }, { unique: true });
+    await db.collection('trace_comparisons').createIndex({ baselineTraceId: 1 });
+    await db.collection('trace_comparisons').createIndex({ optimizedTraceId: 1 });
+    await db.collection('trace_comparisons').createIndex({ runId: 1 });
     indexesEnsured = true;
   } catch {
     // MongoDB offline fallback
@@ -1776,5 +1801,229 @@ export const dbRepository = {
       await db.collection('evaluation_runs').createIndex({ scenario: 1, status: 1, createdAt: -1 });
       await db.collection('evaluation_runs').createIndex({ investigationId: 1 });
     } catch {}
+  },
+
+  // ==================== TRACE PERSISTENCE (Task 7) ====================
+  
+  async ensureTraceIndexes(): Promise<void> {
+    try {
+      const db = await getDb();
+      await db.collection('traces').createIndex({ traceId: 1 }, { unique: true });
+      await db.collection('traces').createIndex({ runId: 1 });
+      await db.collection('traces').createIndex({ investigationId: 1, startedAt: -1 });
+      await db.collection('traces').createIndex({ status: 1 });
+      
+      await db.collection('trace_events').createIndex({ traceId: 1, timestamp: -1 });
+      await db.collection('trace_events').createIndex({ eventId: 1 }, { unique: true });
+      await db.collection('trace_events').createIndex({ investigationId: 1, eventType: 1 });
+      await db.collection('trace_events').createIndex({ runId: 1 });
+      
+      await db.collection('trace_diagnoses').createIndex({ diagnosisId: 1 }, { unique: true });
+      await db.collection('trace_diagnoses').createIndex({ traceId: 1 });
+      await db.collection('trace_diagnoses').createIndex({ investigationId: 1 });
+      
+      await db.collection('trace_comparisons').createIndex({ comparisonId: 1 }, { unique: true });
+      await db.collection('trace_comparisons').createIndex({ baselineTraceId: 1 });
+      await db.collection('trace_comparisons').createIndex({ optimizedTraceId: 1 });
+      await db.collection('trace_comparisons').createIndex({ runId: 1 });
+    } catch {}
+  },
+
+  async saveTrace(trace: TraceModel): Promise<TraceModel> {
+    try {
+      const db = await getDb();
+      await db.collection('traces').updateOne(
+        { traceId: trace.traceId },
+        { $set: trace },
+        { upsert: true }
+      );
+    } catch {}
+    return trace;
+  },
+
+  async getTraceById(traceId: string): Promise<TraceModel | undefined> {
+    try {
+      const db = await getDb();
+      const doc = await db.collection('traces').findOne({ traceId });
+      if (doc) return doc as unknown as TraceModel;
+    } catch {}
+    return undefined;
+  },
+
+  async getTracesByInvestigation(investigationId: string): Promise<TraceModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('traces').find({ investigationId }).sort({ startedAt: -1 }).toArray();
+      if (docs.length > 0) return docs as unknown as TraceModel[];
+    } catch {}
+    return [];
+  },
+
+  async saveTraceEvents(traceId: string, events: TraceEventModel[]): Promise<void> {
+    if (events.length === 0) return;
+    try {
+      const db = await getDb();
+      await db.collection('trace_events').deleteMany({ traceId });
+      await db.collection('trace_events').insertMany(events);
+    } catch {}
+  },
+
+  async getTraceEvents(traceId: string): Promise<TraceEventModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('trace_events').find({ traceId }).sort({ timestamp: 1 }).toArray();
+      if (docs.length > 0) return docs as unknown as TraceEventModel[];
+    } catch {}
+    return [];
+  },
+
+  async saveTraceDiagnosis(diagnosis: TraceDiagnosisModel): Promise<TraceDiagnosisModel> {
+    try {
+      const db = await getDb();
+      await db.collection('trace_diagnoses').updateOne(
+        { diagnosisId: diagnosis.diagnosisId },
+        { $set: diagnosis },
+        { upsert: true }
+      );
+    } catch {}
+    return diagnosis;
+  },
+
+  async getTraceDiagnosis(traceId: string): Promise<TraceDiagnosisModel | undefined> {
+    try {
+      const db = await getDb();
+      const doc = await db.collection('trace_diagnoses').findOne({ traceId });
+      if (doc) return doc as unknown as TraceDiagnosisModel;
+    } catch {}
+    return undefined;
+  },
+
+  async saveTraceComparison(comparison: TraceComparisonModel): Promise<TraceComparisonModel> {
+    try {
+      const db = await getDb();
+      await db.collection('trace_comparisons').updateOne(
+        { comparisonId: comparison.comparisonId },
+        { $set: comparison },
+        { upsert: true }
+      );
+    } catch {}
+    return comparison;
+  },
+
+  async getTraceComparisons(runId: string): Promise<TraceComparisonModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('trace_comparisons').find({ runId }).sort({ createdAt: -1 }).toArray();
+      if (docs.length > 0) return docs as unknown as TraceComparisonModel[];
+    } catch {}
+    return [];
+  },
+
+  async getTraceByRunId(runId: string): Promise<TraceModel | undefined> {
+    try {
+      const db = await getDb();
+      const doc = await db.collection('traces').findOne({ runId });
+      if (doc) return doc;
+    } catch {}
+    return undefined;
+  },
+
+  async getTracesByInvestigationId(investigationId: string): Promise<TraceModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('traces').find({ investigationId }).sort({ startedAt: -1 }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return [];
+  },
+
+  async getAllTraces(): Promise<TraceModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('traces').find({}).sort({ startedAt: -1 }).limit(100).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return [];
+  },
+
+  async getTraceDiagnosisById(diagnosisId: string): Promise<TraceDiagnosisModel | undefined> {
+    try {
+      const db = await getDb();
+      const doc = await db.collection('trace_diagnoses').findOne({ diagnosisId });
+      if (doc) return doc;
+    } catch {}
+    return undefined;
+  },
+
+  async getTraceDiagnosisByTraceId(traceId: string): Promise<TraceDiagnosisModel | undefined> {
+    try {
+      const db = await getDb();
+      const doc = await db.collection('trace_diagnoses').findOne({ traceId });
+      if (doc) return doc;
+    } catch {}
+    return undefined;
+  },
+
+  async getTraceDiagnosesByInvestigationId(investigationId: string): Promise<TraceDiagnosisModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('trace_diagnoses').find({ investigationId }).sort({ createdAt: -1 }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return [];
+  },
+
+  async getTraceComparisonById(comparisonId: string): Promise<TraceComparisonModel | undefined> {
+    try {
+      const db = await getDb();
+      const doc = await db.collection('trace_comparisons').findOne({ comparisonId });
+      if (doc) return doc;
+    } catch {}
+    return undefined;
+  },
+
+  async getTraceComparisonsByRunId(runId: string): Promise<TraceComparisonModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('trace_comparisons').find({ runId }).sort({ createdAt: -1 }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return [];
+  },
+
+  async getTraceComparisonsByInvestigationId(investigationId: string): Promise<TraceComparisonModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('trace_comparisons').find({ investigationId }).sort({ createdAt: -1 }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return [];
+  },
+
+  async getAllComparisons(): Promise<TraceComparisonModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('trace_comparisons').find({}).sort({ createdAt: -1 }).limit(100).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return [];
+  },
+
+  async getTraceEventsByTraceId(traceId: string): Promise<TraceEventModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('trace_events').find({ traceId }).sort({ timestamp: 1 }).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return [];
+  },
+
+  async getRecentTraces(limit: number): Promise<TraceModel[]> {
+    try {
+      const db = await getDb();
+      const docs = await db.collection('traces').find({}).sort({ startedAt: -1 }).limit(limit).toArray();
+      if (docs.length > 0) return docs;
+    } catch {}
+    return [];
   },
 };

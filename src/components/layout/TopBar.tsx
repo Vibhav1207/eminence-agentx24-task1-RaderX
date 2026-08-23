@@ -34,7 +34,7 @@ export default function TopBar({ onOpenCommandPalette, onOpenSidebar }: TopBarPr
       {/* Mobile Menu Button - visible on all screen sizes for responsive navigation */}
       <button
         onClick={onOpenSidebar}
-        className="p-2 rounded-xl bg-white border border-[#E5E7EB] text-[#4B5563] hover:text-[#111827] hover:border-[#D4AF37]/50 shadow-xs transition-colors touch-target lg:hidden"
+        className="p-2 rounded-xl bg-white border border-[#E5E7EB] text-[#4B5563] hover:text-[#111827] hover:border-[#D4AF37]/50 shadow-xs transition-colors touch-target"
         aria-label="Open navigation menu"
       >
         <Menu className="w-5 h-5" />

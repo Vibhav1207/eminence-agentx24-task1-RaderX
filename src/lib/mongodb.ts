@@ -1,6 +1,13 @@
 import { MongoClient, Db } from "mongodb";
-import fs from 'fs';
-import path from 'path';
+
+// Server-only imports
+let fs: typeof import('fs') | null = null;
+let path: typeof import('path') | null = null;
+
+if (typeof window === 'undefined') {
+  fs = require('fs');
+  path = require('path');
+}
 
 let client: MongoClient;
 let db: Db;
@@ -10,12 +17,12 @@ declare global {
   var _mongoClient: MongoClient | undefined;
 }
 
-const MOCK_DB_FILE = path.resolve(process.cwd(), 'src/lib/db/mock_db.json');
+const MOCK_DB_FILE = typeof window === 'undefined' ? path!.resolve(process.cwd(), 'src/lib/db/mock_db.json') : '';
 
 function readMockDb(): Record<string, any[]> {
   try {
-    if (fs.existsSync(MOCK_DB_FILE)) {
-      const content = fs.readFileSync(MOCK_DB_FILE, 'utf-8');
+    if (typeof window === 'undefined' && fs!.existsSync(MOCK_DB_FILE)) {
+      const content = fs!.readFileSync(MOCK_DB_FILE, 'utf-8');
       return JSON.parse(content);
     } else {
       if (process.env.DEBUG_MOCK_DB === 'true') {
@@ -30,10 +37,12 @@ function readMockDb(): Record<string, any[]> {
 
 function writeMockDb(data: Record<string, any[]>) {
   try {
-    fs.mkdirSync(path.dirname(MOCK_DB_FILE), { recursive: true });
-    fs.writeFileSync(MOCK_DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
-    if (process.env.DEBUG_MOCK_DB === 'true') {
-      console.log(`[MOCK_DB] Successfully wrote mock DB to: ${MOCK_DB_FILE}`);
+    if (typeof window === 'undefined') {
+      fs!.mkdirSync(path!.dirname(MOCK_DB_FILE), { recursive: true });
+      fs!.writeFileSync(MOCK_DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+      if (process.env.DEBUG_MOCK_DB === 'true') {
+        console.log(`[MOCK_DB] Successfully wrote mock DB to: ${MOCK_DB_FILE}`);
+      }
     }
   } catch (err: any) {
     console.error(`[MOCK_DB] Write error at "${MOCK_DB_FILE}":`, err.message || err);

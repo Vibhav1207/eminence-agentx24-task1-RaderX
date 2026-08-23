@@ -10,8 +10,11 @@ import {
   MissionEventModel,
   ClaimModel,
   ProviderExecutionModel,
-} from "../types";
-import { dbRepository } from "../db/repository";
+  TraceEventType,
+  TraceEventModel,
+  TraceModel,
+} from "@/lib/types";
+import { dbRepository } from "@/lib/db/repository";
 import { defaultAgentRegistry } from "./agentRegistry";
 import { defaultContextBuilderService } from "./contextBuilderService";
 import { defaultSignalEngine } from "../intelligence/signalEngine";
@@ -31,6 +34,7 @@ import {
   SelfEvaluationResult,
   ConclusionVersion,
 } from "../types";
+import { traceService, createTraceEvent, sanitizeTraceData } from "@/lib/tracing/traceService";
 
 // Define the state annotation using LangGraph's Annotation
 export const InvestigationState = Annotation.Root({
@@ -246,6 +250,74 @@ async function logTraceEvent(
   }
 }
 
+/**
+ * Enhanced trace event logging for Task 7 observability
+ * Creates detailed TraceEventModel entries alongside MissionEventModel
+ */
+async function logTraceEventDetailed(
+  traceId: string,
+  runId: string,
+  investigationId: string,
+  missionId: string,
+  eventType: TraceEventType,
+  params: {
+    agentId?: string;
+    agentName?: string;
+    status?: TraceEventModel['status'];
+    durationMs?: number;
+    inputMetadata?: Record<string, unknown>;
+    outputMetadata?: Record<string, unknown>;
+    error?: TraceEventModel['error'];
+    parentEventId?: string;
+    tokenUsage?: TraceEventModel['tokenUsage'];
+    toolCall?: TraceEventModel['toolCall'];
+    decision?: TraceEventModel['decision'];
+    agentExecution?: TraceEventModel['agentExecution'];
+  }
+): Promise<TraceEventModel> {
+  const event = createTraceEvent({
+    traceId,
+    runId,
+    investigationId,
+    eventType,
+    agentId: params.agentId,
+    agentName: params.agentName,
+    status: params.status,
+    durationMs: params.durationMs,
+    inputMetadata: params.inputMetadata ? sanitizeTraceData(params.inputMetadata) : undefined,
+    outputMetadata: params.outputMetadata ? sanitizeTraceData(params.outputMetadata) : undefined,
+    error: params.error,
+    parentEventId: params.parentEventId,
+    tokenUsage: params.tokenUsage,
+    toolCall: params.toolCall,
+    decision: params.decision,
+    agentExecution: params.agentExecution,
+  });
+  
+  traceService.addEvent(event);
+  return event;
+}
+
+/**
+ * Get or create trace for an investigation run
+ */
+async function getOrCreateTrace(runId: string, investigationId: string): Promise<TraceModel> {
+  let trace = traceService.getTraceByRunId(runId);
+  if (!trace) {
+    trace = traceService.createTrace(runId, investigationId);
+    // Log investigation started event
+    await logTraceEventDetailed(
+      trace.traceId,
+      runId,
+      investigationId,
+      `mission-${investigationId}`,
+      'INVESTIGATION_STARTED',
+      { status: 'RUNNING' }
+    );
+  }
+  return trace;
+}
+
 export const graphStateSync = {
   sync: (missionId: string, plan: TaskModel[]) => {}
 };
@@ -423,8 +495,25 @@ async function plannerNode(state: InvestigationStateType): Promise<Partial<Inves
 
   const missionId = `mission-${invId}`;
   const iteration = state.resourceBudget.iterationCount + 1;
-
+  
+  // Get or create trace for this run
+  const runId = `run-${invId}-${Date.now()}`;
+  const trace = await getOrCreateTrace(runId, invId);
+  const traceId = trace.traceId;
+  const graphRunId = `gr-${traceId}`;
+  
+  // Update trace with graph run info
+  traceService.updateTrace(traceId, { graphRunId });
+  
+  // Log planner started
   await logTraceEvent(invId, missionId, 'PLAN_CREATED', `Planner analyzing goals for iteration ${iteration}.`, 'ORCHESTRATOR');
+  await logTraceEventDetailed(
+    traceId, runId, invId, missionId,
+    'PLANNER_STARTED',
+    { agentId: 'planner', agentName: 'Planner', status: 'RUNNING', parentEventId: trace.events[0]?.eventId }
+  );
+
+  const plannerStartTime = Date.now();
 
   // Loop/Deadlock Detection
   const repeatedTasks = state.plan.filter(t => t.status === 'RUNNING' || t.status === 'FAILED');
@@ -638,6 +727,12 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
   const invId = state.investigationId;
   const missionId = `mission-${invId}`;
   
+  // Get trace for this run (assuming trace was created in planner)
+  const traces = traceService.getTracesByInvestigation(invId);
+  const trace = traces[0];
+  const traceId = trace?.traceId;
+  const runId = trace?.runId;
+  
   // Pause & Cancel check loop
   while (graphEventEmitter.isPaused(missionId)) {
     if (graphEventEmitter.isCancelled(missionId)) {
@@ -664,6 +759,29 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
   task.status = 'RUNNING';
   task.startedAt = new Date().toISOString();
   await logTraceEvent(invId, missionId, 'TASK_STARTED', `Agent [${agentType}] starting execution.`, agentType, task.id);
+  
+  // Detailed trace: agent execution started
+  if (traceId && runId) {
+    const traceEvents = traceService.getEvents(traceId);
+    await logTraceEventDetailed(
+      traceId, runId, invId, missionId,
+      'AGENT_STARTED',
+      { 
+        agentId: task.id, 
+        agentName: agentType, 
+        status: 'RUNNING', 
+        parentEventId: traceEvents[0]?.eventId,
+        agentExecution: {
+          agentType,
+          agentRole: agentType,
+          startTime: new Date().toISOString(),
+          status: 'RUNNING',
+          retryCount: 0,
+          inputContextMetadata: { task: task.title, input: task.input },
+        }
+      }
+    );
+  }
 
   let success = false;
   let evidenceItems: EvidenceModel[] = [];
@@ -683,6 +801,8 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
     task,
     agentType
   );
+
+  const agentStartTime = Date.now();
 
   while (retries <= maxRetries && !success) {
     try {
@@ -706,11 +826,30 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
       await logTraceEvent(
         invId,
         missionId,
-        'TOOL_FAILURE',
+        'TOOL_CALL_FAILED',
         `Tool Failure [${agentType}] - Attempt ${retries}/${maxRetries} failed: ${errorMsg}. Retrying...`,
         agentType,
         task.id
       );
+      
+      // Detailed trace: retry event
+      if (traceId && runId) {
+        await logTraceEventDetailed(
+          traceId, runId, invId, missionId,
+          'AGENT_RETRYING',
+          { 
+            agentId: task.id, 
+            agentName: agentType, 
+            status: 'RETRYING', 
+            error: { 
+              type: 'TOOL_HTTP_ERROR', 
+              message: errorMsg, 
+              component: agentType, 
+              retryCount: retries 
+            }
+          }
+        );
+      }
 
       // Exponential backoff wait
       await new Promise(r => setTimeout(r, 1000 * retries));
@@ -761,12 +900,28 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
           }));
 
           success = true;
+          
+          // Detailed trace: fallback recovery
+          if (traceId && runId) {
+            await logTraceEventDetailed(
+              traceId, runId, invId, missionId,
+              'RECOVERY',
+              { 
+                agentId: task.id, 
+                agentName: agentType, 
+                status: 'SUCCESS',
+                outputMetadata: { fallbackUsed: true, fallbackProvider: 'Web Intelligence', evidenceCount: evidenceItems.length }
+              }
+            );
+          }
         }
       } catch (fallbackErr: any) {
         console.error("Fallback provider failed:", fallbackErr);
       }
     }
   }
+
+  const agentDurationMs = Date.now() - agentStartTime;
 
   if (success) {
     if (task.verificationRequired) {
@@ -792,6 +947,30 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
       agentType,
       task.id
     );
+    
+    // Detailed trace: agent completed
+    if (traceId && runId) {
+      await logTraceEventDetailed(
+        traceId, runId, invId, missionId,
+        'AGENT_COMPLETED',
+        { 
+          agentId: task.id, 
+          agentName: agentType, 
+          status: 'COMPLETED',
+          durationMs: agentDurationMs,
+          outputMetadata: { evidenceCount: evidenceItems.length, evidenceIds: evidenceItems.map(e => e.id) },
+          agentExecution: {
+            agentType,
+            agentRole: agentType,
+            startTime: task.startedAt,
+            endTime: task.completedAt,
+            status: 'COMPLETED',
+            retryCount: retries,
+            outputMetadata: { evidenceCount: evidenceItems.length },
+          }
+        }
+      );
+    }
   } else {
     task.status = 'FAILED';
     task.completedAt = new Date().toISOString();
@@ -803,6 +982,35 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
       agentType,
       task.id
     );
+    
+    // Detailed trace: agent failed
+    if (traceId && runId) {
+      await logTraceEventDetailed(
+        traceId, runId, invId, missionId,
+        'AGENT_FAILED',
+        { 
+          agentId: task.id, 
+          agentName: agentType, 
+          status: 'FAILED',
+          durationMs: agentDurationMs,
+          error: { 
+            type: 'AGENT_ERROR', 
+            message: errorMsg, 
+            component: agentType, 
+            retryCount: retries 
+          },
+          agentExecution: {
+            agentType,
+            agentRole: agentType,
+            startTime: task.startedAt,
+            endTime: task.completedAt,
+            status: 'FAILED',
+            retryCount: retries,
+            errors: [errorMsg],
+          }
+        }
+      );
+    }
   }
 
   // Update confidence in state

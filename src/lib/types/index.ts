@@ -91,6 +91,14 @@ export interface ProviderExecutionModel {
   resultCount: number;
   error?: string;
   latencyMs: number;
+  // Token Usage (Task 7 - Observability)
+  tokenUsage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+    model?: string;
+    available: boolean;
+  };
 }
 
 // 1. Investigation Model
@@ -1318,7 +1326,12 @@ export type EvaluationScenarioType =
   | 'CONTRADICTORY'
   | 'INCOMPLETE'
   | 'TOOL_FAILURE'
-  | 'REPEATED_RUN';
+  | 'REPEATED_RUN'
+  | 'CONTROLLED_TOOL_TIMEOUT'
+  | 'CONTROLLED_TOOL_UNAVAILABLE'
+  | 'CONTROLLED_API_FAILURE'
+  | 'CONTROLLED_INVALID_RESPONSE'
+  | 'CONTROLLED_AGENT_FAILURE';
 
 export type EvaluationRunStatus =
   | 'PENDING'
@@ -1448,4 +1461,262 @@ export interface EvaluationRunModel {
   startedAt: string;
   completedAt?: string;
   createdAt: string;
+}
+
+/**
+ * ==================================================
+ * TRACE & OBSERVABILITY MODELS (Task 7)
+ * ==================================================
+ */
+
+export type TraceEventType =
+  | 'INVESTIGATION_STARTED'
+  | 'GRAPH_RUN_STARTED'
+  | 'GRAPH_START'
+  | 'GRAPH_END'
+  | 'PLANNER_STARTED'
+  | 'PLANNER_COMPLETED'
+  | 'AGENT_STARTED'
+  | 'AGENT_COMPLETED'
+  | 'AGENT_FAILED'
+  | 'AGENT_RETRYING'
+  | 'AGENT_DECISION'
+  | 'DECISION_MADE'
+  | 'ROUTER_DECISION'
+  | 'TOOL_CALL_STARTED'
+  | 'TOOL_CALL_COMPLETED'
+  | 'TOOL_CALL_FAILED'
+  | 'TOOL_FALLBACK'
+  | 'EVIDENCE_GATHERED'
+  | 'VALIDATOR_STARTED'
+  | 'CONTRADICTION_DETECTED'
+  | 'CONFLICT_RESOLVED'
+  | 'CRITIC_STARTED'
+  | 'SELF_EVALUATION_COMPLETE'
+  | 'REPLANNING'
+  | 'SYNTHESIS_STARTED'
+  | 'MISSION_COMPLETED'
+  | 'MISSION_FAILED'
+  | 'CHECKPOINT_SAVED'
+  | 'AGENT_RETRY'
+  | 'FALLBACK_RECOVERY'
+  | 'AGENT_ERROR'
+  | 'PROVIDER_EXECUTION'
+  | 'TOKEN_USAGE'
+  | 'LATENCY_MEASUREMENT'
+  | 'ERROR'
+  | 'RECOVERY'
+  | 'CHECKPOINT_SAVE'
+  | 'CHECKPOINT_RESTORE';
+
+export type AgentStatusTrace =
+  | 'PLANNED'
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'RETRYING'
+  | 'RECOVERING'
+  | 'SKIPPED';
+
+export interface TraceEventModel {
+  eventId: string;
+  traceId: string;
+  runId: string;
+  investigationId: string;
+  agentId?: string;
+  agentName?: string;
+  eventType: TraceEventType;
+  timestamp: string;
+  durationMs?: number;
+  status: 'SUCCESS' | 'FAILED' | 'PARTIAL' | 'RUNNING' | 'PENDING';
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  inputMetadata?: Record<string, unknown>;
+  outputMetadata?: Record<string, unknown>;
+  error?: {
+    type: 'TOOL_TIMEOUT' | 'TOOL_HTTP_ERROR' | 'AUTH_ERROR' | 'RATE_LIMIT' | 'MODEL_ERROR' | 'VALIDATION_ERROR' | 'DATABASE_ERROR' | 'GRAPH_ERROR' | 'UNKNOWN';
+    message: string;
+    component: string;
+    agent?: string;
+    tool?: string;
+    retryCount: number;
+    recoveryAction?: string;
+    finalStatus: 'RECOVERED' | 'FAILED' | 'RETRYING';
+  };
+  parentEventId?: string;
+  // Token usage
+  tokenUsage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    model: string;
+    available: boolean;
+  };
+  // Tool call details
+  toolCall?: {
+    toolName: string;
+    provider: string;
+    requestStart: string;
+    requestEnd: string;
+    httpStatus?: number;
+    resultCount: number;
+    retryCount: number;
+    fallbackUsed?: string;
+    status: 'SUCCESS' | 'FAILED' | 'PARTIAL' | 'RUNNING';
+    durationMs?: number;
+  };
+  // Decision details
+  decision?: {
+    currentNode: string;
+    decision: string;
+    selectedRoute: string[];
+    candidateRoutes: string[];
+    reason: string;
+    confidence: number;
+    nextNode: string;
+  };
+  // Agent execution details
+  agentExecution?: {
+    agentType: string;
+    role: string;
+    agentRole?: string;
+    startTime: string;
+    endTime?: string;
+    durationMs?: number;
+    status: AgentStatusTrace;
+    inputContextMetadata?: Record<string, unknown>;
+    outputMetadata?: Record<string, unknown>;
+    decision?: string;
+    toolsUsed: string[];
+    errors: string[];
+    retryCount: number;
+    confidence?: number;
+  };
+}
+
+export interface TraceModel {
+  traceId: string;
+  runId: string;
+  investigationId: string;
+  startedAt: string;
+  completedAt?: string;
+  status: 'RUNNING' | 'COMPLETED' | 'FAILED' | 'PARTIAL';
+  // Hierarchy tracking
+  graphRunId?: string;
+  agentRuns: string[]; // agentRunIds
+  totalDurationMs?: number;
+  // Metrics
+  totalToolCalls: number;
+  totalErrors: number;
+  totalRetries: number;
+  totalTokens?: {
+    input: number;
+    output: number;
+    total: number;
+  };
+  // Latency breakdown
+  latencyBreakdown?: {
+    planningMs: number;
+    agentMs: number;
+    toolMs: number;
+    verificationMs: number;
+    synthesisMs: number;
+    retryMs: number;
+    recoveryMs: number;
+  };
+  // Latency percentages
+  latencyPercentages?: {
+    planning: number;
+    agent: number;
+    tool: number;
+    verification: number;
+    synthesis: number;
+    retry: number;
+    recovery: number;
+  };
+  // Optimization
+  optimizationApplied?: string;
+  baselineTraceId?: string;
+  optimizedTraceId?: string;
+}
+
+export interface TraceDiagnosisModel {
+  diagnosisId: string;
+  traceId: string;
+  runId: string;
+  investigationId: string;
+  createdAt: string;
+  rootCause: {
+    component: string;
+    type: string;
+    description: string;
+    traceEvidence: string[];
+  } | string;
+  affectedComponent: string;
+  impact: {
+    latencyIncreaseMs: number;
+    retries: number;
+    extraRetries: number;
+    failedToolCalls: number;
+    extraToolCalls: number;
+    errors: string[];
+  };
+  evidenceFromTrace: string[]; // eventIds that support the diagnosis
+  recoveryAction: string;
+  finalResult: 'RECOVERED' | 'FAILED' | 'PARTIAL' | 'SUCCESS' | 'DEGRADED';
+  recommendations: string[];
+}
+
+export interface TraceComparisonModel {
+  comparisonId: string;
+  baselineTraceId: string;
+  optimizedTraceId: string;
+  runId: string;
+  investigationId: string;
+  createdAt: string;
+  before: {
+    latencyMs: number;
+    toolCalls: number;
+    errors: number;
+    retries: number;
+    successRate: number;
+    tokens: number;
+  };
+  after: {
+    latencyMs: number;
+    toolCalls: number;
+    errors: number;
+    retries: number;
+    successRate: number;
+    tokens: number;
+  };
+  improvement: {
+    latencyPct: number;
+    toolCallsPct: number;
+    errorsPct: number;
+    retriesPct: number;
+    successRatePct: number;
+  };
+  optimizationApplied: string;
+}
+
+/**
+ * Controlled Failure Injection (Safe - only for Evaluation/Trace Lab)
+ */
+export type FailureInjectionType =
+  | 'TOOL_TIMEOUT'
+  | 'TOOL_UNAVAILABLE'
+  | 'TEMPORARY_API_FAILURE'
+  | 'INVALID_TOOL_RESPONSE'
+  | 'AGENT_EXECUTION_FAILURE';
+
+export interface FailureInjectionConfig {
+  enabled: boolean;
+  type: FailureInjectionType;
+  targetAgent?: AgentType;
+  targetTool?: string;
+  errorMessage?: string;
+  httpStatus?: number;
+  delayMs?: number;
+  label: 'CONTROLLED TEST FAILURE';
 }

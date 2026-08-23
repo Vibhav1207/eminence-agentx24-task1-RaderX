@@ -41,6 +41,11 @@ const ALL_SCENARIOS: EvaluationScenarioType[] = [
   'INCOMPLETE',
   'TOOL_FAILURE',
   'REPEATED_RUN',
+  'CONTROLLED_TOOL_TIMEOUT',
+  'CONTROLLED_TOOL_UNAVAILABLE',
+  'CONTROLLED_API_FAILURE',
+  'CONTROLLED_INVALID_RESPONSE',
+  'CONTROLLED_AGENT_FAILURE',
 ];
 
 const SCENARIO_META: Record<
@@ -88,6 +93,36 @@ const SCENARIO_META: Record<
     description: 'Same objective run twice — measures consistency',
     icon: RefreshCw,
     color: 'text-[#C9A227]',
+  },
+  CONTROLLED_TOOL_TIMEOUT: {
+    label: 'Tool Timeout (Controlled)',
+    description: 'Intentional tool timeout — tests retry, fallback, and trace diagnosis',
+    icon: Clock,
+    color: 'text-[#DC2626]',
+  },
+  CONTROLLED_TOOL_UNAVAILABLE: {
+    label: 'Tool Unavailable (Controlled)',
+    description: 'Intentional tool unavailability — tests provider switching and recovery',
+    icon: AlertTriangle,
+    color: 'text-[#DC2626]',
+  },
+  CONTROLLED_API_FAILURE: {
+    label: 'API Failure (Controlled)',
+    description: 'Intentional HTTP 503 — tests error handling and retry logic',
+    icon: XCircle,
+    color: 'text-[#DC2626]',
+  },
+  CONTROLLED_INVALID_RESPONSE: {
+    label: 'Invalid Response (Controlled)',
+    description: 'Intentional malformed response — tests validation and graceful handling',
+    icon: AlertCircle,
+    color: 'text-[#DC2626]',
+  },
+  CONTROLLED_AGENT_FAILURE: {
+    label: 'Agent Failure (Controlled)',
+    description: 'Intentional agent execution failure — tests graph-level error handling',
+    icon: Cpu,
+    color: 'text-[#DC2626]',
   },
 };
 
@@ -504,6 +539,9 @@ export default function EvaluationLabPage() {
                 <span className="font-semibold text-[#374151]">
                   {selectedScenarios.size} of {ALL_SCENARIOS.length} selected.
                 </span>
+              </p>
+              <p className="text-[10px] text-[#9CA3AF] mt-1.5 font-mono">
+                Click "Run Evaluation" again to execute with the new selection
               </p>
             </div>
             <div className="flex items-center gap-2">

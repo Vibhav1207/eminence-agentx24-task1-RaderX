@@ -66,6 +66,77 @@ export const SCENARIO_DEFINITIONS: Record<
       'Agent detects provider failure, activates fallback routing, continues investigation with degraded but functional coverage, and reports the provider failure explicitly.',
     metadataOverrides: { forceResearchFail: true, forcePatentTimeout: true },
   },
+  CONTROLLED_TOOL_TIMEOUT: {
+    objective: 'Research patent filings and academic publications for AI memory bandwidth optimization.',
+    expectedBehavior:
+      'Agent experiences intentional tool timeout, retries with exponential backoff, activates fallback provider, and records failure/recovery in trace for diagnosis.',
+    metadataOverrides: { 
+      failureInjection: {
+        enabled: true,
+        type: 'TOOL_TIMEOUT',
+        targetTool: 'patent',
+        delayMs: 5000,
+        label: 'CONTROLLED TEST FAILURE'
+      }
+    },
+  },
+  CONTROLLED_TOOL_UNAVAILABLE: {
+    objective: 'Research recent AI semiconductor industry news and competitor announcements.',
+    expectedBehavior:
+      'Agent encounters intentional tool unavailability, switches to alternative provider, and completes investigation with degraded but functional coverage.',
+    metadataOverrides: {
+      failureInjection: {
+        enabled: true,
+        type: 'TOOL_UNAVAILABLE',
+        targetTool: 'news',
+        errorMessage: 'Service temporarily unavailable',
+        label: 'CONTROLLED TEST FAILURE'
+      }
+    },
+  },
+  CONTROLLED_API_FAILURE: {
+    objective: 'Analyze patent landscape for AI inference accelerator innovations.',
+    expectedBehavior:
+      'Agent receives temporary API error (HTTP 503), retries with backoff, and either recovers or escalates for fallback routing.',
+    metadataOverrides: {
+      failureInjection: {
+        enabled: true,
+        type: 'TEMPORARY_API_FAILURE',
+        targetTool: 'patent',
+        httpStatus: 503,
+        delayMs: 2000,
+        label: 'CONTROLLED TEST FAILURE'
+      }
+    },
+  },
+  CONTROLLED_INVALID_RESPONSE: {
+    objective: 'Search for competitive intelligence on AI hardware startups.',
+    expectedBehavior:
+      'Agent receives malformed/invalid tool response, handles validation error gracefully, and either retries or uses fallback.',
+    metadataOverrides: {
+      failureInjection: {
+        enabled: true,
+        type: 'INVALID_TOOL_RESPONSE',
+        targetTool: 'web',
+        errorMessage: 'Invalid response format from provider',
+        label: 'CONTROLLED TEST FAILURE'
+      }
+    },
+  },
+  CONTROLLED_AGENT_FAILURE: {
+    objective: 'Evaluate supply chain resilience for AI chip manufacturing.',
+    expectedBehavior:
+      'Agent execution intentionally fails to test graph-level error handling, retry logic, and recovery mechanisms.',
+    metadataOverrides: {
+      failureInjection: {
+        enabled: true,
+        type: 'AGENT_EXECUTION_FAILURE',
+        targetAgent: 'RESEARCH',
+        errorMessage: 'Simulated agent execution failure for testing',
+        label: 'CONTROLLED TEST FAILURE'
+      }
+    },
+  },
   REPEATED_RUN: {
     objective: 'Assess recent AI chip packaging developments and competitive positioning.',
     expectedBehavior:

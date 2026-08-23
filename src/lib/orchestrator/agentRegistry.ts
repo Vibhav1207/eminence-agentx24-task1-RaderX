@@ -7,6 +7,7 @@ import {
   SignalModel,
   RelationshipModel,
   ProviderExecutionModel,
+  FailureInjectionConfig,
 } from '@/lib/types';
 import { defaultCrossrefProvider } from '@/lib/providers/crossrefProvider';
 import { defaultPatentProvider } from '@/lib/providers/patentProvider';
@@ -14,6 +15,69 @@ import { defaultNewsProvider } from '@/lib/providers/newsProvider';
 import { defaultWebProvider } from '@/lib/providers/webProvider';
 import { defaultEvidenceNormalizer } from '@/lib/normalization/evidenceNormalizer';
 import { defaultEntityResolver } from '@/lib/normalization/entityResolver';
+
+/**
+ * Controlled Failure Injection - Only active in Evaluation Lab controlled scenarios
+ * Extracts failure injection config from investigation metadata
+ */
+function getFailureInjectionConfig(context: AgentContextModel): FailureInjectionConfig | null {
+  const meta = context.investigation.metadata as Record<string, unknown> | undefined;
+  if (!meta?.failureInjection) return null;
+  
+  const config = meta.failureInjection as FailureInjectionConfig;
+  if (!config.enabled) return null;
+  
+  // Check if this agent/tool is targeted
+  if (config.targetAgent && config.targetAgent !== context.task.agentType) return null;
+  if (config.targetTool) {
+    const toolMap: Record<string, AgentType> = {
+      'research': 'RESEARCH',
+      'patent': 'PATENT',
+      'news': 'NEWS',
+      'competitor': 'COMPETITOR',
+      'web': 'WEB',
+    };
+    const targetAgent = toolMap[config.targetTool];
+    if (targetAgent && targetAgent !== context.task.agentType) return null;
+  }
+  
+  return config;
+}
+
+/**
+ * Apply controlled failure injection
+ */
+async function applyFailureInjection<T>(
+  config: FailureInjectionConfig,
+  operation: () => Promise<T>
+): Promise<T> {
+  const { type, errorMessage, httpStatus, delayMs } = config;
+  
+  switch (type) {
+    case 'TOOL_TIMEOUT':
+      await new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(errorMessage || 'Tool timeout (controlled failure)')), delayMs || 5000)
+      );
+      break;
+      
+    case 'TOOL_UNAVAILABLE':
+      throw new Error(errorMessage || 'Service temporarily unavailable (controlled failure)');
+      
+    case 'TEMPORARY_API_FAILURE':
+      if (delayMs) await new Promise(r => setTimeout(r, delayMs));
+      const err = new Error(`API error ${httpStatus || 503} (controlled failure)`);
+      (err as any).status = httpStatus || 503;
+      throw err;
+      
+    case 'INVALID_TOOL_RESPONSE':
+      throw new Error(errorMessage || 'Invalid response format from provider (controlled failure)');
+      
+    case 'AGENT_EXECUTION_FAILURE':
+      throw new Error(errorMessage || 'Simulated agent execution failure (controlled failure)');
+  }
+  
+  return operation();
+}
 
 export interface Agent {
   type: AgentType;
@@ -32,6 +96,11 @@ class ResearchAgent implements Agent {
   }
 
   async run(context: AgentContextModel): Promise<AgentResultModel> {
+    const failureConfig = getFailureInjectionConfig(context);
+    if (failureConfig) {
+      await applyFailureInjection(failureConfig, async () => {});
+    }
+    
     const now = new Date().toISOString();
     const invId = context.investigation.id;
     const query = context.investigation.objective || context.investigation.title;
@@ -59,6 +128,9 @@ class ResearchAgent implements Agent {
       resultCount: providerResults.length,
       error: providerResults.length === 0 ? 'No results returned' : undefined,
       latencyMs: providerLatency,
+      tokenUsage: {
+        available: false, // Crossref doesn't expose token usage
+      },
     };
 
     return {
@@ -93,6 +165,11 @@ class PatentAgent implements Agent {
   }
 
   async run(context: AgentContextModel): Promise<AgentResultModel> {
+    const failureConfig = getFailureInjectionConfig(context);
+    if (failureConfig) {
+      await applyFailureInjection(failureConfig, async () => {});
+    }
+    
     const now = new Date().toISOString();
     const invId = context.investigation.id;
     const org = context.investigation.primaryEntities[0] || context.investigation.title;
@@ -137,6 +214,9 @@ class PatentAgent implements Agent {
       resultCount: providerResults.length,
       error: providerResults.length === 0 ? 'No results returned' : undefined,
       latencyMs: providerLatency,
+      tokenUsage: {
+        available: false, // Patent provider doesn't expose token usage
+      },
     };
 
     return {
@@ -171,6 +251,11 @@ class NewsAgent implements Agent {
   }
 
   async run(context: AgentContextModel): Promise<AgentResultModel> {
+    const failureConfig = getFailureInjectionConfig(context);
+    if (failureConfig) {
+      await applyFailureInjection(failureConfig, async () => {});
+    }
+    
     const now = new Date().toISOString();
     const invId = context.investigation.id;
     const org = context.investigation.primaryEntities[0] || context.investigation.title;
@@ -198,6 +283,9 @@ class NewsAgent implements Agent {
       resultCount: providerResults.length,
       error: providerResults.length === 0 ? 'No results returned' : undefined,
       latencyMs: providerLatency,
+      tokenUsage: {
+        available: false, // News provider doesn't expose token usage
+      },
     };
 
     return {
@@ -232,6 +320,11 @@ class CompetitorAgent implements Agent {
   }
 
   async run(context: AgentContextModel): Promise<AgentResultModel> {
+    const failureConfig = getFailureInjectionConfig(context);
+    if (failureConfig) {
+      await applyFailureInjection(failureConfig, async () => {});
+    }
+    
     const now = new Date().toISOString();
     const invId = context.investigation.id;
     const org = context.investigation.primaryEntities[0] || context.investigation.title;
@@ -277,6 +370,9 @@ class CompetitorAgent implements Agent {
       resultCount: compResults.length,
       error: compResults.length === 0 ? 'No results returned' : undefined,
       latencyMs: providerLatency,
+      tokenUsage: {
+        available: false, // News provider doesn't expose token usage
+      },
     };
 
     return {
@@ -311,6 +407,11 @@ class WebAgent implements Agent {
   }
 
   async run(context: AgentContextModel): Promise<AgentResultModel> {
+    const failureConfig = getFailureInjectionConfig(context);
+    if (failureConfig) {
+      await applyFailureInjection(failureConfig, async () => {});
+    }
+    
     const now = new Date().toISOString();
     const invId = context.investigation.id;
     const topic = context.investigation.objective || context.investigation.title;
@@ -338,6 +439,9 @@ class WebAgent implements Agent {
       resultCount: providerResults.length,
       error: providerResults.length === 0 ? 'No results returned' : undefined,
       latencyMs: providerLatency,
+      tokenUsage: {
+        available: false, // Web provider doesn't expose token usage
+      },
     };
 
     return {
