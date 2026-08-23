@@ -287,7 +287,7 @@ class TraceStore {
 
   // Get all traces for an investigation
   async getTracesByInvestigation(investigationId: string): Promise<TraceModel[]> {
-    return dbRepository.getTracesByInvestigation(investigationId);
+    return dbRepository.getTracesByInvestigationId(investigationId);
   }
 }
 
@@ -395,10 +395,22 @@ export async function persistTraceEvents(traceId: string): Promise<void> {
 }
 
 /**
- * Automatically diagnose a trace using the Trace Diagnosis Engine
+ * Automatically diagnose a trace using the Trace Diagnosis Engine.
+ * Loads the trace from DB if not found in memory (e.g. after a serverless restart).
  */
 export async function diagnoseTrace(traceId: string): Promise<TraceDiagnosisModel | null> {
-  const trace = traceService.getTrace(traceId);
+  // Try in-memory first (live trace)
+  let trace = traceService.getTrace(traceId);
+  if (!trace) {
+    // Load from DB for completed/persisted traces
+    trace = await dbRepository.getTraceById(traceId);
+    if (trace) {
+      // Cache it in memory for the diagnosis engine to use
+      traceService.updateTrace(trace.traceId, trace);
+      const events = await dbRepository.getTraceEvents(traceId);
+      events.forEach(e => traceService.addEvent(e));
+    }
+  }
   if (!trace) return null;
 
   // Use the new diagnosis engine for comprehensive analysis

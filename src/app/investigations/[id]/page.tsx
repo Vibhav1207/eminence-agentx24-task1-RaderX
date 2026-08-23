@@ -129,9 +129,9 @@ export default function LiveInvestigationWorkspace() {
     return () => clearInterval(interval);
   }, [fetchMissionState]);
 
-  // Fetch trace data for live trace updates
+  // Fetch trace data for live trace updates — start immediately, not gated on mission
   const fetchTraceData = useCallback(async () => {
-    if (!id || !mission) return;
+    if (!id) return;
     
     try {
       setTraceLoading(true);
@@ -144,7 +144,7 @@ export default function LiveInvestigationWorkspace() {
         const currentTrace = traceData.data[0];
         setTrace(currentTrace);
         
-        // Fetch trace events
+        // Fetch trace events — GET /api/traces/events now falls back to DB
         const eventsRes = await fetch(`/api/traces/events?traceId=${currentTrace.traceId}&limit=200`);
         const eventsData = await eventsRes.json();
         
@@ -157,15 +157,15 @@ export default function LiveInvestigationWorkspace() {
     } finally {
       setTraceLoading(false);
     }
-  }, [id, mission]);
+  }, [id]);
 
   useEffect(() => {
-    if (mission) {
+    if (id) {
       fetchTraceData();
       const interval = setInterval(fetchTraceData, 2000); // Poll every 2 seconds for live updates
       return () => clearInterval(interval);
     }
-  }, [fetchTraceData, mission]);
+  }, [id, fetchTraceData]);
 
   if (loading || !investigation) {
     return (

@@ -11,10 +11,12 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
     if (eventId) {
-      // Get specific event - would need to search across all traces
-      // For now return from the trace if we have traceId
       if (traceId) {
-        const events = traceService.getEvents(traceId);
+        // Try in-memory first, then DB
+        let events = traceService.getEvents(traceId);
+        if (events.length === 0) {
+          events = await dbRepository.getTraceEvents(traceId);
+        }
         const event = events.find(e => e.eventId === eventId);
         if (!event) {
           return NextResponse.json({ success: false, error: 'Event not found' }, { status: 404 });
@@ -25,7 +27,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (traceId) {
-      const events = traceService.getEvents(traceId);
+      // Try in-memory first (live trace), then fall back to DB (persisted/completed trace)
+      let events = traceService.getEvents(traceId);
+      if (events.length === 0) {
+        events = await dbRepository.getTraceEvents(traceId);
+      }
       const paginated = events.slice(offset, offset + limit);
       return NextResponse.json({ 
         success: true, 

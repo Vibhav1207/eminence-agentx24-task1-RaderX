@@ -27,9 +27,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: comparisons });
     }
 
-    // Get all comparisons
-    const comparisons = traceService.getAllComparisons();
-    return NextResponse.json({ success: true, data: comparisons });
+    // Get all comparisons - merge in-memory and DB
+    const memComparisons = traceService.getAllComparisons();
+    const dbComparisons = await dbRepository.getAllComparisons();
+    const seen = new Set(memComparisons.map(c => c.comparisonId));
+    const merged = [
+      ...memComparisons,
+      ...dbComparisons.filter(c => !seen.has(c.comparisonId)),
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return NextResponse.json({ success: true, data: merged });
   } catch (error) {
     console.error('GET /api/traces/comparisons error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
@@ -46,8 +52,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'baselineTraceId and optimizedTraceId required' }, { status: 400 });
       }
 
-      const baseline = traceService.getTrace(baselineTraceId);
-      const optimized = traceService.getTrace(optimizedTraceId);
+      // Load traces - try in-memory first, then DB
+      let baseline = traceService.getTrace(baselineTraceId);
+      if (!baseline) {
+        baseline = await dbRepository.getTraceById(baselineTraceId) || undefined;
+        if (baseline) traceService.updateTrace(baseline.traceId, baseline); // cache it
+      }
+      let optimized = traceService.getTrace(optimizedTraceId);
+      if (!optimized) {
+        optimized = await dbRepository.getTraceById(optimizedTraceId) || undefined;
+        if (optimized) traceService.updateTrace(optimized.traceId, optimized); // cache it
+      }
       
       if (!baseline || !optimized) {
         return NextResponse.json({ success: false, error: 'One or both traces not found' }, { status: 404 });
