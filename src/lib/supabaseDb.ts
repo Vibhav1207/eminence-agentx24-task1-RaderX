@@ -69,6 +69,20 @@ function matches(document: Document, query: Query): boolean {
   });
 }
 
+function documentId(document: Document, collectionName: string): string {
+  const raw = document as Document & Record<string, unknown>;
+  return String(
+    raw.id ??
+    raw._id ??
+    raw.traceId ??
+    raw.eventId ??
+    raw.diagnosisId ??
+    raw.comparisonId ??
+    raw.checkpointId ??
+    `${collectionName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  );
+}
+
 class SqlCursor<T> {
   constructor(private readonly loader: () => Promise<T[]>, private readonly sortSpec?: Query, private readonly max?: number) {}
   sort(spec: Query) { return new SqlCursor(this.loader, spec, this.max); }
@@ -109,7 +123,7 @@ export class SupabaseCollection<T = Document> {
   async insertOne(document: T) {
     await ensureSchema();
     const raw = document as T & RawDocument;
-    const id = String(raw.id ?? raw._id ?? `${this.name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    const id = documentId(raw, this.name);
     const stored = { ...raw, _id: raw._id ?? id };
     await getPool().query(
       `insert into public.radarx_documents (collection_name, document_id, document)
@@ -157,16 +171,20 @@ export class SupabaseCollection<T = Document> {
     const existing = await this.findOne(filter);
     if (!existing) return { acknowledged: true, deletedCount: 0 };
     const raw = existing as T & RawDocument;
-    const id = String(raw.id ?? raw._id);
+    const id = documentId(raw, this.name);
     const result = await getPool().query('delete from public.radarx_documents where collection_name = $1 and document_id = $2', [this.name, id]);
     return { acknowledged: true, deletedCount: result.rowCount ?? 0 };
   }
 
   async deleteMany(filter: Query) {
     const documents = await this.find(filter).toArray();
-    for (const document of documents) {
-      const raw = document as T & RawDocument;
-      await this.deleteOne({ id: raw.id ?? raw._id });
+    await ensureSchema();
+    const ids = documents.map((document) => documentId(document as T & RawDocument, this.name));
+    if (ids.length > 0) {
+      await getPool().query(
+        'delete from public.radarx_documents where collection_name = $1 and document_id = any($2::text[])',
+        [this.name, ids]
+      );
     }
     return { acknowledged: true, deletedCount: documents.length };
   }

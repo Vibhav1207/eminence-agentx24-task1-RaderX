@@ -226,8 +226,9 @@ class TraceStore {
     const events = this.traceEvents.get(traceId);
     if (!trace) return;
 
-    // Non-blocking persistence - fire and forget
-    this.persistTraceAsync(traceId, trace, events);
+    // Await persistence so serverless invocations cannot terminate before the
+    // trace and its events reach the durable database.
+    await this.persistTraceAsync(traceId, trace, events);
   }
 
   /**

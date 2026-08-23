@@ -481,7 +481,7 @@ export default function UnifiedIntelligencePage() {
                 </h3>
               </div>
               <span className="badge-responsive bg-[#059669]/15 text-[#047857] border border-[#059669]/30 font-extrabold">
-                100% TRACEABLE
+                EXTRACTED FROM FINDINGS
               </span>
             </div>
 
@@ -521,6 +521,12 @@ export default function UnifiedIntelligencePage() {
                   )}
                 </div>
               ))}
+              {(!intelligence?.recommendedActions || intelligence.recommendedActions.length === 0) && (
+                <div className="p-responsive rounded-xl border border-[#D1D5DB] bg-[#F9FAFB] text-responsive-xs text-[#4B5563] font-sans">
+                  <strong className="block text-[#111827] mb-1">No evidence-backed recommendation is available.</strong>
+                  Recommendations are created only when validated opportunities or threats contain cited evidence. Continue collecting primary evidence before taking strategic action.
+                </div>
+              )}
             </div>
 
             <motion.button

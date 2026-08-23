@@ -1033,12 +1033,15 @@ async function runAgentNode(agentType: AgentType, state: InvestigationStateType)
     toolFailures: !success ? [...state.toolFailures, { agent: agentType, error: errorMsg }] : state.toolFailures,
   };
 
-  // Non-blocking checkpoint for agent nodes — keeps graph moving without waiting for DB write
+  // Persist checkpoints without allowing a serverless invocation to end before
+  // the durable write has been scheduled.
   saveGraphCheckpointAsync(invId, updatedState);
-  // Async flush trace events to MongoDB (non-blocking)
+  // Flush trace events to Supabase.
   if (traceId) {
     traceService.updateTraceMetrics(traceId);
-    traceService.persistTrace(traceId).catch(() => {});
+    await traceService.persistTrace(traceId).catch((error) => {
+      console.error('[TRACE] Failed to persist agent trace update:', error);
+    });
   }
   return updatedState;
 }

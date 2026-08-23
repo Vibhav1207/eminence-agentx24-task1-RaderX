@@ -9,7 +9,10 @@ export async function GET(
     const { id } = await params;
     const mission = orchestratorService.getMissionState(id);
     if (!mission) {
-      return apiError(`No active mission found for investigation ${id}`, 'NOT_FOUND', 404);
+      // A completed mission is a valid terminal state. The workspace polls
+      // this endpoint while the investigation page remains open, so return a
+      // normal empty payload instead of turning completion into repeated 404s.
+      return apiSuccess(null);
     }
     return apiSuccess(mission);
   } catch (error: any) {

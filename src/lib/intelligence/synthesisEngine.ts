@@ -91,19 +91,20 @@ export class SynthesisEngine {
         ? 'MODERATE CONFIDENCE'
         : 'LOW CONFIDENCE';
 
-    // Requirement 30, 31, 32, 33, 35, 39: Generate Grounded Recommendations
+    // Threats & Opportunities (VERIFIED evidence links only)
+    const threats = this.generateThreats(signals, verifiedEvidence, entityA);
+    const opportunities = this.generateOpportunities(signals, verifiedEvidence, entityA);
+
+    // Recommendations are derived from the extracted threats and opportunities.
+    // No generic action is emitted when the evidence does not support one.
     const recommendedActions = this.generateGroundedRecommendations(
       investigation,
       verifiedEvidence,
       signals,
       decisionConfidence,
-      entityA,
-      entityB
+      threats,
+      opportunities
     );
-
-    // Threats & Opportunities (VERIFIED evidence links only)
-    const threats = this.generateThreats(signals, verifiedEvidence, entityA);
-    const opportunities = this.generateOpportunities(signals, verifiedEvidence, entityA);
 
     // Insufficient Evidence Notice
     let insufficientEvidenceNotice: string | undefined;
@@ -397,84 +398,41 @@ export class SynthesisEngine {
     verifiedEvidence: EvidenceModel[],
     signals: SignalModel[],
     decisionConfidence: number,
-    entityA: string,
-    entityB: string
+    threats: ExecutiveThreat[],
+    opportunities: ExecutiveOpportunity[]
   ): ExecutiveRecommendation[] {
     const recommendations: ExecutiveRecommendation[] = [];
 
-    // Requirement 33: Uncertainty Affects Recommendation
-    if (decisionConfidence < 60 || verifiedEvidence.length < 3) {
+    threats.forEach((threat, index) => {
+      if (threat.evidenceIds.length === 0) return;
       recommendations.push({
-        id: `rec-1`,
-        action: `Gather additional verified primary disclosures on ${entityA} and ${entityB}`,
-        reason: `Current decision confidence is ${decisionConfidence}%. Available evidence is insufficient for aggressive strategic capital reallocation.`,
-        implication: `Premature action based on incomplete evidence presents risk.`,
-        priority: 'MEDIUM',
-        supportingSignalIds: signals.map((s) => s.id),
-        supportingEvidenceIds: verifiedEvidence.map((e) => e.id),
+        id: `rec-threat-${index + 1}`,
+        action: threat.recommendedResponse,
+        reason: `Derived from the validated threat “${threat.title}” and ${threat.evidenceIds.length} cited evidence item(s).`,
+        implication: threat.description,
+        priority: threat.impact === 'CRITICAL' || threat.impact === 'HIGH' ? 'CRITICAL' : 'HIGH',
+        supportingSignalIds: signals.filter((s) => s.evidenceIds?.some((id) => threat.evidenceIds.includes(id))).map((s) => s.id),
+        supportingEvidenceIds: threat.evidenceIds,
         timeHorizon: 'IMMEDIATE',
-        confidence: decisionConfidence,
-        expectedImpact: 'Prevents misallocation of strategic resources based on incomplete data.',
+        confidence: threat.confidence,
+        expectedImpact: `Reduce exposure to ${threat.title}.`,
       });
+    });
 
+    opportunities.forEach((opportunity, index) => {
+      if (opportunity.evidenceIds.length === 0) return;
       recommendations.push({
-        id: `rec-2`,
-        action: `Configure automated 24/7 background watchlist monitoring for ${entityA} vs ${entityB}`,
-        reason: 'Continuous monitoring captures new patent grants and financial disclosures as they publish.',
-        implication: 'Ensures real-time detection of competitive shifts.',
-        priority: 'HIGH',
-        supportingSignalIds: signals.map((s) => s.id),
-        supportingEvidenceIds: verifiedEvidence.map((e) => e.id),
-        timeHorizon: 'SHORT_TERM',
-        confidence: decisionConfidence,
-        expectedImpact: 'Automated early warning for strategic disclosures.',
+        id: `rec-opportunity-${index + 1}`,
+        action: opportunity.recommendedAction,
+        reason: `Derived from the validated opportunity “${opportunity.title}” and ${opportunity.evidenceIds.length} cited evidence item(s).`,
+        implication: opportunity.description,
+        priority: opportunity.potentialImpact === 'CRITICAL' || opportunity.potentialImpact === 'HIGH' ? 'HIGH' : 'MEDIUM',
+        supportingSignalIds: signals.filter((s) => s.evidenceIds?.some((id) => opportunity.evidenceIds.includes(id))).map((s) => s.id),
+        supportingEvidenceIds: opportunity.evidenceIds,
+        timeHorizon: opportunity.timeHorizon || 'SHORT_TERM',
+        confidence: opportunity.confidence,
+        expectedImpact: `Capture value from ${opportunity.title}.`,
       });
-
-      return recommendations;
-    }
-
-    // High / Moderate confidence recommendations grounded strictly in query & evidence
-    const topEv = verifiedEvidence.slice(0, 3);
-    const evIds = topEv.map((e) => e.id);
-
-    // Requirement 39: Recommendations change dynamically with query
-    recommendations.push({
-      id: `rec-1`,
-      action: `Benchmark internal PC gaming & platform architecture against ${entityA} verified disclosures`,
-      reason: `Verified literature (${topEv[0]?.title || 'primary evidence'}) demonstrates active technical evolution.`,
-      implication: `Competitors operating in PC distribution & esports face accelerating technical standards.`,
-      priority: 'HIGH',
-      supportingSignalIds: signals.map((s) => s.id),
-      supportingEvidenceIds: evIds,
-      timeHorizon: 'IMMEDIATE',
-      confidence: decisionConfidence,
-      expectedImpact: 'Identifies technical parity gaps and competitive opportunities.',
-    });
-
-    recommendations.push({
-      id: `rec-2`,
-      action: `Establish continuous patent and research monitoring on ${entityB} developer ecosystem`,
-      reason: `Correlated primary evidence indicates strategic continuity in platform positioning.`,
-      implication: `Failure to track ${entityB} disclosures risks strategic surprise in digital distribution.`,
-      priority: 'HIGH',
-      supportingSignalIds: signals.map((s) => s.id),
-      supportingEvidenceIds: verifiedEvidence.slice(1, 4).map((e) => e.id),
-      timeHorizon: 'SHORT_TERM',
-      confidence: decisionConfidence,
-      expectedImpact: 'Protects against platform locked-in advantages.',
-    });
-
-    recommendations.push({
-      id: `rec-3`,
-      action: `Evaluate multi-platform diversification and sponsorship alignment for ${entityA}`,
-      reason: `Verified disclosures document shifting sponsorship portfolios and user churn models.`,
-      implication: `Long-term competitive growth requires balancing core title monetization with ecosystem breadth.`,
-      priority: 'MEDIUM',
-      supportingSignalIds: signals.map((s) => s.id),
-      supportingEvidenceIds: verifiedEvidence.slice(2, 5).map((e) => e.id),
-      timeHorizon: 'MEDIUM_TERM',
-      confidence: decisionConfidence,
-      expectedImpact: 'Sustains long-term audience growth and monetization resilience.',
     });
 
     return recommendations;
